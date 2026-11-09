@@ -1,0 +1,42 @@
+<!-- The newest files, then a search over the rest. Each is a row to
+     tick, the same row the agents and skills dialogs have. -->
+@if (leading.length) {
+  <div class="files-list" role="group" aria-label="Recent files">
+    @for (file of leading; track file.record_id) {
+      <mat-checkbox class="check-row" [checked]="isSelected(file.record_id)" (change)="toggle(file.record_id)">
+        <span class="check-name">{{ file.name }}</span>
+        <span class="check-hint">{{ fileMeta(file) }}</span>
+      </mat-checkbox>
+    }
+  </div>
+} @else if (!loading && !searching) {
+  <p class="dialog-note">Search your files by name.</p>
+}
+<span class="search-field">
+  <lucide-icon name="search" [size]="16" aria-hidden="true"></lucide-icon>
+  <input
+    class="input"
+    type="search"
+    name="search"
+    maxlength="200"
+    autocomplete="off"
+    aria-label="Search your files"
+    [placeholder]="loading ? 'Loading your files…' : 'Search all your files'"
+    [(ngModel)]="search"
+  />
+</span>
+@if (error) { <p class="form-notice is-error" role="alert">{{ error }}</p> }
+@if (searching) {
+  @if (searchResults.length) {
+    <div class="files-list" role="group" aria-label="Search results">
+      @for (file of searchResults; track file.record_id) {
+        <mat-checkbox class="check-row" [checked]="isSelected(file.record_id)" (change)="toggle(file.record_id)">
+          <span class="check-name">{{ file.name }}</span>
+          <span class="check-hint">{{ fileMeta(file) }}</span>
+        </mat-checkbox>
+      }
+    </div>
+  } @else {
+    <p class="dialog-note">No other file matches “{{ search.trim() }}”.</p>
+  }
+}

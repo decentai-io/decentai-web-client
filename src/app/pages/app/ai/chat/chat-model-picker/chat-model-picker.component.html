@@ -1,0 +1,62 @@
+<button type="button" class="btn ghost sm model-chip" [disabled]="disabled" (click)="toggle()"
+        aria-haspopup="dialog" [attr.aria-expanded]="open"
+        [attr.aria-label]="'Model: ' + label">
+  <lucide-icon name="brain-circuit" [size]="16" aria-hidden="true"></lucide-icon>
+  <span class="model-chip-name">{{ label }}</span>
+  <lucide-icon name="chevron-down" [size]="16" aria-hidden="true"></lucide-icon>
+</button>
+
+<!-- The same panel every menu is (styles/controls.scss), with a search
+     row at its head: a mat-menu would take the typing for itself. -->
+@if (open) {
+  <div class="model-panel" [class.is-below]="below" [style.max-height.px]="panelHeight"
+       role="dialog" aria-label="Choose a model" (keydown)="moveThroughModels($event)">
+    <span class="search-field model-search">
+      <lucide-icon name="search" [size]="16" aria-hidden="true"></lucide-icon>
+      <input class="input" type="search" [(ngModel)]="query" placeholder="Search models"
+             aria-label="Search models" #search />
+    </span>
+
+    <div class="model-list" role="listbox" aria-label="Models">
+      @if (!query.trim()) {
+        <button type="button" class="model-option" role="option" [attr.aria-selected]="!llm.model" (click)="choose('')">
+          <span class="model-name">The organization's default</span>
+          @if (standard) { <span class="model-of">{{ standard.name }}</span> }
+          @if (!llm.model) {
+            <lucide-icon class="model-check" name="check" [size]="16" aria-hidden="true"></lucide-icon>
+          }
+        </button>
+      }
+      @if (loading && !connections.length) {
+        <p class="model-note">Loading models…</p>
+      } @else if (!connections.length) {
+        <p class="model-note">No model connection is shared with you yet.</p>
+      } @else if (!visible.length) {
+        <p class="model-note">No model matches “{{ query }}”.</p>
+      }
+
+      @for (connection of visible; track connection.connection_id) {
+        <button type="button" class="model-option" role="option"
+                [attr.aria-selected]="llm.model === connection.connection_id"
+                (click)="choose(connection.connection_id)">
+          <span class="model-name">{{ connection.name }}</span>
+          <span class="model-of">{{ connection.models.join(', ') || connection.provider }}</span>
+          @if (llm.model === connection.connection_id) {
+            <lucide-icon class="model-check" name="check" [size]="16" aria-hidden="true"></lucide-icon>
+          }
+        </button>
+      }
+    </div>
+
+    <!-- How hard the model is asked to think. -->
+    <div class="model-effort">
+      <span class="model-effort-label">Effort</span>
+      <app-segmented
+        label="Reasoning effort"
+        [choices]="efforts"
+        [ngModel]="llm.effort"
+        (ngModelChange)="chooseEffort($event)"
+      ></app-segmented>
+    </div>
+  </div>
+}

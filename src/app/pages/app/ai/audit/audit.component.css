@@ -1,0 +1,62 @@
+/* Audit. The page frame, the list and the rows are the shared ones;
+   here are the filter row, who did a thing, the way to its chat, and
+   what a row opens to. */
+.audit-filters {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+/* The search gives way first, so the filters stay on one line. */
+.audit-filters .toolbar-search {
+  flex: 1 1 120px;
+  min-width: 0;
+}
+
+/* As wide as its button whether or not the row has a chat, so the
+   rows' ends line up. */
+.audit-chat {
+  flex: none;
+  width: 32px;
+}
+
+.audit-who {
+  flex: none;
+  width: 148px;
+  overflow: hidden;
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.audit-refs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
+}
+
+.audit-refs code,
+.audit-id {
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  line-height: var(--lh-xs);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 700px) {
+/* No room to line the ends up: who did it is in the details, and
+     only a row with a chat keeps the way to it. */
+  .audit-who,
+  .audit-chat:empty {
+    display: none;
+  }
+}

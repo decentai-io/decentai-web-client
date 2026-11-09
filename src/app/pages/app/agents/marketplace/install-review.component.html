@@ -1,0 +1,171 @@
+<!-- One agent, read before installing. Alone, it is two columns: what the
+     agent says of itself and what it may do, wide; and the facts that
+     installing agrees to — what it may do by level, where it connects,
+     what it keeps, and what it runs on — in a column of their own beside
+     it, in view while the rest is read. Among several, each agent is a
+     section of its own in one column, with the functions folded. -->
+<header class="reading-head" *ngIf="brief">
+  <app-agent-mark [name]="name"></app-agent-mark>
+  <h2>
+    {{ name }}
+    <span class="agent-head-version">v{{ manifest.agent.version }}</span>
+    <span class="chip" *ngIf="approved">update</span>
+  </h2>
+</header>
+
+<p class="agent-description" *ngIf="manifest.agent.description">{{ manifest.agent.description }}</p>
+
+<p class="form-notice is-error" role="alert" *ngFor="let message of offer.errors">
+  This cannot be installed: {{ message }}
+</p>
+
+<!-- First on an update: the only part a returning administrator has
+     not already read. -->
+<section class="reading-changes" *ngIf="changes.length" [attr.aria-labelledby]="id + '-changes'">
+  <h2 class="reading-card-title" [id]="id + '-changes'">
+    <lucide-icon name="refresh-cw" [size]="16" aria-hidden="true"></lucide-icon>
+    What this update changes
+  </h2>
+  <ul>
+    <li *ngFor="let line of changes">{{ line }}</li>
+  </ul>
+</section>
+
+<!-- ── Alone: two columns ─────────────────────────────────────────── -->
+<div class="reading-grid" *ngIf="!brief">
+  <div class="reading-main">
+    <!-- The agent's own account of itself. Folded to its first screen. -->
+    <section class="reading-card" *ngIf="offer.readme" [attr.aria-labelledby]="id + '-readme'">
+      <h2 class="reading-card-title" [id]="id + '-readme'">
+        <lucide-icon name="book-open" [size]="16" aria-hidden="true"></lucide-icon>
+        About
+      </h2>
+      <div class="reading-readme" [class.is-folded]="readmeLong && !readmeOpen">
+        <markdown [data]="readme"></markdown>
+      </div>
+      <button class="btn ghost sm reading-more" type="button" *ngIf="readmeLong" [attr.aria-expanded]="readmeOpen" (click)="readmeOpen = !readmeOpen">
+        <lucide-icon [name]="readmeOpen ? 'chevron-up' : 'chevron-down'" [size]="16" aria-hidden="true"></lucide-icon>
+        {{ readmeOpen ? "Show less" : "Read all of it" }}
+      </button>
+    </section>
+
+    <section class="reading-card" *ngIf="manifest.functions.length" [attr.aria-labelledby]="id + '-does'">
+      <h2 class="reading-card-title" [id]="id + '-does'">
+        <lucide-icon name="list-checks" [size]="16" aria-hidden="true"></lucide-icon>
+        What it may do
+        <span class="reading-count">{{ manifest.functions.length }} {{ manifest.functions.length === 1 ? "function" : "functions" }}</span>
+      </h2>
+      <app-agent-functions [manifest]="manifest" [expanded]="true"></app-agent-functions>
+    </section>
+  </div>
+
+  <aside class="reading-side" [attr.aria-label]="'What installing ' + name + ' agrees to'">
+    <section class="reading-card reading-facts">
+      <h2 class="reading-card-title">At a glance</h2>
+
+      <div class="fact" *ngIf="tally.length">
+        <h3 class="fact-name">How far it may go</h3>
+        <ng-container *ngTemplateOutlet="levels"></ng-container>
+      </div>
+
+      <div class="fact">
+        <h3 class="fact-name">Where it connects</h3>
+        <ng-container *ngTemplateOutlet="hosts"></ng-container>
+      </div>
+
+      <div class="fact">
+        <h3 class="fact-name">What it keeps</h3>
+        <ng-container *ngTemplateOutlet="keeps"></ng-container>
+      </div>
+    </section>
+
+    <section class="reading-card" [attr.aria-labelledby]="id + '-runs'">
+      <h2 class="reading-card-title" [id]="id + '-runs'">
+        <lucide-icon name="download" [size]="16" aria-hidden="true"></lucide-icon>
+        What it runs on
+      </h2>
+      <ng-container *ngTemplateOutlet="runs"></ng-container>
+    </section>
+  </aside>
+</div>
+
+<!-- ── Among several: one column, the functions folded ────────────── -->
+<ng-container *ngIf="brief">
+  <section [attr.aria-labelledby]="id + '-keeps'">
+    <h2 class="agent-section-title" [id]="id + '-keeps'">What it keeps</h2>
+    <ng-container *ngTemplateOutlet="keeps"></ng-container>
+  </section>
+
+  <section [attr.aria-labelledby]="id + '-network'">
+    <h2 class="agent-section-title" [id]="id + '-network'">Where it connects</h2>
+    <ng-container *ngTemplateOutlet="hosts"></ng-container>
+  </section>
+
+  <section *ngIf="manifest.functions.length" [attr.aria-labelledby]="id + '-does'">
+    <h2 class="agent-section-title" [id]="id + '-does'">What it may do</h2>
+    <ng-container *ngTemplateOutlet="levels"></ng-container>
+    <details class="fold reading-functions">
+      <summary>{{ manifest.functions.length === 1 ? "Its function" : "Its " + manifest.functions.length + " functions" }}</summary>
+      <app-agent-functions [manifest]="manifest"></app-agent-functions>
+    </details>
+  </section>
+
+  <section [attr.aria-labelledby]="id + '-runs'">
+    <h2 class="agent-section-title" [id]="id + '-runs'">What it runs on</h2>
+    <ng-container *ngTemplateOutlet="runs"></ng-container>
+  </section>
+</ng-container>
+
+<!-- ── The pieces, placed by the layout above ─────────────────────── -->
+
+<!-- How many functions at each level: what a chat may run without
+     asking, and what it must ask a person for. -->
+<ng-template #levels>
+  <p class="reading-levels">
+    <span class="lvl" *ngFor="let level of tally" [attr.data-level]="level.name">
+      <span class="lvl-dot"></span>{{ level.count }} {{ level.name }}
+    </span>
+  </p>
+</ng-template>
+
+<!-- Always said, a manifest that says nothing included: where an agent
+     connects is part of what installing agrees to. -->
+<ng-template #hosts>
+  <div class="host-chips">
+    <code class="is-wide" *ngIf="network.any">any public address</code>
+    <code class="is-none" *ngIf="!network.any && !network.hosts.length && !network.from_secrets.length">nothing outside the platform</code>
+    <code *ngFor="let host of network.hosts">{{ host }}</code>
+    <code class="is-credential" *ngFor="let field of network.from_secrets">
+      <lucide-icon name="key-round" [size]="12" aria-hidden="true"></lucide-icon>
+      {{ credentialHost(field) }}
+    </code>
+  </div>
+  <p class="reading-note">{{ networkNote }}</p>
+</ng-template>
+
+<ng-template #keeps>
+  <p class="reading-note" *ngIf="!resources.length">Nothing: it keeps no secret, record or file.</p>
+  <ul class="reading-items" *ngIf="resources.length">
+    <li *ngFor="let group of resources">
+      <lucide-icon [name]="group.kind === 'secrets' ? 'key-round' : group.kind === 'files' ? 'folder' : 'database'" [size]="16" aria-hidden="true"></lucide-icon>
+      <span class="reading-item-words">
+        <strong>{{ group.word }}</strong>
+        <span class="reading-item-about">{{ kindsOf(group) }}</span>
+      </span>
+    </li>
+  </ul>
+</ng-template>
+
+<!-- Every machine it has a program for, and the base it relies on: a
+     runtime runs it only where both are there. -->
+<ng-template #runs>
+  <ul class="reading-downloads">
+    <li *ngFor="let machine of machines"><span class="reading-download-what">{{ machine }}</span></li>
+    <li *ngIf="!machines.length"><span class="reading-download-none">No program: it can't run anywhere.</span></li>
+  </ul>
+  <p class="reading-note" *ngIf="offer.base">It relies on the sandbox base <code>{{ offer.base }}</code>.</p>
+  <p class="reading-note">
+    From <span class="reading-address">{{ source.url }}</span>. Each file is kept only if it matches the
+    digest its catalog names, and is never fetched from there again.
+  </p>
+</ng-template>

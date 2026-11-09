@@ -1,0 +1,282 @@
+<app-page guide="records"
+  title="Files"
+  sentence="Files you upload, attach to chats, or receive from your agents."
+  [wide]="true"
+>
+  <p class="form-notice is-error" *ngIf="error" role="alert">{{ error }}</p>
+  <p class="form-notice" *ngIf="notice" role="status">{{ notice }}</p>
+  <app-handed [records]="handed" [say]="handedSay" [busy]="busyRef" (answer)="accept($event.record, $event.yes)"></app-handed>
+
+  <div class="side-layout" [class.has-opened]="opened">
+    <app-filter-column
+      *ngIf="records.length && !opened"
+      label="Filter files"
+      [groups]="filters"
+      [chosen]="chosen"
+      (choose)="filter($event.key, $event.value)"
+    ></app-filter-column>
+
+    <app-list class="files-list" label="Files" rows="table" [loading]="loading" [class.side-alone]="!records.length"
+              [class.is-dropping]="dropping"
+              (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
+      <ng-container listToolbar *ngIf="records.length">
+        <!-- With something ticked, the toolbar is what can be done to it. -->
+        <app-selection-bar
+          class="toolbar-fill"
+          *ngIf="selected.size; else toolbar"
+          [count]="selected.size"
+          [shown]="selectableShown.length"
+          (selectAll)="selectAllShown()"
+          (clear)="clearSelection()"
+        >
+          <button class="btn danger sm" type="button" (click)="deleteSelected()" [disabled]="deleteBusy">
+            <lucide-icon name="trash-2" [size]="16" aria-hidden="true"></lucide-icon>
+            Delete
+          </button>
+        </app-selection-bar>
+
+        <ng-template #toolbar>
+          <span class="search-field toolbar-search">
+            <lucide-icon name="search" [size]="16" aria-hidden="true"></lucide-icon>
+            <input
+              class="input"
+              type="search"
+              placeholder="Search files"
+              aria-label="Search files"
+              [ngModel]="query"
+              (ngModelChange)="search($event)"
+            />
+          </span>
+          <app-select
+            class="toolbar-sort"
+            label="Sort files"
+            placeholder="Sort"
+            [choices]="sortChoices"
+            [ngModel]="sortChoice"
+            (ngModelChange)="sortByChoice($event)"
+          ></app-select>
+          <ng-container *ngTemplateOutlet="upload"></ng-container>
+        </ng-template>
+      </ng-container>
+
+      <!-- Shown while files are dragged over the list: where they go,
+           and how large one may be. -->
+      <p class="files-drop" *ngIf="dropping" aria-hidden="true">
+        <lucide-icon name="upload" [size]="20" aria-hidden="true"></lucide-icon>
+        Drop files to upload
+        <span>Up to {{ uploadLimitMb }} MB each</span>
+      </p>
+
+      <!-- The files on their way in, above the ones already here. -->
+      <ul class="upload-rows" *ngIf="uploads.length" aria-label="Uploads" aria-live="polite">
+        <li class="upload-row" *ngFor="let upload of uploads" [class.is-failed]="upload.state === 'failed'">
+          <app-file-icon [name]="upload.file.name" [mime]="upload.file.type"></app-file-icon>
+          <div class="upload-words">
+            <span class="upload-name">{{ upload.file.name }}</span>
+            <span class="upload-state">{{ uploadWords(upload) }}</span>
+            <span class="upload-bar" *ngIf="upload.state === 'uploading' || upload.state === 'waiting'" role="progressbar"
+                  aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="upload.sent * 100"
+                  [attr.aria-label]="upload.file.name + ' upload'">
+              <span [style.width.%]="upload.sent * 100"></span>
+            </span>
+          </div>
+          <button class="btn sm" type="button" *ngIf="upload.state === 'failed' && !upload.problem.startsWith('Larger')" (click)="retry(upload)">Retry</button>
+          <button class="icon-btn sm" type="button"
+                  [attr.aria-label]="(upload.state === 'uploading' ? 'Cancel the upload of ' : 'Dismiss ') + upload.file.name"
+                  (click)="dismiss(upload)">
+            <lucide-icon name="x" [size]="16" aria-hidden="true"></lucide-icon>
+          </button>
+        </li>
+      </ul>
+
+      <table class="table" *ngIf="shown.length">
+        <thead>
+          <tr>
+            <th class="cell-check" *ngIf="can('delete')">
+              <mat-checkbox
+                aria-label="Select every file shown"
+                [checked]="allShownSelected"
+                [indeterminate]="selected.size > 0 && !allShownSelected"
+                [disabled]="!selectableShown.length"
+                (change)="$event.checked ? selectAllShown() : clearSelection()"
+              ></mat-checkbox>
+            </th>
+            <th appSort="name" [sort]="sort" (sortChange)="sortBy($event)">Name</th>
+            <th>Source</th>
+            <th appSort="size" class="num" [sort]="sort" (sortChange)="sortBy($event)">Size</th>
+            <th appSort="changed" [sort]="sort" (sortChange)="sortBy($event)">Changed</th>
+            <th class="cell-minor">Sharing</th>
+            <th class="cell-actions"><span class="visually-hidden">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let file of pagedFiles" [class.is-selected]="isSelected(file) || file.record_id === openId">
+            <td class="cell-check" *ngIf="can('delete')">
+              <mat-checkbox
+                *ngIf="deletable(file)"
+                [aria-label]="'Select ' + nameOf(file)"
+                [checked]="isSelected(file)"
+                (change)="toggleSelected(file)"
+              ></mat-checkbox>
+            </td>
+            <td class="cell-main">
+              <span class="file-name">
+                <app-file-icon [name]="nameOf(file)" [mime]="file.file?.type"></app-file-icon>
+                <a class="cell-open file-name-words" [routerLink]="['/data/files', file.record_id]" queryParamsHandling="preserve"
+                   [attr.aria-current]="file.record_id === openId ? 'true' : null">{{ stem(file) }}<span class="file-extension" *ngIf="extension(file)">.{{ extension(file) }}</span></a>
+                <span class="chip" *ngIf="file.handing" matTooltip="Waiting for them to accept it">Handed over</span>
+              </span>
+            </td>
+            <!-- Whose it is for: an agent's resource, by its mark, or the person's own. -->
+            <td class="cell-fact">
+              <span class="file-source" *ngIf="file.of; else own">
+                <app-agent-mark size="sm" [name]="agentName(file.of.agent)"></app-agent-mark>
+                {{ sourceLabel(file) }}
+              </span>
+              <ng-template #own>{{ sourceLabel(file) }}</ng-template>
+            </td>
+            <td class="cell-fact num">{{ sizeOf(file) }}</td>
+            <td class="cell-when" [title]="changedInFull(file)">{{ changed(file) }}</td>
+            <td class="cell-minor">
+              <span class="chip" [matTooltip]="sharing(file).names">{{ sharing(file).word }}</span>
+            </td>
+            <td class="cell-actions">
+              <button
+                class="icon-btn sm"
+                type="button"
+                *ngIf="canChat"
+                [attr.aria-label]="'Use ' + nameOf(file) + ' in a chat'"
+                matTooltip="Use in a chat"
+                (click)="useInChat(file)"
+              >
+                <lucide-icon name="message-square" [size]="16" aria-hidden="true"></lucide-icon>
+              </button>
+              <button
+                class="icon-btn sm"
+                type="button"
+                *ngIf="canDownload"
+                [attr.aria-label]="'Download ' + nameOf(file)"
+                matTooltip="Download"
+                [disabled]="busyRef === file.record_id"
+                (click)="download(file)"
+              >
+                <lucide-icon name="download" [size]="16" aria-hidden="true"></lucide-icon>
+              </button>
+              <button
+                class="icon-btn sm"
+                type="button"
+                *ngIf="hasActions(file)"
+                [attr.aria-label]="'More actions for ' + nameOf(file)"
+                [matMenuTriggerFor]="fileMenu"
+                [matMenuTriggerData]="{ file: file }"
+              >
+                <lucide-icon name="ellipsis-vertical" [size]="16" aria-hidden="true"></lucide-icon>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <app-pager
+        [page]="page"
+        [pageSize]="pageSize"
+        [total]="shown.length"
+        (pageChange)="toPage($event)"
+      ></app-pager>
+
+      <ng-container *ngIf="!shown.length">
+        <app-empty
+          *ngIf="filtered; else noFiles"
+          icon="search-x"
+          title="No file matches"
+          line="Try another search, or clear the filters."
+        >
+          <button class="btn" type="button" (click)="clearFilters()">Clear the filters</button>
+        </app-empty>
+        <ng-template #noFiles>
+          <app-empty
+            icon="file-text"
+            title="No files yet"
+            [line]="'Upload one here or drop it on this page, attach one to a chat, or let an agent produce one. Up to ' + uploadLimitMb + ' MB each.'"
+          >
+            <ng-container *ngTemplateOutlet="upload"></ng-container>
+          </app-empty>
+        </ng-template>
+      </ng-container>
+    </app-list>
+
+    <!-- The file the address names: beside the list on a wide screen,
+         in its place on a narrow one. -->
+    <app-file-preview
+      class="side-opened"
+      *ngIf="opened as file"
+      [file]="file"
+      [source]="sourceLabel(file)"
+      [sharing]="sharing(file).word"
+      [madeBy]="madeBy(file)"
+      [handingTo]="handingTo(file)"
+      [canDownload]="canDownload"
+      [canRename]="can('update') && isMine(file)"
+      [renaming]="renaming"
+      [renameProblem]="renameProblem"
+      (closed)="closeOpened()"
+      (download)="download(file)"
+      (rename)="rename(file, $event)"
+    >
+      <button previewActions class="btn primary sm" type="button" *ngIf="canChat" (click)="useInChat(file)">
+        Use in a chat
+      </button>
+      <button previewActions class="btn sm" type="button" *ngIf="canDownload" (click)="download(file)">
+        Download
+      </button>
+      <button previewActions class="icon-btn sm" type="button" *ngIf="hasActions(file)"
+              [attr.aria-label]="'More actions for ' + nameOf(file)" [matMenuTriggerFor]="fileMenu"
+              [matMenuTriggerData]="{ file: file }">
+        <lucide-icon name="ellipsis-vertical" [size]="16" aria-hidden="true"></lucide-icon>
+      </button>
+    </app-file-preview>
+  </div>
+
+  <mat-menu #fileMenu="matMenu" xPosition="before">
+    <ng-template matMenuContent let-file="file">
+      <a mat-menu-item *ngIf="file.record_id !== openId" [routerLink]="['/data/files', file.record_id]" queryParamsHandling="preserve">Open</a>
+      <button mat-menu-item *ngIf="can('update')" (click)="openAgents(file)">Agents…</button>
+      <button mat-menu-item *ngIf="can('update')" (click)="openShare(file)">Share</button>
+      <button mat-menu-item *ngIf="can('transfer') && !file.handing" (click)="requestTransfer(file)">Hand over</button>
+      <button mat-menu-item *ngIf="handingOn(file) && can('withdraw')" (click)="withdraw(file)">Withdraw the hand-over</button>
+      <button mat-menu-item *ngIf="can('delete')" [disabled]="busyRef === file.record_id" (click)="deleteOne(file)">Delete</button>
+    </ng-template>
+  </mat-menu>
+
+  <!-- The one way in for a file: a real button, and the browser's picker
+       behind it. -->
+  <ng-template #upload>
+    <ng-container *ngIf="canUpload">
+      <button class="icon-btn primary toolbar-end" type="button" (click)="picker.click()"
+              aria-label="Upload files" matTooltip="Upload files">
+        <lucide-icon name="upload" [size]="18" aria-hidden="true"></lucide-icon>
+      </button>
+    </ng-container>
+  </ng-template>
+  <input #picker type="file" multiple hidden (change)="onPicked($event)" />
+
+  <app-share-dialog *ngIf="share.ref"
+                    [share]="share"
+                    heading="Who can see this file"
+                    note="Anyone you share with can download this file."
+                    [allowOrganization]="!!share.peers.everyone"
+                    [problem]="shareProblem"
+                    (save)="saveShare()" (closed)="share.close()">
+  </app-share-dialog>
+
+  <app-record-agents *ngIf="agentsTarget as file"
+                     [record]="file" [shapes]="shapes" [busy]="agentsSaving" [problem]="agentsProblem"
+                     (save)="saveAgents($event)" (closed)="closeAgents()">
+  </app-record-agents>
+
+  <app-transfer-dialog *ngIf="transferTarget as item"
+                       [subject]="'the file “' + nameOf(item) + '”'" [ownerId]="item.created_by"
+                       note="Once they accept it, it is theirs to rename and delete. Everyone it is shared with keeps seeing it."
+                       [busy]="transferring" (chosen)="transfer($event)" (closed)="closeTransfer()">
+  </app-transfer-dialog>
+</app-page>

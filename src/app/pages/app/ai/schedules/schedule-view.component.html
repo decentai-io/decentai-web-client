@@ -1,0 +1,74 @@
+<header class="schedule-head">
+  <div class="schedule-words">
+    <h2 class="schedule-title">{{ cadence }}</h2>
+    <p class="schedule-kind">
+      <span>{{ zone }}</span>
+      <span class="chip" [class.accent]="state === 'active'" [class.danger]="state === 'failing'">{{ stateWord }}</span>
+    </p>
+  </div>
+  <button class="icon-btn sm" type="button" aria-label="Close the schedule" (click)="closed.emit()">
+    <lucide-icon name="x" [size]="16" aria-hidden="true"></lucide-icon>
+  </button>
+</header>
+
+<div class="schedule-what">
+  <lucide-icon [name]="mark" [size]="16" aria-hidden="true"></lucide-icon>
+  <p>
+    {{ what }}
+    <span class="schedule-also">
+      in <a [routerLink]="['/ai/chats', schedule.chat_id]">{{ chatTitle || "its chat" }}</a>,
+      set by {{ schedule.by === "assistant" ? "the assistant" : "you" }}
+    </span>
+  </p>
+</div>
+<pre class="code-tile" *ngIf="inputs">{{ inputs }}</pre>
+
+<div class="schedule-actions" *ngIf="canUpdate || canDelete">
+  <button class="btn sm" type="button" *ngIf="canUpdate" [disabled]="busy" (click)="edit.emit()">Change when it runs</button>
+  <button class="btn sm" type="button" *ngIf="canUpdate && state !== 'done'" [disabled]="busy" (click)="setPaused.emit(!schedule.paused)">
+    {{ schedule.paused ? "Resume" : "Pause" }}
+  </button>
+  <button class="btn sm" type="button" *ngIf="canUpdate && !schedule.paused && !stopped" [disabled]="busy" (click)="runNow.emit()">Run now</button>
+  <a class="btn sm" [routerLink]="['/ai/chats', schedule.chat_id]">Open the chat</a>
+  <button class="btn ghost danger sm" type="button" *ngIf="canDelete" [disabled]="busy" (click)="remove.emit()">Delete</button>
+</div>
+
+<section aria-labelledby="schedule-next-title" *ngIf="state !== 'done'">
+  <h3 class="schedule-section" id="schedule-next-title">Next</h3>
+  <p class="schedule-upcoming" *ngIf="nextAt">
+    <span>{{ moment(nextAt) }}</span>
+    <span class="schedule-away" *ngIf="!stopped">{{ away(nextAt) }}</span>
+  </p>
+  <p class="schedule-note" *ngIf="stopped && nextAt">You stopped everything, so it does not run until you resume.</p>
+  <p class="schedule-note" *ngIf="schedule.paused">Paused. Resuming counts the next run from then: nothing it missed is run.</p>
+</section>
+
+<section aria-labelledby="schedule-runs-title">
+  <div class="schedule-runs-head">
+    <h3 class="schedule-section" id="schedule-runs-title">Runs</h3>
+    <app-segmented *ngIf="runs.length" label="Which runs" [choices]="runFilters" [(ngModel)]="runFilter"></app-segmented>
+  </div>
+  <p class="schedule-note" *ngIf="!runs.length">It has not run yet.</p>
+  <p class="schedule-note" *ngIf="runs.length && !shownRuns.length">None of its runs failed.</p>
+
+  <ul class="schedule-runs" *ngIf="shownRuns.length">
+    <li *ngFor="let run of shownRuns">
+      <!-- A run that ended with words opens to them. -->
+      <details class="fold" *ngIf="run.summary; else plainRun">
+        <summary>
+          <ng-container *ngTemplateOutlet="runLine; context: { run: run }"></ng-container>
+        </summary>
+        <pre class="code-tile">{{ run.summary }}</pre>
+      </details>
+      <ng-template #plainRun>
+        <p class="schedule-run"><ng-container *ngTemplateOutlet="runLine; context: { run: run }"></ng-container></p>
+      </ng-template>
+    </li>
+  </ul>
+  <p class="schedule-note" *ngIf="runs.length">The last {{ runs.length }} {{ runs.length === 1 ? "run is" : "runs are" }} kept.<ng-container *ngIf="failures"> {{ failures }}.</ng-container></p>
+</section>
+
+<ng-template #runLine let-run="run">
+  <span class="run-when">{{ moment(run.at) }}</span>
+  <span class="run-what" [class.is-failed]="run.failed">{{ run.failed ? "Failed" : "Ran" }}</span>
+</ng-template>

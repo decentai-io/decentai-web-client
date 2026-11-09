@@ -1,0 +1,146 @@
+<app-page guide="organization#monitoring" title="Monitoring" sentence="What models and agents use, and what runtimes saw of them." [wide]="true">
+  <span pageActions class="mon-updated" *ngIf="view === 'agents' && updated">{{ updated }}</span>
+  <app-segmented
+    pageActions
+    *ngIf="views.length > 1"
+    label="Monitoring views"
+    [choices]="views"
+    [ngModel]="view"
+    (ngModelChange)="go($event)"
+  ></app-segmented>
+
+  <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
+
+  <!-- ── What happened, added up ─────────────────────────────────── -->
+  <app-activity-overview *ngIf="view === 'overview'"></app-activity-overview>
+
+  <!-- ── The tokens models used, and their estimated cost ────────── -->
+  <app-token-usage *ngIf="view === 'tokens'"></app-token-usage>
+  <app-token-usage *ngIf="view === 'mine'" [mine]="true"></app-token-usage>
+
+  <!-- ── What the agents use now ─────────────────────────────────── -->
+  <ng-container *ngIf="view === 'agents'">
+    <div class="form" *ngIf="loadingUsage" aria-busy="true" aria-label="Loading what the agents use">
+      <span class="sk sk-field"></span>
+      <span class="sk sk-field"></span>
+    </div>
+
+    <section class="form-section" *ngIf="!loadingUsage">
+      <h2 class="form-section-title">The agents</h2>
+      <p class="form-section-note">The organization's agents running now, as their runtimes report them: one process for each chat that uses one.</p>
+
+      <dl class="mon-tiles" *ngIf="agents.length">
+        <div class="mon-tile">
+          <dt>Processes</dt>
+          <dd>{{ processes }}</dd>
+        </div>
+        <div class="mon-tile">
+          <dt>Memory they hold now</dt>
+          <dd>{{ bytes(memory) }}</dd>
+        </div>
+      </dl>
+
+      <app-empty
+        *ngIf="!agents.length"
+        icon="gauge"
+        title="No agent is running"
+        line="An agent starts when a chat first calls it, and is listed here while it runs."
+      ></app-empty>
+
+      <app-list label="Running agents" rows="table" *ngIf="agents.length">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Agent</th>
+              <th scope="col">Memory</th>
+              <th scope="col" class="num cell-minor">Processes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let agent of agents; trackBy: byAgent">
+              <td class="cell-main">{{ agent.agent }}</td>
+              <td class="cell-fact">
+                <span class="mon-memory">
+                  <span class="mon-number">{{ bytes(agent.memory) }}</span>
+                  <span class="mon-meter" role="img" [attr.aria-label]="share(agent) + '% of the most any agent holds'">
+                    <span [style.width.%]="share(agent)"></span>
+                  </span>
+                </span>
+              </td>
+              <td class="num cell-minor">{{ agent.processes }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </app-list>
+    </section>
+  </ng-container>
+
+  <!-- ── What runtimes wrote down ────────────────────────────────── -->
+  <app-list *ngIf="view === 'events'" rows="groups" label="Events" [loading]="loading">
+    <app-empty
+      *ngIf="!days.length"
+      icon="scroll-text"
+      title="Nothing written down yet"
+      line="What runtimes do for the organization's chats appears here as it happens."
+    ></app-empty>
+
+    <section *ngFor="let day of days">
+      <h2 class="record-day">{{ day.day }}</h2>
+      <div role="list" [attr.aria-label]="day.day">
+        <app-record-row
+          *ngFor="let group of day.items"
+          [time]="time(group.first)"
+          [tone]="tone(group.first)"
+          [outcome]="outcome(group.first)"
+          [words]="group.first.what"
+          [more]="more(group.first)"
+          [chip]="group.first.who"
+          [count]="group.lines.length"
+          [canOpen]="group.lines.length > 1 || hasDetails(group.first)"
+          [open]="isOpen(groupKey(group))"
+          (toggle)="toggle(groupKey(group))"
+        >
+          <ng-container *ngIf="isOpen(groupKey(group))">
+            <ng-container *ngIf="group.lines.length === 1">
+              <ng-container *ngTemplateOutlet="written; context: { $implicit: group.first }"></ng-container>
+            </ng-container>
+
+            <!-- Several alike: each of them, with its own time and details. -->
+            <div role="list" *ngIf="group.lines.length > 1" [attr.aria-label]="group.first.what">
+              <app-record-row
+                *ngFor="let line of group.lines"
+                [time]="time(line)"
+                [tone]="tone(line)"
+                [outcome]="outcome(line)"
+                [words]="line.what"
+                [more]="more(line)"
+                [canOpen]="hasDetails(line)"
+                [open]="isOpen(line.line_id)"
+                (toggle)="toggle(line.line_id)"
+              >
+                <ng-container *ngIf="isOpen(line.line_id)">
+                  <ng-container *ngTemplateOutlet="written; context: { $implicit: line }"></ng-container>
+                </ng-container>
+              </app-record-row>
+            </div>
+          </ng-container>
+        </app-record-row>
+      </div>
+    </section>
+
+    <div class="record-older" *ngIf="before">
+      <button class="btn" type="button" [disabled]="loadingMore" (click)="older()">
+        {{ loadingMore ? "Loading…" : "Load older" }}
+      </button>
+    </div>
+  </app-list>
+</app-page>
+
+<!-- One line as it was written down, field by field. -->
+<ng-template #written let-line>
+  <dl class="mon-fields">
+    <div><dt>at</dt><dd>{{ fullWhen(line) }}</dd></div>
+    <div *ngIf="line.chat_id"><dt>chat</dt><dd><code>{{ line.chat_id }}</code></dd></div>
+  </dl>
+  <pre class="record-json">{{ details(line) }}</pre>
+</ng-template>

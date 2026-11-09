@@ -1,0 +1,65 @@
+<!-- One filter row above everything it scopes. -->
+<div class="ov-bar">
+  <app-segmented label="Time window" [choices]="windows" [ngModel]="days" (ngModelChange)="choose($event)"></app-segmented>
+  <span class="ov-window" *ngIf="read">Added up from the audit trail {{ inWindow }}.</span>
+</div>
+
+<p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
+
+<div class="ov-tiles ov-loading" *ngIf="loading && !read" aria-busy="true" aria-label="Adding up what happened">
+  <span class="sk ov-tile-sk" *ngFor="let n of [1, 2, 3]"></span>
+</div>
+
+<!-- Held at reduced opacity while a new window is read: no jump. -->
+<div class="ov" *ngIf="read" [class.is-stale]="loading">
+  <!-- ── The numbers ─────────────────────────────────────────────── -->
+  <dl class="ov-tiles">
+    <div class="ov-tile">
+      <dt>Recorded</dt>
+      <dd class="ov-value">{{ number(total) }}</dd>
+      <dd class="ov-sub">{{ total ? okShare : 'Nothing ' + inWindow }}</dd>
+    </div>
+    <div class="ov-tile" [class.is-bad]="refused + failed > 0">
+      <dt>
+        <lucide-icon *ngIf="refused + failed > 0" name="triangle-alert" [size]="14" aria-hidden="true"></lucide-icon>
+        Did not succeed
+      </dt>
+      <dd class="ov-value">{{ number(refused + failed) }}</dd>
+      <dd class="ov-sub">{{ refused }} refused · {{ failed }} failed</dd>
+    </div>
+    <div class="ov-tile">
+      <dt>Agents running now</dt>
+      <dd class="ov-value">{{ running == null ? "—" : running.length }}</dd>
+      <dd class="ov-sub">{{ running == null ? "Not reported" : processes + (processes === 1 ? " process" : " processes") }}</dd>
+    </div>
+  </dl>
+
+  <app-empty
+    *ngIf="!total"
+    icon="activity"
+    [title]="'Nothing was recorded ' + inWindow"
+    line="Every change and every refusal is recorded, and counted here."
+  ></app-empty>
+
+  <!-- ── What was done most ─────────────────────────────────────── -->
+  <section class="ov-card" aria-labelledby="ov-what-title" *ngIf="total">
+    <header class="ov-card-head">
+      <div>
+        <h2 class="ov-card-title" id="ov-what-title">What was done most</h2>
+        <p class="ov-card-note">How often, and how many did not succeed.</p>
+      </div>
+      <a class="btn ghost sm" routerLink="/audit/org">Open the audit trail</a>
+    </header>
+    <ul class="ov-bars">
+      <li *ngFor="let row of done">
+        <span class="ov-bar-name"><code>{{ row.what }}</code></span>
+        <span class="ov-bar-track" aria-hidden="true"><span [style.width.%]="share(row.total)"></span></span>
+        <span class="ov-bar-value">{{ number(row.total) }}</span>
+        <span class="ov-bar-extra">
+          <span class="chip warn" *ngIf="row.refused">{{ row.refused }} refused</span>
+          <span class="chip danger" *ngIf="row.failed">{{ row.failed }} failed</span>
+        </span>
+      </li>
+    </ul>
+  </section>
+</div>

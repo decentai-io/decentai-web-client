@@ -1,0 +1,96 @@
+<div class="messages">
+  <!-- Scrollable area (header/title/status/actions now live in the chat-detail shell) -->
+  <div class="messages-scroll" #messagesContainer (scroll)="onScroll()">
+    @if (loading) {
+      <div class="thread-column thread-loading" aria-busy="true" aria-label="Loading the chat">
+        <span class="sk sk-bubble"></span>
+        <span class="sk sk-line"></span>
+        <span class="sk sk-line is-short"></span>
+      </div>
+    } @else {
+      @if (hasMore) {
+        <div class="thread-column thread-older">
+          <button class="btn sm" type="button" (click)="loadOlder.emit()" [disabled]="loadingOlder">
+            {{ loadingOlder ? 'Loading earlier messages…' : 'Load earlier messages' }}
+          </button>
+        </div>
+      }
+      @if (turns.length > 0) {
+        <div class="thread-column thread-turns" #messagesInner>
+          @for (turn of turns; track turn.key; let lastTurn = $last) {
+            <section class="chat-turn">
+              @if (turn.userMessage) {
+                <app-chat-message [message]="turn.userMessage" [files]="files" [agentNames]="names"></app-chat-message>
+              }
+              <!-- The turn's work, between what was asked and the
+                   answer, where it happened. -->
+              @if (steps[turn.key]?.length) {
+                <app-chat-work [steps]="steps[turn.key]" [live]="lastTurn && busy" [elapsed]="lastTurn ? elapsedSeconds : 0"
+                               [stoppingAll]="stoppingAll" (stopAll)="stopAll.emit()"
+                               [stopping]="stoppingWork" (stopOne)="stopWork.emit($event)"></app-chat-work>
+              }
+              <!-- The assistant's side of the turn: one speaker, one
+                   header, however many messages the answer took. -->
+              @for (msg of turn.assistantMessages; track msg.message_id; let first = $first) {
+                <app-chat-message [message]="msg" [continuation]="!first" [files]="files" [agentNames]="names"
+                                  [copyText]="first ? turnText(turn) : null">
+                </app-chat-message>
+              }
+              @if (lastTurn && draftMessage) {
+                <app-chat-message [message]="draftMessage" [continuation]="turn.assistantMessages.length > 0"
+                                  [streaming]="true"></app-chat-message>
+              }
+              <!-- While the turn goes on and nothing is being written,
+                   its last line says so: what runs, and for how long. -->
+              @if (lastTurn && thinking) {
+                <ng-container *ngTemplateOutlet="dots"></ng-container>
+              }
+            </section>
+          }
+        </div>
+      }
+      @if (!turns.length && (showLiveWork || thinking || draftMessage)) {
+        <div class="thread-column">
+          @if (showLiveWork) {
+            <app-chat-work [steps]="steps['']" [live]="busy" [elapsed]="elapsedSeconds"
+                           [stoppingAll]="stoppingAll" (stopAll)="stopAll.emit()"
+                           [stopping]="stoppingWork" (stopOne)="stopWork.emit($event)"></app-chat-work>
+          } @else if (thinking) {
+            <ng-container *ngTemplateOutlet="dots"></ng-container>
+          }
+          @if (draftMessage) {
+            <app-chat-message [message]="draftMessage" [streaming]="true"></app-chat-message>
+          }
+        </div>
+      }
+      @if (!turns.length && !busy && !isProcessing && !draftMessage) {
+        <div class="thread-column thread-empty">
+          <lucide-icon class="thread-empty-mark" name="sparkles" [size]="24" aria-hidden="true"></lucide-icon>
+          <h2 class="thread-empty-title">Start the conversation</h2>
+          <p class="thread-empty-line">{{ capabilityLine }}</p>
+          <div class="thread-openers" role="group" aria-label="Suggested messages">
+            @for (openerText of openers; track openerText) {
+              <button class="btn" type="button" (click)="opener.emit(openerText)">{{ openerText }}</button>
+            }
+          </div>
+        </div>
+      }
+    }
+  </div>
+
+  @if (showJumpToLatest) {
+    <button class="jump-pill" type="button"
+            (click)="jumpToLatest()" [attr.aria-label]="newUpdateCount > 0 ? 'New reply. Jump to it' : 'Jump to the latest'">
+      <lucide-icon name="arrow-down" [size]="16" aria-hidden="true"></lucide-icon>
+      @if (newUpdateCount > 0) { <span>New reply</span> }
+    </button>
+  }
+</div>
+
+<!-- The assistant is on it and nothing shows yet: what runs, and for how long. -->
+<ng-template #dots>
+  <div class="thinking" role="status" aria-live="polite" [attr.aria-label]="liveLine">
+    <span class="thinking-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+    <span class="thinking-time">{{ liveLine }}</span>
+  </div>
+</ng-template>

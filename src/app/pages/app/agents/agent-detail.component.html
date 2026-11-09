@@ -1,0 +1,205 @@
+<a class="btn ghost sm agent-back" routerLink="/agents">
+  <lucide-icon name="arrow-left" [size]="16" aria-hidden="true"></lucide-icon>
+  All agents
+</a>
+
+<!-- Who it is, where it stands, when it was installed. -->
+<header class="agent-head">
+  <app-agent-mark size="lg" [name]="agent.name"></app-agent-mark>
+  <div class="agent-head-words">
+    <h1 class="agent-head-name">
+      {{ agent.name }}
+      <span class="agent-head-version">v{{ agent.version }}</span>
+      <span class="chip" [ngClass]="standing.tone">{{ standing.word }}</span>
+    </h1>
+    <p class="agent-head-source">
+      Installed {{ relativeDate(agent.installed_at).toLowerCase() }}<ng-container *ngIf="agent.source_url"> from {{ agent.source_url }}</ng-container>
+    </p>
+  </div>
+  <div class="agent-head-actions">
+    <button class="btn" type="button" *ngIf="canInstall && standing.kind === 'update'"
+            [disabled]="busy" (click)="update.emit()">
+      Review update
+    </button>
+    <button class="btn" type="button" *ngIf="canInstall" [disabled]="busy" (click)="check.emit()">
+      Check again
+    </button>
+    <button class="btn ghost danger" type="button" *ngIf="canUninstall" [disabled]="busy" (click)="uninstall.emit()">
+      Uninstall
+    </button>
+  </div>
+</header>
+
+<p class="form-notice is-error" role="alert" *ngIf="agent.state === 'failed'">
+  A runtime started it and it did not answer as its manifest says: {{ agent.error || "no reason was given" }}.
+  Until it passes, no chat can use it.
+</p>
+<p class="form-notice" role="status" *ngIf="agent.state === 'checking'">
+  A runtime starts it once, with no network, to see that it answers as its manifest says.
+  Until then no chat can use it.<ng-container *ngIf="agent.error"> Not checked yet: {{ agent.error }}</ng-container>
+</p>
+
+<app-segmented
+  class="agent-tabs"
+  label="This agent's sections"
+  [choices]="tabs"
+  [ngModel]="tab"
+  (ngModelChange)="tabChange.emit($event)"
+></app-segmented>
+
+<!-- ── Overview: what it is, what to say to it, what it keeps ────────── -->
+<div class="agent-overview" *ngIf="tab === 'overview'">
+  <p class="agent-description">{{ agent.manifest.agent.description }}</p>
+
+  <!-- The agent in its own words, by example: what a person types to
+       get something done with it. It is the reason it is installed. -->
+  <section *ngIf="agent.manifest.agent.examples?.length" aria-labelledby="try-title">
+    <h2 class="agent-section-title" id="try-title">Try asking</h2>
+    <ul class="try-cards">
+      <li class="try-card" *ngFor="let example of agent.manifest.agent.examples">
+        <strong>{{ example.title }}</strong>
+        <span class="try-prompt">“{{ example.prompt }}”</span>
+        <button class="btn sm" type="button" (click)="tryPrompt(example.prompt)">
+          Start a chat
+          <lucide-icon name="arrow-right" [size]="16" aria-hidden="true"></lucide-icon>
+        </button>
+      </li>
+    </ul>
+  </section>
+
+  <!-- What it may do, as one line of numbers. -->
+  <p class="agent-glance">
+    <button class="agent-glance-link" type="button" (click)="tabChange.emit('functions')">
+      <strong>{{ agent.manifest.functions.length }}</strong> {{ agent.manifest.functions.length === 1 ? "function" : "functions" }}
+    </button>
+    <span class="agent-glance-levels" *ngIf="tally.length">
+      <span class="lvl" *ngFor="let level of tally" [attr.data-level]="level.name">
+        <span class="lvl-dot"></span>{{ level.count }} {{ level.name }}
+      </span>
+    </span>
+  </p>
+
+  <div class="agent-cards">
+    <article class="agent-fact-card">
+      <h3>Where it connects</h3>
+      <div class="host-chips">
+        <code class="is-wide" *ngIf="network.any">any public address</code>
+        <code class="is-none" *ngIf="!network.any && !network.hosts.length && !network.from_secrets.length">nothing outside the platform</code>
+        <code *ngFor="let host of network.hosts">{{ host }}</code>
+        <code class="is-credential" *ngFor="let field of network.from_secrets">
+          <lucide-icon name="key-round" [size]="12" aria-hidden="true"></lucide-icon>
+          {{ credentialHost(field) }}
+        </code>
+      </div>
+      <p class="agent-fact-note">{{ networkNote }}</p>
+    </article>
+
+    <!-- What it keeps for people: secrets it signs in with, records and
+         files, each as its manifest declares it. -->
+    <article class="agent-fact-card" *ngIf="resources.length">
+      <h3>What it keeps</h3>
+      <dl class="agent-fact-list">
+        <ng-container *ngFor="let group of resources">
+          <ng-container *ngFor="let resource of group.items">
+            <dt>
+              {{ resource.label || resource.id }}
+              <span class="agent-fact-kind"> · {{ group.word | lowercase }}<ng-container *ngIf="resource.binding?.cardinality === 'one'">, one</ng-container><ng-container *ngIf="resource.binding?.required">, required</ng-container></span>
+            </dt>
+            <dd>
+              {{ resource.description }}
+              <ng-container *ngIf="resource.oauth"> Connected through {{ resource.oauth.provider }}.</ng-container>
+              <ng-container *ngIf="resource.user_access?.length"> You may {{ resource.user_access!.join(" and ") }} them yourself.</ng-container>
+              <ng-container *ngIf="resource.constraints?.mime_types?.length"> {{ resource.constraints!.mime_types!.join(", ") }}.</ng-container>
+              <ng-container *ngIf="resource.constraints?.max_size_mb"> At most {{ resource.constraints!.max_size_mb }} MB.</ng-container>
+            </dd>
+          </ng-container>
+        </ng-container>
+      </dl>
+      <p class="agent-fact-note">
+        A record lists the agents that may use it. Yours are under Secrets, Records and Files, where you
+        may add an agent to one.
+      </p>
+    </article>
+
+    <!-- Something to try it on: the rows and files the agent ships,
+         loaded as this person's own records and taken back on request. -->
+    <article class="agent-fact-card" *ngIf="samples">
+      <h3>Sample data</h3>
+      <p class="agent-fact-note">
+        <ng-container *ngIf="samplesStory">{{ samplesStory }} </ng-container>
+        {{ samples.records }} {{ samples.records === 1 ? "record" : "records" }}<ng-container *ngIf="samples.files">
+          and {{ samples.files }} {{ samples.files === 1 ? "file" : "files" }}</ng-container>,
+        loaded as your own: private to you, editable, and removed in one step here.
+      </p>
+      <button class="btn sm primary" type="button" *ngIf="!samplesLoaded" [disabled]="samplesBusy" (click)="loadSamples()">Load sample data</button>
+      <button class="btn sm" type="button" *ngIf="samplesLoaded" [disabled]="samplesBusy" (click)="removeSamples()">Remove what I loaded</button>
+    </article>
+
+    <!-- Approvals the person chose to remember on a card: theirs to
+         take back, and the next call asks again. -->
+    <article class="agent-fact-card" *ngIf="remembered.length">
+      <h3>Approvals you remembered</h3>
+      <dl class="agent-fact-list is-pairs">
+        <ng-container *ngFor="let approval of remembered">
+          <dt><code>{{ approval.function }}</code></dt>
+          <dd>
+            {{ approval.allowed ? "Allowed" : "Refused" }}{{ approval.record ? " for one record" : "" }},
+            {{ relativeDate(approval.at).toLowerCase() }}
+            <button class="btn ghost sm" type="button" [disabled]="!!forgetting" (click)="forget(approval)">Forget</button>
+          </dd>
+        </ng-container>
+      </dl>
+    </article>
+
+    <!-- Only for an agent that declares scopes. -->
+    <article class="agent-fact-card" *ngIf="scopes.length">
+      <h3>Authorization scopes</h3>
+      <dl class="agent-fact-list">
+        <ng-container *ngFor="let scope of scopes">
+          <dt><code>{{ scope.name }}</code></dt>
+          <dd>{{ scope.description }}</dd>
+        </ng-container>
+      </dl>
+      <p class="agent-fact-note">
+        A policy can narrow a function to particular values of these: a call outside them is refused.
+        Functions shows which input carries each.
+      </p>
+    </article>
+
+    <article class="agent-fact-card">
+      <h3>Who may use it</h3>
+      <p class="agent-fact-note">
+        The organization's policies say who may call each function, as the actions
+        <code>agent:{{ agent.agent_id }}:&lt;function&gt;</code>.
+      </p>
+      <a class="btn sm" routerLink="/admin/policies" *ngIf="canReadPolicies">Open Policies</a>
+    </article>
+
+    <article class="agent-fact-card">
+      <h3>Identity</h3>
+      <dl class="agent-fact-list is-pairs">
+        <dt>Id</dt><dd><code>{{ agent.agent_id }}</code></dd>
+        <dt>Version</dt><dd>{{ agent.version }}</dd>
+        <dt>Runs on</dt><dd>{{ agent.machines.join(", ") || "no machine" }}</dd>
+        <ng-container *ngIf="agent.base"><dt>Base</dt><dd><code>{{ agent.base }}</code></dd></ng-container>
+        <ng-container *ngIf="agent.manifest.agent.tags?.length">
+          <dt>Tags</dt><dd>{{ agent.manifest.agent.tags!.join(", ") }}</dd>
+        </ng-container>
+      </dl>
+    </article>
+  </div>
+
+  <!-- What the model is told of it, and its publisher's own account. -->
+  <details class="fold" *ngIf="agent.manifest.agent.instructions">
+    <summary>What the assistant is told about it</summary>
+    <p class="agent-fact-note">{{ agent.manifest.agent.instructions }}</p>
+  </details>
+  <details class="fold" *ngIf="readme">
+    <summary>About, from its publisher</summary>
+    <markdown [data]="readme"></markdown>
+  </details>
+</div>
+
+<div class="agent-tab" *ngIf="tab === 'functions'">
+  <app-agent-functions [manifest]="agent.manifest"></app-agent-functions>
+</div>

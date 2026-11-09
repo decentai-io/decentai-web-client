@@ -1,0 +1,42 @@
+# The web client's files, and nothing else.
+#
+# The app is served here, on a port of its own, and speaks to a DecentAI
+# engine somewhere else — the address the person enters on its first
+# screen, or the one assets/config.json names (docs/hosting.md). This
+# server never sees the engine's paths, holds no certificate, and
+# listens on plain HTTP: TLS is for whatever is in front of it.
+
+:80 {
+	encode gzip
+
+	# ── What the page may do ───────────────────────────────────────────
+	#
+	# The page's own policy — what it may load and where it may send —
+	# is in index.html, as a meta tag, so that it holds from a static
+	# host too. Here is only what a meta tag cannot carry: never be shown
+	# in another page's frame. Only the microphone and the camera, which
+	# the chat uses, may be asked for. A deployment that knows its engine
+	# may tighten connect-src in index.html (docs/hosting.md).
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy same-origin
+		X-Frame-Options DENY
+		Permissions-Policy "microphone=(self), camera=(self), geolocation=(), payment=(), usb=()"
+		Content-Security-Policy "frame-ancestors 'none'"
+	}
+
+	# Client-side routes fall back to the page. The page, the service
+	# worker's own files, the theme script and the deployment's word
+	# (assets/config.json) keep their names from one version to the next,
+	# so the browser asks for them afresh every time; everything else
+	# carries a hash in its name. `route` keeps the order written: the
+	# fallback first, so that an address like /ai/chats is known to be
+	# the page by the time the header is decided.
+	root * /srv
+	route {
+		try_files {path} /index.html
+		@fresh path /index.html /ngsw.json /ngsw-worker.js /theme-init.js /assets/config.json
+		header @fresh Cache-Control no-cache
+		file_server
+	}
+}

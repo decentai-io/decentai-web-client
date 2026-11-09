@@ -1,0 +1,30 @@
+# The web client, built from this checkout, served on a port of its own.
+#
+#   docker compose up -d --build
+#
+# Open http://localhost:4300. The app speaks to a DecentAI engine
+# somewhere else — on this computer, `python deploy/setup/setup.py` in the
+# engine's repository (decentai) starts one at http://localhost:4280 —
+# and its first screen asks for that address. Name it here instead, as
+# ENGINE_URL, and nobody is asked: the container writes it into
+# assets/config.json as it starts (docs/hosting.md).
+#
+# A release instead of this checkout: WEB_CLIENT_VERSION=0.6.0, then
+# `docker compose pull` and `docker compose up -d --no-build`
+# (docs/hosting.md, Releases).
+#
+# The engine must allow this origin: AI_API_ORIGINS in its
+# deploy/config/deploy.env names http://localhost:4300 by default (beside
+# :4200). Another port
+# here (PORT) is another origin to name there.
+services:
+  web-client:
+    image: ${WEB_CLIENT_IMAGE:-ghcr.io/decentai-io/decentai-web-client}:${WEB_CLIENT_VERSION:-local}
+    build: .
+    restart: unless-stopped
+    environment:
+      # Where the engine is, for every browser that opens this app.
+      # Empty: the first screen asks.
+      ENGINE_URL: ${ENGINE_URL:-}
+    ports:
+      - "${LISTEN:-127.0.0.1}:${PORT:-4300}:80"

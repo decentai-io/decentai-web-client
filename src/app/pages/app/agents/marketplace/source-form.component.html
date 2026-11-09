@@ -1,0 +1,81 @@
+<h2 mat-dialog-title>{{ editing ? "Edit the source" : "Add a source" }}</h2>
+<form (ngSubmit)="submit()">
+  <mat-dialog-content>
+    <div class="form">
+      <p class="dialog-note">
+        A source is the address of a catalog of agents. It is read when it is saved, and kept as it
+        was read: nothing in it runs until an agent is reviewed and installed.
+      </p>
+
+      <app-field label="Address" help="Where the catalog is read from." [error]="(tried && urlProblem) || error">
+        <input
+          class="input"
+          name="source-url"
+          autocomplete="off"
+          placeholder="https://agents.example.com/catalog.json"
+          [(ngModel)]="url"
+        />
+      </app-field>
+
+      <!-- One already kept stays as it is unless this is switched on:
+           it can't be shown, so there is nothing to edit in place. -->
+      <app-switch
+        *ngIf="source?.credential && url.trim() === source?.url"
+        name="source-change-credential"
+        label="Change the credential"
+        help="It is read with a credential kept encrypted on this source. Left off, it is kept."
+        [(ngModel)]="changeCredential"
+      ></app-switch>
+      <p class="form-notice" role="status" *ngIf="source?.credential && url.trim() !== source?.url">
+        A new address needs its credential again: it is never sent anywhere it was not given for.
+      </p>
+
+      <ng-container *ngIf="asksCredential">
+        <app-field label="Credential" help="For a private catalog. Sent only to the source's own host, and never shown again.">
+          <app-segmented name="source-credential-kind" label="Kind of credential" [choices]="kinds" [(ngModel)]="kind"></app-segmented>
+        </app-field>
+        <app-field label="Token" *ngIf="kind === 'token'" help="Sent as Authorization: Bearer." [error]="tried ? missing('token') : ''">
+          <input class="input" name="source-token" type="password" autocomplete="new-password" maxlength="4000" [(ngModel)]="token" />
+        </app-field>
+        <ng-container *ngIf="kind === 'header'">
+          <app-field label="Header" help="The name the catalog's host asks for, like X-API-Key." [error]="tried ? missing('header') : ''">
+            <input class="input" name="source-header" autocomplete="off" maxlength="80" [(ngModel)]="header" />
+          </app-field>
+          <app-field label="Value" [error]="tried ? missing('value') : ''">
+            <input class="input" name="source-value" type="password" autocomplete="new-password" maxlength="4000" [(ngModel)]="value" />
+          </app-field>
+        </ng-container>
+        <p class="form-notice" role="status" *ngIf="source?.credential && kind === 'none'">
+          Saving with None removes the credential this source is read with now.
+        </p>
+      </ng-container>
+
+      <!-- What an address has to answer, where somebody about to save
+           one is standing. -->
+      <details class="fold source-needs">
+        <summary>What a catalog is</summary>
+        <p>
+          The address answers one JSON document listing the agents on offer: each with its manifest,
+          and for each machine it runs on, the address of its program with that file's size and
+          digest. Sample data and a readme can be listed beside them.
+        </p>
+        <p>
+          The manifest declares what the agent can do, the level of each function, what it keeps and
+          where it connects. That is what an administrator reviews, and reading a catalog runs
+          nothing. Installing keeps one exact version: what is downloaded must match its digest, and
+          a version never changes.
+        </p>
+      </details>
+    </div>
+  </mat-dialog-content>
+  <mat-dialog-actions>
+    <!-- An address this deployment suggests: a hint, never a default. -->
+    <button class="btn dialog-aside" type="button" *ngIf="suggestedUrl && !editing" [disabled]="busy" (click)="useSuggested()">
+      Use the reference catalog
+    </button>
+    <button class="btn" type="button" [disabled]="busy" (click)="cancel.emit()">Cancel</button>
+    <button class="btn primary" type="submit" [disabled]="busy">
+      {{ busy ? "Reading…" : "Save and read" }}
+    </button>
+  </mat-dialog-actions>
+</form>

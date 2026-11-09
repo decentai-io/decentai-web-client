@@ -1,0 +1,204 @@
+/* The thread: every turn of the chat in one column, scrolled inside
+   the page. The scroll area is as wide as the window, so its scrollbar
+   is at the window's edge; the column (--chat-column, set by the chat
+   page) is what the turns line up to. */
+:host {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.messages {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* No `scroll-behavior: smooth` here on purpose: it applies to scrolls
+   made from code too, turning every "go to the end now" into an
+   animation aimed at a height measured before the thread finished
+   growing. The one scroll that should glide asks for it by name. */
+.messages-scroll {
+  flex: 1;
+  min-height: 0;
+  padding: 24px 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.thread-column {
+  width: min(100% - 32px, var(--chat-column, 800px));
+  margin-inline: auto;
+}
+
+/* ── Turns ─────────────────────────────────────────────────────────── */
+.thread-turns {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* A turn: what was asked, then the answer. A further message of the
+   same answer follows after 12px, with no header of its own. */
+.chat-turn {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.thread-older {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+/* ── Loading: the shape of a turn ──────────────────────────────────── */
+.thread-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sk-bubble {
+  align-self: flex-end;
+  width: 46%;
+  height: 44px;
+  border-radius: var(--r-lg);
+}
+
+.sk-line {
+  width: 72%;
+  height: 14px;
+}
+
+.sk-line.is-short {
+  width: 48%;
+}
+
+/* ── An empty chat ─────────────────────────────────────────────────── */
+.thread-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  text-align: center;
+}
+
+.thread-empty-mark {
+  display: flex;
+  margin-bottom: 12px;
+  color: var(--accent-ink);
+}
+
+.thread-empty-title {
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: var(--t-xl);
+  font-weight: 600;
+  line-height: var(--lh-xl);
+}
+
+.thread-empty-line {
+  max-width: 52ch;
+  margin-top: 8px;
+  color: var(--ink-2);
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
+}
+
+.thread-openers {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+/* ── Jump to the latest ────────────────────────────────────────────── */
+.jump-pill {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: var(--r-full);
+  background: var(--surface);
+  color: var(--ink);
+  font: 500 var(--t-sm) / var(--lh-sm) var(--font-sans);
+  box-shadow: var(--shadow-float);
+  /* Not `transform`: the arriving motion uses that. */
+  translate: -50% 0;
+  cursor: pointer;
+  animation: arrive var(--dur-2) var(--ease);
+}
+
+.jump-pill:hover {
+  background: var(--surface-2);
+}
+
+/* ── Thinking ────────────────────────────────────────────────────────
+   The assistant is on it and has nothing to show yet: three dots where
+   its answer will be — not a status line — and how long, once that is
+   worth saying. */
+.thinking {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 28px;
+  color: var(--ink-3);
+  font: 400 var(--t-sm) / var(--lh-sm) var(--font-sans);
+  animation: arrive var(--dur-2) var(--ease);
+}
+
+.thinking-dots {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.thinking-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-full);
+  background: var(--ink-3);
+  animation: pulse 1.2s var(--ease) infinite;
+}
+
+.thinking-dots i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.thinking-dots i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.thinking-time {
+  font-variant-numeric: tabular-nums;
+  animation: arrive var(--dur-2) var(--ease);
+}
+
+@media (max-width: 700px) {
+  .messages-scroll {
+    padding: 16px 0;
+  }
+
+  .thread-turns {
+    gap: 20px;
+  }
+
+  .thread-openers {
+    flex-direction: column;
+    align-self: stretch;
+  }
+}

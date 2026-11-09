@@ -1,0 +1,114 @@
+# A release: the web client's image, published under the version a tag
+# names (v0.6.0), and its files as a zip for a static host, both on a
+# GitHub release. Runs when a version is tagged. docs/hosting.md,
+# "Releases", says how a deployment picks one.
+#
+# What it needs of the repository: nothing but its own token. The
+# package it publishes is private until made public once, on GitHub,
+# after the first release.
+name: release
+
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+
+permissions:
+  contents: write
+  packages: write
+  actions: read
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/decentai-web-client
+
+jobs:
+  # A tag on a commit whose tests did not pass is not released. The
+  # tests run on the push to main; tag once they are green.
+  tested:
+    name: the commit's tests passed
+    runs-on: ubuntu-latest
+    steps:
+      - name: Look for a passing run of the tests on this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          conclusion=$(gh run list --repo "$GITHUB_REPOSITORY" \
+            --workflow ci.yml --commit "$GITHUB_SHA" \
+            --json conclusion,status \
+            --jq '[.[] | select(.status == "completed")][0].conclusion // "none"')
+          echo "tests on ${GITHUB_SHA}: ${conclusion}"
+          if [ "$conclusion" != "success" ]; then
+            echo "::error::The tests have not passed on this commit (${conclusion}). Tag a commit whose tests passed, or re-run this workflow once they have."
+            exit 1
+          fi
+
+  release:
+    name: the image, the files and the release
+    needs: tested
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: The version is the tag's
+        id: version
+        run: echo "number=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      # The files, for a host that serves files: the same build the
+      # image serves, zipped with assets/config.json as built (naming no
+      # engine), for the host to write.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npx ng build --configuration container
+      - name: The files, zipped
+        run: |
+          (cd dist/decentai/browser && zip -qr "$GITHUB_WORKSPACE/decentai-web-client-${{ steps.version.outputs.number }}.zip" .)
+
+      # Both processor types a server has: Intel and AMD, and ARM.
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: The image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          cache-from: type=gha,scope=web-client
+          cache-to: type=gha,scope=web-client,mode=max
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.version.outputs.number }}
+            ${{ env.IMAGE }}:latest
+          labels: |
+            org.opencontainers.image.title=decentai-web-client
+            org.opencontainers.image.version=${{ steps.version.outputs.number }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.licenses=Apache-2.0
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${{ steps.version.outputs.number }}"
+          {
+            echo "The web client ${version}:"
+            echo
+            echo "- the image: \`${IMAGE}@${{ steps.build.outputs.digest }}\`"
+            echo "- the files, for a static host: \`decentai-web-client-${version}.zip\`, below"
+            echo
+            echo "Either is told the engine's address as docs/hosting.md says."
+          } > notes.md
+          gh release create "$GITHUB_REF_NAME" \
+            "decentai-web-client-${version}.zip" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "DecentAI web client ${version}" \
+            --notes-file notes.md \
+            --generate-notes \
+            --verify-tag

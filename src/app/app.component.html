@@ -1,0 +1,24 @@
+<!-- Loading View -->
+<ng-container *ngIf="view === 'loading'">
+  <app-loading [unreachable]="unreachable" (retry)="tryNow()"></app-loading>
+</ng-container>
+
+<!-- Which engine -->
+<ng-container *ngIf="view === 'connect'">
+  <app-connect [changing]="changingEngine" (connected)="engineChosen($event)" (cancelled)="engineKept()"></app-connect>
+</ng-container>
+
+<!-- Sign in -->
+<ng-container *ngIf="view === 'auth'">
+  <app-auth (changeEngine)="changeEngine()"></app-auth>
+</ng-container>
+
+<!-- Main Application View -->
+<ng-container *ngIf="view === 'app'">
+  <app-main></app-main>
+</ng-container>
+
+<!-- Signed out -->
+<ng-container *ngIf="view === 'logout'">
+  <app-logout></app-logout>
+</ng-container>

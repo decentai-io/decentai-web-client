@@ -1,0 +1,37 @@
+/* Naming the engine, on the shared card: the field and the button are
+   the app's own. Here is what only this screen has. */
+
+/* The one action, as wide as the card. */
+.connect-wide {
+  width: 100%;
+}
+
+/* The way back, when there is one: a text link, not a second button. */
+.connect-link {
+  align-self: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
+  cursor: pointer;
+}
+
+.connect-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.connect-link:focus-visible {
+  outline: none;
+  border-radius: var(--r-sm);
+  box-shadow: var(--focus);
+}
+
+.connect-link:disabled {
+  color: var(--ink-3);
+  cursor: default;
+  text-decoration: none;
+}

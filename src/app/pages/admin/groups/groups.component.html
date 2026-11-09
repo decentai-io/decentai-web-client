@@ -1,0 +1,87 @@
+<app-page guide="access" title="Groups" sentence="A group gives its people its policies. Everyone holds every person. People are placed in groups on the Users page." [wide]="true">
+  <p class="form-notice is-error" role="alert" *ngIf="error && !editorOpen">{{ error }}</p>
+  <p class="form-notice" role="status" *ngIf="notice">{{ notice }}</p>
+
+  <app-list label="Groups" [loading]="loading">
+    <ng-container listToolbar *ngIf="groups.length">
+      <span class="search-field toolbar-search">
+        <lucide-icon name="search" [size]="16" aria-hidden="true"></lucide-icon>
+        <input class="input" type="search" placeholder="Search groups" aria-label="Search groups" [(ngModel)]="query" />
+      </span>
+      <ng-container *ngTemplateOutlet="addButton"></ng-container>
+    </ng-container>
+
+    <app-row *ngFor="let group of shown">
+      <lucide-icon rowMark name="users" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
+      <button rowName class="admin-name" type="button" *ngIf="canUpdate || canAssign; else plainName" (click)="startEdit(group)">{{ group.name }}</button>
+      <ng-template #plainName><span rowName>{{ group.name }}</span></ng-template>
+      <ng-container rowMeta>{{ summarise(group) }}</ng-container>
+      <button rowState class="icon-btn sm" type="button" *ngIf="canUpdate || canAssign || (canDelete && !stays(group))"
+              [attr.aria-label]="'More for ' + group.name" [disabled]="isBusy(group.group_id)"
+              [matMenuTriggerFor]="groupMenu" [matMenuTriggerData]="{ group: group }">
+        <lucide-icon name="ellipsis-vertical" [size]="16" aria-hidden="true"></lucide-icon>
+      </button>
+    </app-row>
+
+    <app-empty *ngIf="!loading && !groups.length" icon="users" title="No groups yet"
+               line="A group gives its people its policies.">
+      <ng-container *ngTemplateOutlet="addButton"></ng-container>
+    </app-empty>
+    <app-empty *ngIf="groups.length && !shown.length" icon="search-x" title="No group matches" line="Try another search."></app-empty>
+  </app-list>
+
+  <ng-template #addButton>
+    <button class="btn primary toolbar-end" type="button" *ngIf="canCreate" (click)="startCreate()">
+      <lucide-icon name="plus" [size]="16" aria-hidden="true"></lucide-icon>
+      New group
+    </button>
+  </ng-template>
+
+  <mat-menu #groupMenu="matMenu" xPosition="before">
+    <ng-template matMenuContent let-group="group">
+      <button mat-menu-item *ngIf="canUpdate || canAssign" (click)="startEdit(group)">Edit</button>
+      <button mat-menu-item *ngIf="canDelete && !stays(group)" (click)="remove(group)">Delete</button>
+    </ng-template>
+  </mat-menu>
+
+  <!-- ── A group, made or changed ────────────────────────────────────── -->
+  <ng-template #editor>
+    <h2 mat-dialog-title>{{ editorTitle }}</h2>
+    <form (ngSubmit)="save()">
+      <mat-dialog-content>
+        <div class="form">
+          <app-field label="Name" [error]="tried && !formName.trim() ? 'Give the group a name.' : ''">
+            <input class="input" name="group-name" autocomplete="off" placeholder="Analysts"
+                   [(ngModel)]="formName" [disabled]="(!isCreating && !canUpdate) || stays(editing)" />
+          </app-field>
+
+          <fieldset class="admin-picks">
+            <legend>Policies<span class="admin-count">{{ selected.size }} of {{ policies.length }}</span></legend>
+            <mat-checkbox class="check-row" *ngFor="let policy of policies" [checked]="selected.has(policy.policy_id)"
+                          [disabled]="!canAssign" (change)="togglePolicy(policy.policy_id)">
+              <span class="check-name">{{ policy.name }}</span>
+              <span class="check-hint" *ngIf="policy.built_in">Built in</span>
+            </mat-checkbox>
+          </fieldset>
+
+          <!-- Who a change reaches: shown here, changed on the Users page. -->
+          <details class="fold" *ngIf="!isCreating && !editing?.everyone">
+            <summary>{{ editingPeople.length }} {{ editingPeople.length === 1 ? "person is" : "people are" }} in this group</summary>
+            <ul class="admin-lines" *ngIf="editingPeople.length">
+              <li *ngFor="let person of editingPeople"><strong>{{ person.name }}</strong> · {{ person.email }}</li>
+            </ul>
+            <p class="dialog-note" *ngIf="!editingPeople.length">Add people from the Users page.</p>
+          </details>
+          <p class="dialog-note" *ngIf="editing?.everyone">Every person of the organization is in it.</p>
+          <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
+        </div>
+      </mat-dialog-content>
+      <mat-dialog-actions>
+        <button class="btn" type="button" [disabled]="saving" (click)="cancelEdit()">Cancel</button>
+        <button class="btn primary" type="submit" [disabled]="saving">
+          {{ saving ? "Saving…" : isCreating ? "Create group" : "Save changes" }}
+        </button>
+      </mat-dialog-actions>
+    </form>
+  </ng-template>
+</app-page>

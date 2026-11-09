@@ -1,0 +1,126 @@
+/* Model providers. The list, the rows, the fields and the dialog are
+   the shared ones; what is here is the one thing only this page has,
+   the choice of a provider, and a few placements in its form. */
+:host {
+  display: block;
+}
+
+/* Step one: the providers as rows in two columns, since their names
+   are what a person scans. */
+.provider-search {
+  margin-bottom: 12px;
+}
+
+.provider-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  list-style: none;
+}
+
+/* The whole catalog, or what matches in it: scrolled inside the dialog,
+   so the search and the way back stay where they are. The padding
+   keeps a focused choice's ring inside the scrolled box. */
+.provider-list.is-all {
+  max-height: min(48vh, 420px);
+  overflow-y: auto;
+  padding: 3px;
+  margin: -3px;
+}
+
+/* A server of the person's own: apart from the list, across it. */
+.provider-own {
+  margin-bottom: 6px;
+}
+
+.provider-all {
+  margin-top: 8px;
+  margin-left: -8px;
+}
+
+.provider-choice {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease);
+}
+
+.provider-choice:hover {
+  background: var(--surface-2);
+}
+
+.provider-choice:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+}
+
+.provider-name {
+  font-size: var(--t-base);
+  font-weight: 500;
+  line-height: var(--lh-base);
+}
+
+.provider-hint,
+.provider-note,
+.provider-servers {
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
+}
+
+.provider-note {
+  margin-top: 8px;
+}
+
+/* Step two. */
+.provider-servers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.provider-more {
+  align-self: flex-start;
+  margin-left: -8px;
+}
+
+/* Whose chats may use it: the groups, Everyone first. */
+.provider-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.provider-groups-title {
+  margin-bottom: 2px;
+  color: var(--ink);
+  font-size: var(--t-sm);
+  font-weight: 500;
+  line-height: var(--lh-sm);
+}
+
+.provider-back {
+  margin-right: auto;
+}
+
+@media (max-width: 700px) {
+  .provider-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

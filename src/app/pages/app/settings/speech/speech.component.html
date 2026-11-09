@@ -1,0 +1,61 @@
+<div class="form" *ngIf="loading" aria-busy="true" aria-label="Loading speech settings">
+  <span class="sk sk-field"></span>
+  <span class="sk sk-field"></span>
+</div>
+
+<app-empty *ngIf="loadError" icon="cloud-off" title="Speech could not be loaded" [line]="loadError">
+  <button class="btn" type="button" (click)="load()">Try again</button>
+</app-empty>
+
+<ng-container *ngIf="!loading && !loadError">
+  <p class="form-notice" *ngIf="!canEdit">Only an administrator changes this.</p>
+
+  <div class="form-section">
+    <app-field label="Speech" [help]="sourceHelp">
+      <app-segmented [choices]="sourceChoices" [disabled]="!canEdit" [(ngModel)]="draft.value.speech"></app-segmented>
+    </app-field>
+  </div>
+
+  <div class="form-section" *ngIf="draft.value.speech === 'model'">
+    <p class="form-notice" *ngIf="!connections.length">
+      There is no model connection yet. <a routerLink="/settings/providers">Add one on Model providers</a>.
+    </p>
+    <app-field
+      label="Connection"
+      help="One that serves OpenAI's speech protocol: everyone's recordings and replies go through it."
+      [error]="draft.dirty ? connectionError : ''"
+    >
+      <app-select
+        placeholder="Choose a connection"
+        [choices]="connections"
+        [disabled]="!canEdit"
+        [(ngModel)]="draft.value.speech_connection"
+      ></app-select>
+    </app-field>
+
+    <app-field label="Transcription model" help="As the provider names it; left empty, whisper-1.">
+      <input class="input" type="text" placeholder="whisper-1" maxlength="100" [disabled]="!canEdit"
+             [(ngModel)]="draft.value.transcription_model" />
+    </app-field>
+
+    <div class="form-pair">
+      <app-field label="Speech model" help="As the provider names it; left empty, its own.">
+        <input class="input" type="text" placeholder="gpt-4o-mini-tts" maxlength="100" [disabled]="!canEdit"
+               [(ngModel)]="draft.value.speech_model" />
+      </app-field>
+      <app-field label="Voice" help="One of the provider's voices; left empty, the reply's language.">
+        <input class="input" type="text" placeholder="alloy" maxlength="100" [disabled]="!canEdit"
+               [(ngModel)]="draft.value.speech_voice" />
+      </app-field>
+    </div>
+  </div>
+
+  <app-save-bar
+    *ngIf="canEdit"
+    [dirty]="draft.dirty"
+    [saving]="saving"
+    [error]="saveError"
+    (save)="save()"
+    (discard)="discard()"
+  ></app-save-bar>
+</ng-container>

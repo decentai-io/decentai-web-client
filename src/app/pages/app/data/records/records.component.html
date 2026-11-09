@@ -1,0 +1,328 @@
+<app-page guide="records"
+  title="Records"
+  sentence="Notes, tasks and other records your agents keep for you."
+  [wide]="true"
+>
+  <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
+  <p class="form-notice" role="status" *ngIf="notice">{{ notice }}</p>
+  <app-handed [records]="handed" [say]="handedSay" [busy]="busyRef" (answer)="accept($event.record, $event.yes)"></app-handed>
+
+  <div class="side-layout" [class.has-opened]="opened">
+    <app-filter-column
+      *ngIf="records.length && !opened"
+      label="Filter records"
+      [groups]="filters"
+      [chosen]="chosen"
+      (choose)="filter($event.key, $event.value)"
+    ></app-filter-column>
+
+    <app-list label="Records" rows="table" [loading]="loading" [class.side-alone]="!records.length">
+      <ng-container listToolbar *ngIf="activeKind">
+        <!-- With something ticked, the toolbar is what can be done to it. -->
+        <app-selection-bar
+          class="toolbar-fill"
+          *ngIf="selected.size; else toolbar"
+          [count]="selected.size"
+          [shown]="selectableShown.length"
+          (selectAll)="selectAllShown()"
+          (clear)="clearSelection()"
+        >
+          <button class="btn danger sm" type="button" (click)="deleteSelected()" [disabled]="deleteBusy">
+            <lucide-icon name="trash-2" [size]="16" aria-hidden="true"></lucide-icon>
+            Delete
+          </button>
+        </app-selection-bar>
+
+        <ng-template #toolbar>
+          <span class="search-field toolbar-search records-search">
+            <lucide-icon name="search" [size]="16" aria-hidden="true"></lucide-icon>
+            <input
+              class="input"
+              type="search"
+              [placeholder]="'Search ' + kindLabel"
+              aria-label="Search records"
+              [ngModel]="query"
+              (ngModelChange)="search($event)"
+            />
+          </span>
+          <app-select
+            class="toolbar-sort"
+            label="Sort records"
+            placeholder="Sort"
+            [choices]="sortChoices"
+            [ngModel]="sort.key"
+            (ngModelChange)="sortByChoice($event)"
+          ></app-select>
+          <!-- The records listed, as a file: every page of them, as
+               they are filtered and sorted. -->
+          <button class="icon-btn" type="button" *ngIf="shown.length" aria-label="Export these records"
+                  matTooltip="Export" [matMenuTriggerFor]="exportMenu">
+            <lucide-icon name="download" [size]="16" aria-hidden="true"></lucide-icon>
+          </button>
+          <mat-menu #exportMenu="matMenu" xPosition="before">
+            <p class="menu-label">{{ shown.length }} {{ shown.length === 1 ? "record" : "records" }}, without secret fields</p>
+            <button mat-menu-item (click)="export('csv')">As CSV</button>
+            <button mat-menu-item (click)="export('json')">As JSON</button>
+          </mat-menu>
+          <ng-container *ngTemplateOutlet="add"></ng-container>
+        </ng-template>
+      </ng-container>
+
+      <p class="records-kind" *ngIf="kindDescription">{{ kindDescription }}</p>
+
+      <!-- One kind: a table in the shape its agent declared. -->
+      <table class="table" *ngIf="shown.length">
+        <thead>
+          <tr>
+            <th class="cell-check" *ngIf="can('delete')">
+              <mat-checkbox
+                aria-label="Select every record shown"
+                [checked]="allShownSelected"
+                [indeterminate]="selected.size > 0 && !allShownSelected"
+                [disabled]="!selectableShown.length"
+                (change)="$event.checked ? selectAllShown() : clearSelection()"
+              ></mat-checkbox>
+            </th>
+            <th
+              *ngFor="let column of columns"
+              [appSort]="column.name"
+              [class.num]="column.type === 'number'"
+              [sort]="sort"
+              (sortChange)="sortBy($event)"
+            >{{ column.label }}</th>
+            <th appSort="updated" [sort]="sort" (sortChange)="sortBy($event)">Changed</th>
+            <th class="cell-minor">Sharing</th>
+            <th class="cell-actions"><span class="visually-hidden">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let record of pagedRecords" [class.is-selected]="isSelected(record) || record.record_id === openId">
+            <td class="cell-check" *ngIf="can('delete')">
+              <mat-checkbox
+                *ngIf="deletable(record)"
+                [aria-label]="'Select ' + nameOf(record)"
+                [checked]="isSelected(record)"
+                (change)="toggleSelected(record)"
+              ></mat-checkbox>
+            </td>
+            <td
+              *ngFor="let column of columns; let first = first; let index = index"
+              [class.cell-main]="first"
+              [class.cell-fact]="index === 1 || index === 2"
+              [class.num]="cellKind(record, column) === 'number'"
+            >
+              <!-- The first column is the record's name, and the way in. -->
+              <a class="cell-open" *ngIf="first; else plain" [routerLink]="recordLink(record)" queryParamsHandling="preserve"
+                 [attr.aria-current]="record.record_id === openId ? 'true' : null">
+                {{ cell(record, column) || nameOf(record) }}
+              </a>
+              <ng-template #plain>
+                <ng-container [ngSwitch]="cellKind(record, column)">
+                  <!-- A yes or a no is a mark, said in words to a screen reader. -->
+                  <span class="records-flag" *ngSwitchCase="'yes'">
+                    <lucide-icon name="check" [size]="16" aria-hidden="true"></lucide-icon><span class="visually-hidden">yes</span>
+                  </span>
+                  <span class="records-flag" *ngSwitchCase="'no'">
+                    <lucide-icon name="minus" [size]="16" aria-hidden="true"></lucide-icon><span class="visually-hidden">no</span>
+                  </span>
+                  <span class="chip" *ngSwitchCase="'chip'">{{ cell(record, column) }}</span>
+                  <span *ngSwitchDefault [ngClass]="'records-' + cellKind(record, column)">{{ cell(record, column) || '—' }}</span>
+                </ng-container>
+              </ng-template>
+            </td>
+            <td class="cell-when" [title]="changedInFull(record)">{{ changed(record) }}</td>
+            <td class="cell-minor">
+              <span class="chip" [matTooltip]="sharing(record).names">{{ sharing(record).word }}</span>
+            </td>
+            <td class="cell-actions">
+              <button
+                class="icon-btn sm"
+                type="button"
+                *ngIf="hasActions(record)"
+                [attr.aria-label]="'Actions for ' + nameOf(record)"
+                [matMenuTriggerFor]="recordMenu"
+                [matMenuTriggerData]="{ record: record }"
+              >
+                <lucide-icon name="ellipsis-vertical" [size]="16" aria-hidden="true"></lucide-icon>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <app-pager
+        [page]="page"
+        [pageSize]="pageSize"
+        [total]="shown.length"
+        (pageChange)="toPage($event)"
+      ></app-pager>
+
+      <ng-container *ngIf="!shown.length">
+        <app-empty
+          *ngIf="query; else nothingKept"
+          icon="search-x"
+          title="No record matches"
+          line="Try another search."
+        >
+          <button class="btn" type="button" (click)="search('')">Clear the search</button>
+        </app-empty>
+        <ng-template #nothingKept>
+          <app-empty
+            icon="database"
+            [title]="kindLabel ? 'No ' + kindLabel + ' records yet' : 'No records yet'"
+            line="Records appear here as your agents work."
+          >
+            <ng-container *ngTemplateOutlet="add"></ng-container>
+          </app-empty>
+        </ng-template>
+      </ng-container>
+    </app-list>
+
+    <!-- The record the address names: beside the list on a wide screen,
+         in its place on a narrow one. -->
+    <app-record-view
+      class="side-opened"
+      *ngIf="opened as record"
+      [record]="record"
+      [shape]="shapeOf(record.of)"
+      [name]="nameOf(record)"
+      [kind]="record.of ? resourceLabel(record.of) : ''"
+      [agents]="servedBy(record)"
+      [sharing]="sharing(record).word"
+      [madeBy]="madeBy(record)"
+      [handingTo]="handingTo(record)"
+      (closed)="closeView()"
+    >
+      <button recordActions class="btn sm" type="button" *ngIf="isMine(record) && can('update') && mayEdit(record)" (click)="startEdit(record)">Edit</button>
+      <button recordActions class="btn sm" type="button" *ngIf="isMine(record) && can('update')" (click)="openAgents(record)">Agents</button>
+      <button recordActions class="btn sm" type="button" *ngIf="isMine(record) && can('update')" (click)="openShare(record)">Share</button>
+      <button recordActions class="btn sm" type="button" *ngIf="isMine(record) && can('transfer') && !record.handing" (click)="requestTransfer(record)">Hand over</button>
+      <button recordActions class="btn sm" type="button" *ngIf="handingOn(record) && can('withdraw')" [disabled]="busyRef === record.record_id" (click)="withdraw(record)">Withdraw the hand-over</button>
+      <button recordActions class="btn ghost danger sm" type="button" *ngIf="isMine(record) && can('delete')"
+              [disabled]="busyRef === record.record_id" (click)="deleteOne(record)">Delete</button>
+    </app-record-view>
+  </div>
+
+  <mat-menu #recordMenu="matMenu" xPosition="before">
+    <ng-template matMenuContent let-record="record">
+      <a mat-menu-item [routerLink]="recordLink(record)" queryParamsHandling="preserve">Open</a>
+      <button mat-menu-item *ngIf="can('update') && mayEdit(record)" (click)="startEdit(record)">Edit</button>
+      <button mat-menu-item *ngIf="can('update')" (click)="openAgents(record)">Agents…</button>
+      <button mat-menu-item *ngIf="can('update')" (click)="openShare(record)">Share</button>
+      <button mat-menu-item *ngIf="can('transfer') && !record.handing" (click)="requestTransfer(record)">Hand over</button>
+      <button mat-menu-item *ngIf="handingOn(record) && can('withdraw')" (click)="withdraw(record)">Withdraw the hand-over</button>
+      <button mat-menu-item *ngIf="can('delete')" [disabled]="busyRef === record.record_id" (click)="deleteOne(record)">Delete</button>
+    </ng-template>
+  </mat-menu>
+
+  <ng-template #add>
+    <button
+      class="icon-btn primary toolbar-end"
+      type="button"
+      *ngIf="can('create') && pickerShapes.length"
+      (click)="openPicker()"
+      aria-label="Add a record"
+      matTooltip="Add a record"
+    >
+      <lucide-icon name="plus" [size]="18" aria-hidden="true"></lucide-icon>
+    </button>
+  </ng-template>
+
+  <!-- ── Writing a record: which kind, then its form ────────────────── -->
+  <ng-template #formDialog>
+    <!-- The first step, when more than one kind can be made. -->
+    <ng-container *ngIf="pickerOpen">
+      <h2 mat-dialog-title>Add a record</h2>
+      <mat-dialog-content>
+        <div class="form">
+          <p class="dialog-note">Choose the kind. Each is an agent's, and is written in the shape that agent reads back.</p>
+          <app-choice-cards name="kind" label="The kind of record" [choices]="kindChoices"
+                            [ngModel]="''" (ngModelChange)="chooseKind($event)"></app-choice-cards>
+        </div>
+      </mat-dialog-content>
+      <mat-dialog-actions>
+        <button class="btn" type="button" (click)="cancelForm()">Cancel</button>
+      </mat-dialog-actions>
+    </ng-container>
+
+    <!-- The form, made from the fields the kind declares. -->
+    <ng-container *ngIf="formShape as shape">
+      <h2 mat-dialog-title>{{ editingId ? "Edit " : "New " }}{{ shape.label || shape.id }}</h2>
+      <form (ngSubmit)="saveForm()">
+        <mat-dialog-content>
+          <div class="form">
+            <p class="dialog-note">{{ shape.agent_name }} reads this back, so the shape is its.</p>
+            <app-field label="Name (optional)" help="What you call it. The agent reads its fields, not its name.">
+              <input class="input" name="record-name" maxlength="100" autocomplete="off" [(ngModel)]="formName" />
+            </app-field>
+            <app-field
+              *ngFor="let field of formFieldsOf(shape)"
+              [label]="(field.label || field.name) + (field.required ? '' : ' (optional)')"
+              [help]="field.type === 'secret' ? 'Masked wherever the record is shown.' : field.type === 'object' ? 'Written as JSON.' : ''"
+              [error]="tried ? problemOf(field) : ''"
+            >
+              <app-select
+                *ngIf="field.type === 'select'"
+                [name]="field.name"
+                placeholder="Choose one"
+                [choices]="optionsOf(field)"
+                [(ngModel)]="formFields[field.name]"
+              ></app-select>
+              <textarea
+                *ngIf="field.type === 'object'"
+                class="input record-form-json"
+                rows="5"
+                spellcheck="false"
+                [name]="field.name"
+                [(ngModel)]="formFields[field.name]"
+              ></textarea>
+              <textarea
+                *ngIf="isLong(field)"
+                class="input record-form-text"
+                rows="3"
+                [name]="field.name"
+                [(ngModel)]="formFields[field.name]"
+              ></textarea>
+              <input
+                *ngIf="field.type === 'number' || field.type === 'secret' || (field.type === 'string' && !isLong(field))"
+                class="input"
+                autocomplete="off"
+                [name]="field.name"
+                [type]="field.type === 'secret' ? 'password' : 'text'"
+                [attr.inputmode]="field.type === 'number' ? 'decimal' : null"
+                [(ngModel)]="formFields[field.name]"
+              />
+            </app-field>
+            <p class="form-notice is-error" role="alert" *ngIf="formError">{{ formError }}</p>
+          </div>
+        </mat-dialog-content>
+        <mat-dialog-actions>
+          <button class="btn" type="button" [disabled]="saving" (click)="cancelForm()">Cancel</button>
+          <button class="btn primary" type="submit" [disabled]="saving">
+            {{ saving ? "Saving…" : editingId ? "Save changes" : "Create record" }}
+          </button>
+        </mat-dialog-actions>
+      </form>
+    </ng-container>
+  </ng-template>
+
+  <app-share-dialog *ngIf="share.ref"
+                    [share]="share"
+                    heading="Who can see this record"
+                    note="The people you share with, and their assistants, can read this record."
+                    [allowOrganization]="!!share.peers.everyone"
+                    [problem]="shareProblem"
+                    (save)="saveShare()" (closed)="share.close()">
+  </app-share-dialog>
+
+  <app-record-agents *ngIf="agentsTarget as record"
+                     [record]="record" [shapes]="shapes" [busy]="agentsSaving" [problem]="agentsProblem"
+                     (save)="saveAgents($event)" (closed)="closeAgents()">
+  </app-record-agents>
+
+  <app-transfer-dialog *ngIf="transferTarget as item"
+                       [subject]="'the record “' + nameOf(item) + '”'" [ownerId]="item.created_by"
+                       note="Once they accept it, it is theirs to change and delete. Everyone it is shared with keeps seeing it."
+                       [busy]="transferring" (chosen)="transfer($event)" (closed)="closeTransfer()">
+  </app-transfer-dialog>
+</app-page>

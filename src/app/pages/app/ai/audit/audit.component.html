@@ -1,0 +1,128 @@
+<app-page guide="audit" title="Audit" sentence="A permanent record of every change and every refusal, and what runtimes wrote down of the chats." [wide]="true">
+  <app-segmented
+    pageActions
+    *ngIf="canSeeOrg"
+    label="Whose record"
+    [choices]="tabs"
+    [ngModel]="tab"
+    (ngModelChange)="selectTab($event)"
+  ></app-segmented>
+
+  <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
+
+  <app-list rows="groups" label="the record" [loading]="loading">
+    <form listToolbar class="audit-filters" (ngSubmit)="reload()">
+      <span class="search-field toolbar-search">
+        <lucide-icon name="search" [size]="16" aria-hidden="true"></lucide-icon>
+        <input
+          class="input"
+          type="search"
+          name="what"
+          placeholder="What was done: ai:chat, iam:user:create…"
+          aria-label="What was done, or its start"
+          [(ngModel)]="what"
+        />
+      </span>
+      <app-select
+        class="toolbar-sort"
+        label="How it ended"
+        name="outcome"
+        [choices]="outcomes"
+        [ngModel]="ended"
+        (ngModelChange)="chooseOutcome($event)"
+      ></app-select>
+      <span class="chip" *ngIf="chat">One chat</span>
+      <app-select
+        *ngIf="tab === 'org' && people.length"
+        class="toolbar-sort"
+        label="Whose lines"
+        name="person"
+        [choices]="people"
+        [ngModel]="person"
+        (ngModelChange)="choosePerson($event)"
+      ></app-select>
+      <button class="btn ghost" type="button" *ngIf="filtered" [disabled]="loading" (click)="clearFilters()">Clear</button>
+    </form>
+
+    <app-empty
+      *ngIf="!days.length"
+      icon="scroll-text"
+      [title]="filtered ? 'Nothing matches' : 'Nothing recorded yet'"
+      [line]="filtered ? 'Clear the filters to see every line.' : 'Every change and every refusal appears here as it happens.'"
+    ></app-empty>
+
+    <section *ngFor="let day of days">
+      <h2 class="record-day">{{ day.day }}</h2>
+      <div role="list" [attr.aria-label]="day.day">
+        <app-record-row
+          *ngFor="let group of day.items"
+          [time]="time(group.first)"
+          [tone]="tone(group.first)"
+          [outcome]="outcome(group.first)"
+          [words]="group.first.what"
+          [more]="more(group.first)"
+          [chip]="kind(group.first)"
+          [count]="group.lines.length"
+          [canOpen]="group.lines.length > 1 || hasDetails(group.first)"
+          [open]="isOpen(groupKey(group))"
+          (toggle)="toggle(groupKey(group))"
+        >
+          <span recordEnd class="audit-who" *ngIf="tab === 'org' && group.first.who">{{ group.first.who }}</span>
+          <span recordEnd class="audit-chat">
+            <a
+              class="icon-btn sm"
+              *ngIf="group.first.chat_id && tab === 'mine'"
+              aria-label="Open the chat"
+              matTooltip="Open the chat"
+              [routerLink]="['/ai/chats', group.first.chat_id]"
+            >
+              <lucide-icon name="message-square-text" [size]="16" aria-hidden="true"></lucide-icon>
+            </a>
+          </span>
+
+          <ng-container *ngIf="isOpen(groupKey(group))">
+            <ng-container *ngIf="group.lines.length === 1">
+              <ng-container *ngTemplateOutlet="written; context: { $implicit: group.first }"></ng-container>
+            </ng-container>
+
+            <!-- Several alike: each of them, with its own time and details. -->
+            <div role="list" *ngIf="group.lines.length > 1" [attr.aria-label]="group.first.what">
+              <app-record-row
+                *ngFor="let line of group.lines"
+                [time]="time(line)"
+                [tone]="tone(line)"
+                [outcome]="outcome(line)"
+                [words]="line.what"
+                [more]="more(line)"
+                [canOpen]="hasDetails(line)"
+                [open]="isOpen(line.line_id)"
+                (toggle)="toggle(line.line_id)"
+              >
+                <ng-container *ngIf="isOpen(line.line_id)">
+                  <ng-container *ngTemplateOutlet="written; context: { $implicit: line }"></ng-container>
+                </ng-container>
+              </app-record-row>
+            </div>
+          </ng-container>
+        </app-record-row>
+      </div>
+    </section>
+
+    <div class="record-older" *ngIf="before">
+      <button class="btn" type="button" [disabled]="loadingMore" (click)="loadMore()">
+        {{ loadingMore ? "Loading…" : "Load older" }}
+      </button>
+    </div>
+  </app-list>
+</app-page>
+
+<!-- One line as it was written down: who, what it names, its details, its id. -->
+<ng-template #written let-line>
+  <div class="audit-refs" *ngIf="line.who">By {{ line.who }}</div>
+  <div class="audit-refs" *ngIf="line.ids.length">
+    Touched
+    <code *ngFor="let id of line.ids">{{ id }}</code>
+  </div>
+  <pre class="record-json" *ngIf="hasDetails(line)">{{ details(line) }}</pre>
+  <span class="audit-id">{{ line.line_id }}</span>
+</ng-template>

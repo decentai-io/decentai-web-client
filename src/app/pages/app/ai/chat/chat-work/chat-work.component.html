@@ -1,0 +1,42 @@
+<div class="wc" [class.is-live]="running" [attr.role]="live ? 'status' : null" [attr.aria-live]="live ? 'polite' : null">
+  <div class="wc-head">
+    <button type="button" class="wc-toggle" (click)="toggleCard()" [attr.aria-expanded]="open">
+      @if (running) {
+        <span class="wc-spinner" aria-hidden="true"></span>
+      } @else {
+        <lucide-icon [name]="failed ? 'circle-alert' : 'circle-check'" [class.is-warn]="failed" [size]="16" aria-hidden="true"></lucide-icon>
+      }
+      <span class="wc-headline">{{ headline }}</span>
+      <lucide-icon class="wc-chevron" name="chevron-right" [size]="16" aria-hidden="true"></lucide-icon>
+    </button>
+    @if (running) {
+      <button class="btn sm" type="button" (click)="stopAll.emit()" [disabled]="stoppingAll">Stop</button>
+    }
+  </div>
+
+  @if (open && steps.length) {
+    <ul class="wc-rows" aria-label="This turn's work">
+      @for (step of steps; track step.id) {
+        <li class="wc-row" [attr.data-status]="step.status">
+          <div class="wc-line">
+            <lucide-icon class="wc-icon" [class.is-spinning]="step.status === 'running'" [name]="icon(step)"
+                         [size]="16" aria-hidden="true"></lucide-icon>
+            <div class="wc-main">
+              <span class="wc-title">
+                {{ step.text }}
+                @if (step.link; as link) { <a [routerLink]="link.to">{{ link.text }}</a> }
+              </span>
+            </div>
+            <span class="wc-meta">{{ meta(step) }}</span>
+            @if (step.status === 'running' && step.work) {
+              <button class="icon-btn sm" type="button" [attr.aria-label]="'Stop ' + step.text" matTooltip="Stop this alone"
+                      [disabled]="stopping.includes(step.work)" (click)="stopOne.emit(step.work)">
+                <lucide-icon name="circle-stop" [size]="14" aria-hidden="true"></lucide-icon>
+              </button>
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</div>

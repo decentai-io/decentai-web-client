@@ -1,0 +1,92 @@
+<div class="form" *ngIf="loading" aria-busy="true" aria-label="Loading safety">
+  <span class="sk sk-field"></span>
+  <span class="sk sk-field"></span>
+  <span class="sk sk-field"></span>
+</div>
+
+<app-empty *ngIf="loadError" icon="cloud-off" title="Safety could not be loaded" [line]="loadError">
+  <button class="btn" type="button" (click)="load()">Try again</button>
+</app-empty>
+
+<ng-container *ngIf="!loading && !loadError">
+  <p class="form-notice" *ngIf="!canEdit">Only an administrator changes this.</p>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Sites no agent may reach</h2>
+    <app-field
+      label="Blocked sites"
+      help="A name is refused to every agent, whatever its manifest declares. *.example.com blocks every name under example.com."
+    >
+      <app-token-list
+        placeholder="example.com"
+        addLabel="Block"
+        listLabel="Blocked sites"
+        [normalize]="siteName"
+        [disabled]="!canEdit"
+        [(ngModel)]="draft.value.blocked_hosts"
+      ></app-token-list>
+    </app-field>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Your organization's rules for the assistant</h2>
+    <p class="form-section-note">
+      Added to what the assistant is told in every chat. They can narrow what it does, never widen it: nothing here turns off a card or a setting.
+    </p>
+    <app-field
+      label="Rules"
+      help="Plain sentences, one rule to a line: what to avoid, how to answer, what to check first. The assistant follows them; it is not stopped by them, so keep what must never happen in the blocked sites or in people's permissions."
+    >
+      <textarea
+        class="input rules-text"
+        name="guardrail"
+        rows="8"
+        placeholder="Never write to the Finance notebook.&#10;Answer customers in the language they wrote in."
+        [maxlength]="rulesLimit"
+        [readonly]="!canEdit"
+        [(ngModel)]="draft.value.guardrail"
+      ></textarea>
+      <span class="rules-count" [class.is-near]="rulesNearLimit">{{ draft.value.guardrail.length }}/{{ rulesLimit }}</span>
+    </app-field>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">MCP servers</h2>
+    <p class="form-section-note">Remote tool servers people add for their own chats. A tool runs on its server, not here.</p>
+    <app-field label="Adding servers" [help]="mcpMeaning">
+      <app-segmented [choices]="mcp" [disabled]="!canEdit" [(ngModel)]="draft.value.mcp"></app-segmented>
+    </app-field>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Webhooks</h2>
+    <p class="form-section-note">Addresses other services post events to, each answered by the assistant in a chat.</p>
+    <app-field label="Webhooks and notifications outside" [help]="webhooksMeaning">
+      <app-segmented [choices]="webhooks" [disabled]="!canEdit" [(ngModel)]="draft.value.webhooks"></app-segmented>
+    </app-field>
+    <app-field label="The most a webhook's chat may do without asking"
+               help="A webhook runs with nobody there to ask. Agents act up to this level on their own; above it, they wait for the person.">
+      <app-choice-cards label="The most a webhook's chat may do without asking" [choices]="trust" [disabled]="!canEdit"
+                        [(ngModel)]="draft.value.webhook_trust"></app-choice-cards>
+    </app-field>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Notifications</h2>
+    <p class="form-section-note">
+      What reaches a browser, a mailbox or an outside address passes through services outside this deployment: a browser's push service, the mail server.
+    </p>
+    <app-field label="What a notification says" [help]="notificationTextMeaning">
+      <app-segmented [choices]="notificationText" [disabled]="!canEdit" [(ngModel)]="draft.value.notification_text"></app-segmented>
+    </app-field>
+  </section>
+
+  <app-save-bar
+    *ngIf="canEdit"
+    [dirty]="dirty"
+    [saving]="saving"
+    [error]="saveError"
+    (save)="save()"
+    (discard)="discard()"
+  ></app-save-bar>
+</ng-container>

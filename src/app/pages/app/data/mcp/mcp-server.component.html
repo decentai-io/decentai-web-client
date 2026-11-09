@@ -1,0 +1,155 @@
+<a class="btn ghost sm server-back" routerLink="/data/mcp">
+  <lucide-icon name="arrow-left" [size]="16" aria-hidden="true"></lucide-icon>
+  Tools
+</a>
+
+<div class="form" *ngIf="loading" aria-busy="true" aria-label="Opening the server">
+  <span class="sk sk-field"></span>
+  <span class="sk sk-field"></span>
+  <span class="sk sk-field"></span>
+</div>
+<app-empty *ngIf="problem" icon="triangle-alert" title="The server could not be opened" [line]="problem">
+  <a class="btn" routerLink="/data/mcp">Back to the list</a>
+</app-empty>
+
+<ng-container *ngIf="server as server">
+  <!-- Who it is, and where it is. -->
+  <header class="server-head">
+    <div class="server-words">
+      <h1 class="server-name">
+        {{ server.name }}
+        <button class="icon-btn sm" type="button" *ngIf="mine" aria-label="Rename this server" matTooltip="Rename" (click)="startChange('name')">
+          <lucide-icon name="pencil" [size]="14" aria-hidden="true"></lucide-icon>
+        </button>
+      </h1>
+      <p class="server-address">
+        <code>{{ server.address }}</code>
+        <button class="icon-btn sm" type="button" *ngIf="mine" aria-label="Change the address" matTooltip="Change the address" (click)="startChange('url')">
+          <lucide-icon name="pencil" [size]="14" aria-hidden="true"></lucide-icon>
+        </button>
+      </p>
+    </div>
+    <div class="server-actions" *ngIf="mine">
+      <button class="icon-btn" type="button" [attr.aria-label]="'More for ' + server.name" [matMenuTriggerFor]="serverMenu">
+        <lucide-icon name="ellipsis-vertical" [size]="16" aria-hidden="true"></lucide-icon>
+      </button>
+      <mat-menu #serverMenu="matMenu" xPosition="before">
+        <button mat-menu-item (click)="askRemove()">Remove</button>
+      </mat-menu>
+    </div>
+  </header>
+
+  <p class="form-notice" role="status" *ngIf="!mine">
+    Shared with you. Your chats can call the tools its owner switched on; only they can change it.
+  </p>
+  <p class="form-notice" role="status" *ngIf="notice">{{ notice }}</p>
+  <!-- What a read or a change of the server itself was refused for. -->
+  <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
+
+  <!-- When it was read, and what it is reached with. -->
+  <dl class="server-facts">
+    <div>
+      <dt>Read</dt>
+      <dd>
+        <span [matTooltip]="lastReadInFull">{{ lastRead || "not yet" }}</span>
+        <button class="btn sm" type="button" *ngIf="mine" [disabled]="!!busy" (click)="readAgain()">
+          <lucide-icon name="refresh-cw" [size]="16" aria-hidden="true" [class.is-turning]="busy === 'read'"></lucide-icon>
+          {{ busy === "read" ? "Reading…" : "Read again" }}
+        </button>
+      </dd>
+    </div>
+    <div *ngIf="mine">
+      <dt>Credential</dt>
+      <dd>
+        <span>Kept encrypted, never shown again</span>
+        <button class="btn sm" type="button" (click)="startChange('credential')">Replace</button>
+      </dd>
+    </div>
+  </dl>
+
+  <!-- ── The tools: each with its switch ─────────────────────────────── -->
+  <section aria-labelledby="server-tools-title">
+    <h2 class="form-section-title" id="server-tools-title">Tools</h2>
+
+    <app-list label="The tools this server offers" [foot]="tools.length ? 'A chat that uses this server can call the tools that are on.' : ''">
+      <ng-container listToolbar *ngIf="tools.length">
+        <span class="search-field toolbar-search">
+          <lucide-icon name="search" [size]="16" aria-hidden="true"></lucide-icon>
+          <input class="input" type="search" placeholder="Search tools" aria-label="Search this server's tools" [(ngModel)]="query" />
+        </span>
+        <span class="server-count" role="status">{{ onCount }} of {{ tools.length }} on</span>
+        <span class="toolbar-end server-bulk" *ngIf="mine">
+          <button class="btn sm" type="button" [disabled]="!!busy || onCount === tools.length" (click)="setAll(true)">All on</button>
+          <button class="btn sm" type="button" [disabled]="!!busy || onCount === 0" (click)="setAll(false)">All off</button>
+        </span>
+      </ng-container>
+
+      <ul class="tool-rows" *ngIf="shownTools.length">
+        <li class="tool-row" *ngFor="let tool of shownTools; trackBy: byName" [class.is-off]="!tool.on">
+          <!-- The switch is named by the tool, so its whole label is
+               the way to press it. -->
+          <app-switch
+            class="tool-switch"
+            [label]="tool.name"
+            [disabled]="!mine"
+            [ngModel]="tool.on"
+            (ngModelChange)="setTool(tool, $event)"
+          ></app-switch>
+
+          <div class="tool-words">
+            <p class="tool-about">{{ tool.description || "The server gives no description." }}</p>
+            <p class="tool-flags" *ngIf="saveOf(tool)">
+              <span class="tool-save" role="status" [class.is-failed]="saveFailed(tool)">{{ saveOf(tool) }}</span>
+            </p>
+          </div>
+        </li>
+      </ul>
+
+      <app-empty
+        *ngIf="!tools.length"
+        icon="server"
+        [title]="server.read_at ? 'This server offers no tools' : 'Its tools have not been read yet'"
+        [line]="mine ? 'Read it again if that should have changed.' : 'Its owner can read it again.'"
+      ></app-empty>
+      <app-empty *ngIf="tools.length && !shownTools.length" icon="search-x" title="No tool matches" line="Try another search.">
+        <button class="btn" type="button" (click)="query = ''">Clear the search</button>
+      </app-empty>
+    </app-list>
+  </section>
+</ng-container>
+
+<!-- ── A new name, address or credential: on the dialog shell ───────── -->
+<ng-template #changeDialog>
+  <h2 mat-dialog-title>{{ changeTitle }}</h2>
+  <form (ngSubmit)="saveChange()">
+    <mat-dialog-content>
+      <div class="form">
+        <p class="dialog-note" *ngIf="changing === 'url'">
+          A credential is never sent to an address it was not given for: give it again for the new one.
+          The tools are read again there, and each starts off.
+        </p>
+        <app-field
+          *ngIf="changing !== 'credential'"
+          [label]="changing === 'name' ? 'Name' : 'Address'"
+          [error]="(tried ? valueMissing : '') || (changing === 'name' ? changeProblem : '')"
+        >
+          <input class="input" name="mcp-change" autocomplete="off" [attr.maxlength]="changing === 'name' ? 100 : 500"
+                 [type]="changing === 'name' ? 'text' : 'url'" [(ngModel)]="changeValue" />
+        </app-field>
+        <ng-container *ngIf="changing !== 'name'">
+          <app-mcp-credential [draft]="credential" [tried]="tried"></app-mcp-credential>
+          <p class="form-notice" role="status" *ngIf="credential.kind === 'none'">
+            Saving with None reaches the server without a credential.
+          </p>
+          <p class="form-notice is-error" role="alert" *ngIf="changeProblem">{{ changeProblem }}</p>
+        </ng-container>
+      </div>
+    </mat-dialog-content>
+    <mat-dialog-actions>
+      <button class="btn" type="button" [disabled]="saving" (click)="closeDialog()">Cancel</button>
+      <button class="btn primary" type="submit" [disabled]="saving">
+        {{ saving ? "Saving…" : changing === "name" ? "Rename" : "Save" }}
+      </button>
+    </mat-dialog-actions>
+  </form>
+</ng-template>

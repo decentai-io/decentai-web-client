@@ -1,0 +1,96 @@
+<app-page guide="access" title="Policies" sentence="A policy says what is allowed, denied, or asked of the chat's person first. Groups give their people policies." [wide]="true">
+  <p class="form-notice is-error" role="alert" *ngIf="error && !editing">{{ error }}</p>
+  <p class="form-notice" role="status" *ngIf="notice">{{ notice }}</p>
+
+  <app-list label="Policies" [loading]="loading">
+    <ng-container listToolbar *ngIf="policies.length">
+      <span class="search-field toolbar-search">
+        <lucide-icon name="search" [size]="16" aria-hidden="true"></lucide-icon>
+        <input class="input" type="search" placeholder="Search policies" aria-label="Search policies" [(ngModel)]="query" />
+      </span>
+      <ng-container *ngTemplateOutlet="addButton"></ng-container>
+    </ng-container>
+
+    <app-row *ngFor="let policy of shown">
+      <lucide-icon rowMark name="scroll-text" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
+      <button rowName class="admin-name" type="button" *ngIf="canUpdate && !policy.built_in; else plainName" (click)="startEdit(policy)">{{ policy.name }}</button>
+      <ng-template #plainName><span rowName>{{ policy.name }}</span></ng-template>
+      <span rowChips class="chip" *ngIf="policy.built_in"
+            matTooltip="The platform's own: it changes with every upgrade, and can be copied but not edited">Built in</span>
+      <ng-container rowMeta>{{ summarise(policy) }}</ng-container>
+      <button rowState class="icon-btn sm" type="button" *ngIf="canCreate || (!policy.built_in && (canUpdate || canDelete))"
+              [attr.aria-label]="'More for ' + policy.name" [disabled]="isBusy(policy.policy_id)"
+              [matMenuTriggerFor]="policyMenu" [matMenuTriggerData]="{ policy: policy }">
+        <lucide-icon name="ellipsis-vertical" [size]="16" aria-hidden="true"></lucide-icon>
+      </button>
+    </app-row>
+
+    <app-empty *ngIf="!loading && !policies.length" icon="scroll-text" title="No policies yet"
+               line="A policy says what is allowed. Groups give them.">
+      <ng-container *ngTemplateOutlet="addButton"></ng-container>
+    </app-empty>
+    <app-empty *ngIf="policies.length && !shown.length" icon="search-x" title="No policy matches" line="Try another search."></app-empty>
+  </app-list>
+
+  <ng-template #addButton>
+    <button class="btn primary toolbar-end" type="button" *ngIf="canCreate" (click)="startCreate()">
+      <lucide-icon name="plus" [size]="16" aria-hidden="true"></lucide-icon>
+      New policy
+    </button>
+  </ng-template>
+
+  <mat-menu #policyMenu="matMenu" xPosition="before">
+    <ng-template matMenuContent let-policy="policy">
+      <button mat-menu-item *ngIf="canUpdate && !policy.built_in" (click)="startEdit(policy)">Edit</button>
+      <button mat-menu-item *ngIf="canCreate" (click)="duplicate(policy)">Duplicate</button>
+      <button mat-menu-item *ngIf="canDelete && !policy.built_in" (click)="remove(policy)">Delete</button>
+    </ng-template>
+  </mat-menu>
+
+  <!-- ── A policy, made or changed ───────────────────────────────────── -->
+  <ng-template #editor>
+    <h2 mat-dialog-title>{{ editorTitle }}</h2>
+    <form (ngSubmit)="save()">
+      <mat-dialog-content>
+        <div class="form">
+          <app-field label="Name" [error]="tried && !formName.trim() ? 'Give the policy a name.' : ''">
+            <input class="input" name="policy-name" autocomplete="off" placeholder="Data curation"
+                   [(ngModel)]="formName" />
+          </app-field>
+
+          <!-- What it allows, service by service, then agent by agent:
+               using an agent is allowing its functions. -->
+          <fieldset class="admin-picks" *ngIf="!advanced">
+            <legend>Allows<span class="admin-count">{{ totalSelected }} allowed</span></legend>
+            <p class="dialog-note">A whole service or agent stays allowed as actions are added to it.</p>
+            <details class="fold" *ngFor="let group of catalog" [open]="openAtStart.has(group.key)">
+              <summary>{{ group.label }}<span class="admin-count">{{ selectedCount(group) }} of {{ group.actions.length }}</span></summary>
+              <mat-checkbox class="check-row" [checked]="isGroupOn(group)" [indeterminate]="isGroupPartial(group)"
+                            (change)="toggleGroup(group)">
+                <span class="check-name">All of {{ group.label }}</span>
+              </mat-checkbox>
+              <mat-checkbox class="check-row" *ngFor="let action of group.actions"
+                            [checked]="isActionOn(group, action.action)" (change)="toggleAction(group, action.action)">
+                <span class="check-name">{{ action.name }}</span>
+                <span class="check-hint">{{ action.action }}</span>
+              </mat-checkbox>
+            </details>
+            <button class="btn ghost sm" type="button" (click)="writeDocument()">Deny, ask or narrow: write it as a document</button>
+          </fieldset>
+
+          <!-- The document itself, where the boxes could not show it. -->
+          <app-field *ngIf="advanced" label="The policy's statements" [help]="documentHelp">
+            <textarea class="input mono" name="policy-document" rows="14" spellcheck="false" [(ngModel)]="advancedText"></textarea>
+          </app-field>
+          <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
+        </div>
+      </mat-dialog-content>
+      <mat-dialog-actions>
+        <button class="btn" type="button" [disabled]="saving" (click)="cancelEdit()">Cancel</button>
+        <button class="btn primary" type="submit" [disabled]="saving">
+          {{ saving ? "Saving…" : isCreating ? "Create policy" : "Save changes" }}
+        </button>
+      </mat-dialog-actions>
+    </form>
+  </ng-template>
+</app-page>

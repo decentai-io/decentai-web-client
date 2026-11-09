@@ -1,0 +1,300 @@
+<p class="form-notice is-error" role="alert" *ngIf="error && editingId === null">{{ error }}</p>
+<p class="form-notice" role="status" *ngIf="notice">{{ notice }}</p>
+
+<app-list label="Model providers" [foot]="connections.length ? foot : ''">
+  <ng-container listToolbar>
+    <span class="search-field toolbar-search" *ngIf="connections.length">
+      <lucide-icon name="search" [size]="16" aria-hidden="true"></lucide-icon>
+      <input class="input" type="search" placeholder="Search providers" aria-label="Search providers" [(ngModel)]="query" />
+    </span>
+    <!-- The plus alone, at the list's top right, whether or not there
+         are providers yet. -->
+    <button class="icon-btn primary toolbar-end" type="button" *ngIf="canCreate" (click)="startCreate()"
+            aria-label="Add a provider" matTooltip="Add a provider">
+      <lucide-icon name="plus" [size]="18" aria-hidden="true"></lucide-icon>
+    </button>
+  </ng-container>
+
+  <app-row *ngFor="let connection of visible" [name]="connection.name">
+    <lucide-icon rowMark name="brain-circuit" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
+    <span
+      rowChips
+      class="chip accent"
+      *ngIf="connection.default"
+      matTooltip="Used by a chat whose person has not picked one."
+    >Default</span>
+    <span rowChips class="chip">{{ shareLabel(connection) }}</span>
+    <ng-container rowMeta>{{ summary(connection) }}</ng-container>
+
+    <button
+      rowActions
+      class="icon-btn sm"
+      type="button"
+      *ngIf="canCheck"
+      [attr.aria-label]="'Check ' + connection.name"
+      matTooltip="Check that it answers"
+      [disabled]="!!busyId"
+      (click)="check(connection)"
+    >
+      <lucide-icon [name]="busyId === connection.connection_id ? 'loader-circle' : 'circle-check'" [size]="16" aria-hidden="true"></lucide-icon>
+    </button>
+    <button
+      rowActions
+      class="icon-btn sm"
+      type="button"
+      *ngIf="canSetDefault && !connection.default"
+      [attr.aria-label]="'Set ' + connection.name + ' as default'"
+      matTooltip="Set as default"
+      [disabled]="!!busyId"
+      (click)="makeDefault(connection)"
+    >
+      <lucide-icon name="star" [size]="16" aria-hidden="true"></lucide-icon>
+    </button>
+    <button
+      rowActions
+      class="icon-btn sm"
+      type="button"
+      *ngIf="canUpdate"
+      [attr.aria-label]="'Edit ' + connection.name"
+      matTooltip="Edit, or replace the key"
+      [disabled]="busyId === connection.connection_id"
+      (click)="startEdit(connection)"
+    >
+      <lucide-icon name="pencil" [size]="16" aria-hidden="true"></lucide-icon>
+    </button>
+    <button
+      rowActions
+      class="icon-btn sm danger"
+      type="button"
+      *ngIf="canDelete"
+      [attr.aria-label]="'Remove ' + connection.name"
+      matTooltip="Remove"
+      [disabled]="busyId === connection.connection_id"
+      (click)="askRemove(connection)"
+    >
+      <lucide-icon name="trash-2" [size]="16" aria-hidden="true"></lucide-icon>
+    </button>
+  </app-row>
+
+  <app-empty
+    *ngIf="!connections.length"
+    icon="brain-circuit"
+    title="No provider yet"
+    line="Chats cannot hold a conversation until there is one, made the default or shared with their people."
+  ></app-empty>
+  <app-empty
+    *ngIf="connections.length && !visible.length"
+    icon="search-x"
+    title="No provider matches"
+    line="Try another search."
+  >
+    <button class="btn" type="button" (click)="query = ''">Clear the search</button>
+  </app-empty>
+</app-list>
+
+<!-- ── Add / edit: shown on the dialog shell ──────────────────────── -->
+<ng-template #editor>
+  <h2 mat-dialog-title>
+    {{ choosing ? "Add a provider"
+       : isCreating ? "Connect " + (chosen?.endpoint ? chosen?.name : "your own server")
+       : "Edit " + draft.name }}
+  </h2>
+
+  <!-- Step one: which provider. The few most people look for, then every
+       one by name — searched, or all of them, scrolled. A server of the
+       person's own is apart from the list, always first. -->
+  <mat-dialog-content *ngIf="choosing">
+    <span class="search-field provider-search">
+      <lucide-icon name="search" [size]="16" aria-hidden="true"></lucide-icon>
+      <input
+        class="input"
+        type="search"
+        name="provider-search"
+        aria-label="Search providers"
+        [placeholder]="'Search ' + total + ' providers'"
+        [(ngModel)]="providerQuery"
+      />
+    </span>
+    <button class="provider-choice provider-own" type="button" *ngIf="custom as own" (click)="selectProvider(own)">
+      <span class="provider-name">Your own server</span>
+      <span class="provider-hint">Ollama, LM Studio, vLLM, or anything that speaks OpenAI's protocol.</span>
+    </button>
+    <ul
+      class="provider-list"
+      [class.is-all]="listingAll"
+      [attr.aria-label]="providerQuery ? 'Matching providers' : showAll ? 'All providers' : 'Popular providers'"
+    >
+      <li *ngFor="let provider of offered">
+        <button class="provider-choice" type="button" (click)="selectProvider(provider)">
+          <span class="provider-name">{{ provider.name }}</span>
+        </button>
+      </li>
+    </ul>
+    <button
+      class="btn ghost sm provider-all"
+      type="button"
+      *ngIf="!providerQuery && others"
+      [attr.aria-expanded]="showAll"
+      (click)="showAll = !showAll"
+    >
+      <lucide-icon [name]="showAll ? 'chevron-up' : 'chevron-down'" [size]="16" aria-hidden="true"></lucide-icon>
+      {{ showAll ? "Show the popular few" : "Show all " + total + " providers" }}
+    </button>
+    <p class="provider-note" *ngIf="providerQuery && !offered.length">
+      No provider by that name. If it speaks OpenAI's protocol, add it as your own server.
+    </p>
+  </mat-dialog-content>
+  <mat-dialog-actions *ngIf="choosing">
+    <button class="btn" type="button" (click)="closeEditor()">Cancel</button>
+  </mat-dialog-actions>
+
+  <!-- Step two: the key. Everything else has an answer already. -->
+  <form *ngIf="!choosing" (ngSubmit)="save()">
+    <mat-dialog-content>
+      <div class="form">
+      <app-field
+        *ngIf="endpointIsYours"
+        label="Address"
+        help="The base address of an OpenAI-compatible API, with its version path. A server on this computer is reached at host.docker.internal, not localhost."
+        [error]="errorFor('address')"
+      >
+        <input
+          class="input"
+          type="url"
+          name="address"
+          placeholder="http://host.docker.internal:11434/v1"
+          [ngModel]="draft.address"
+          (ngModelChange)="setEndpoint($event)"
+        />
+        <span class="provider-servers">
+          On this computer:
+          <button class="btn ghost sm" type="button" *ngFor="let server of ownServers" (click)="setEndpoint(server.address)">
+            {{ server.name }}
+          </button>
+        </span>
+      </app-field>
+
+      <app-field
+        *ngFor="let blank of blanks"
+        [label]="blankLabel(blank)"
+        [help]="blankHelp(blank)"
+        [error]="errorFor('blank:' + blank)"
+      >
+        <input
+          class="input"
+          [name]="'blank-' + blank"
+          [attr.list]="blank === 'aws-region' ? 'llm-aws-regions' : null"
+          [placeholder]="blankExample(blank)"
+          [ngModel]="blankValues[blank]"
+          (ngModelChange)="setBlank(blank, $event)"
+        />
+      </app-field>
+      <datalist id="llm-aws-regions">
+        <option *ngFor="let region of awsRegions" [value]="region"></option>
+      </datalist>
+
+      <app-field
+        label="API key"
+        [help]="endpointIsYours ? 'Encrypted when saved, and never shown again. Leave it empty for a server that asks for none.'
+          : 'Encrypted when saved, and never shown again.'"
+        [error]="errorFor('key')"
+      >
+        <span class="secret-field">
+          <input
+            class="input"
+            name="api-key"
+            autocomplete="new-password"
+            [type]="keyShown ? 'text' : 'password'"
+            [placeholder]="isCreating ? 'Paste the key' : 'Set · never shown. Type to replace it.'"
+            [(ngModel)]="draft.key"
+          />
+          <button
+            class="icon-btn sm"
+            type="button"
+            [attr.aria-label]="keyShown ? 'Hide the key' : 'Show the key'"
+            [attr.aria-pressed]="keyShown"
+            (click)="keyShown = !keyShown"
+          >
+            <lucide-icon name="eye" [size]="16" aria-hidden="true"></lucide-icon>
+          </button>
+        </span>
+      </app-field>
+      <p class="provider-note" *ngIf="keyPlace as place">
+        A key is made in {{ place.where }}:
+        <a [href]="place.url" target="_blank" rel="noopener">{{ place.url }}</a>
+      </p>
+
+      <app-field
+        label="Models"
+        help="The provider's own ids for the models chats may use; for Azure, your deployments' names. None named, every model the platform knows for the provider is offered."
+      >
+        <app-token-list
+          name="models"
+          placeholder="claude-sonnet-4-5"
+          addLabel="Add"
+          listLabel="Models"
+          [(ngModel)]="draft.models"
+        ></app-token-list>
+        <span class="provider-servers" *ngIf="canCheck">
+          <button class="btn ghost sm" type="button" [disabled]="checking" (click)="checkForm()">
+            {{ checking ? "Checking…" : "Check" }}
+          </button>
+          <button class="btn ghost sm" type="button" *ngFor="let model of offeredModels" (click)="addModel(model)"
+                  [attr.aria-label]="'Add ' + model">
+            <lucide-icon name="plus" [size]="14" aria-hidden="true"></lucide-icon>
+            {{ model }}
+          </button>
+        </span>
+      </app-field>
+
+      <!-- Sharing decides whose chats may think with this provider. -->
+      <fieldset class="provider-groups">
+        <legend class="provider-groups-title">Whose chats may use it</legend>
+        <mat-checkbox class="check-row" *ngFor="let group of groups; let first = first"
+                      [checked]="draft.groups.includes(group.group_id)" (change)="toggleGroup(group.group_id)">
+          <span class="check-name">{{ group.name }}</span>
+          <span class="check-hint" *ngIf="first">Every person of the organization.</span>
+        </mat-checkbox>
+        <p class="provider-note" *ngIf="!draft.groups.length">Shared with no group, nobody's chats may use it.</p>
+      </fieldset>
+
+      <!-- What has an answer already, for whoever wants another. -->
+      <button
+        class="btn ghost provider-more"
+        type="button"
+        [attr.aria-expanded]="showMore"
+        (click)="showMore = !showMore"
+      >
+        <lucide-icon [name]="showMore ? 'chevron-down' : 'chevron-right'" [size]="16" aria-hidden="true"></lucide-icon>
+        Name and address
+      </button>
+      <ng-container *ngIf="showMore">
+        <app-field label="Name" [error]="errorFor('name')">
+          <input class="input" name="name" placeholder="Anthropic" [ngModel]="draft.name" (ngModelChange)="setName($event)" />
+        </app-field>
+        <app-field
+          *ngIf="!endpointIsYours"
+          label="Address"
+          help="Filled in for you. Change it only to reach this provider through a gateway of your own."
+          [error]="errorFor('address')"
+        >
+          <input class="input" type="url" name="gateway" [ngModel]="draft.address" (ngModelChange)="setEndpoint($event)" />
+        </app-field>
+      </ng-container>
+
+      <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
+      </div>
+    </mat-dialog-content>
+
+    <mat-dialog-actions>
+      <button class="btn provider-back" type="button" *ngIf="isCreating" [disabled]="saving" (click)="chooseAnother()">
+        <lucide-icon name="arrow-left" [size]="16" aria-hidden="true"></lucide-icon>
+        Back
+      </button>
+      <button class="btn" type="button" [disabled]="saving" (click)="closeEditor()">Cancel</button>
+      <button class="btn primary" type="submit" [disabled]="saving">
+        {{ saving ? "Saving…" : isCreating ? "Connect" : "Save" }}
+      </button>
+    </mat-dialog-actions>
+  </form>
+</ng-template>

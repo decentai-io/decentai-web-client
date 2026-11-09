@@ -1,0 +1,354 @@
+<app-empty *ngIf="loadError" icon="cloud-off" title="Nodes could not be loaded" [line]="loadError">
+  <button class="btn" type="button" (click)="load()">Try again</button>
+</app-empty>
+
+<ng-container *ngIf="!loadError">
+  <!-- ── The counts, the views, and how fresh it all is ─────────────── -->
+  <dl class="nodes-tiles" *ngIf="canListNodes" aria-label="At a glance">
+    <div class="nodes-tile">
+      <dt>Nodes connected</dt>
+      <dd>
+        <span class="nodes-tile-number" *ngIf="!loading; else tileLoading">{{ counts.connected }}<span class="nodes-tile-of"> of {{ counts.total }}</span></span>
+        <span class="nodes-tile-note" *ngIf="!loading">{{ counts.refused ? plural(counts.refused, "refused", "refused") : "none refused" }}</span>
+      </dd>
+    </div>
+    <div class="nodes-tile">
+      <dt>Sandboxes</dt>
+      <dd>
+        <span class="nodes-tile-number" *ngIf="!loading; else tileLoading">{{ counts.sandboxes }}</span>
+        <span class="nodes-tile-note" [class.is-warn]="counts.draining" *ngIf="!loading">{{ counts.draining ? counts.draining + " draining" : "none draining" }}</span>
+      </dd>
+    </div>
+    <div class="nodes-tile">
+      <dt>Chats running</dt>
+      <dd>
+        <span class="nodes-tile-number" *ngIf="!loading; else tileLoading">{{ counts.chats }}</span>
+        <span class="nodes-tile-note" *ngIf="!loading">on connected nodes</span>
+      </dd>
+    </div>
+    <div class="nodes-tile" *ngIf="canListTokens">
+      <dt>Enrollment tokens</dt>
+      <dd>
+        <span class="nodes-tile-number" *ngIf="!loading; else tileLoading">{{ counts.tokens }}</span>
+        <span class="nodes-tile-note" *ngIf="!loading">can enroll a node</span>
+      </dd>
+    </div>
+  </dl>
+  <ng-template #tileLoading><span class="sk nodes-tile-sk"></span></ng-template>
+
+  <div class="nodes-bar">
+    <app-segmented
+      *ngIf="views.length > 1"
+      label="Nodes views"
+      [choices]="views"
+      [ngModel]="view"
+      (ngModelChange)="choose($event)"
+    ></app-segmented>
+    <span class="nodes-updated" role="status" aria-live="polite" [class.is-warn]="refreshFailed">{{ updatedLine }}</span>
+    <button
+      class="icon-btn sm"
+      type="button"
+      aria-label="Refresh"
+      matTooltip="Refresh"
+      [disabled]="loading || refreshing"
+      (click)="refresh()"
+    >
+      <lucide-icon name="refresh-cw" [size]="16" [class.is-spinning]="refreshing" aria-hidden="true"></lucide-icon>
+    </button>
+  </div>
+
+  <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
+  <p class="form-notice" role="status" *ngIf="notice">{{ notice }}</p>
+
+  <!-- ── Nodes: a view the engine keeps, never filled in here ───────── -->
+  <ng-container *ngIf="view === 'nodes' && canListNodes">
+    <!-- One node, whole. -->
+    <ng-container *ngIf="openId && !loading">
+      <app-node-detail
+        *ngIf="openNode as node; else gone"
+        [node]="node"
+        [can]="detailGrants"
+        [busy]="busy"
+        (back)="closeDetail()"
+        (edit)="startEditNode(node)"
+        (refuse)="startRefuse(node)"
+        (allow)="allow(node)"
+        (forget)="forget(node)"
+        (drain)="drain(node, $event.sandbox, $event.on)"
+        (drainAll)="drainAll(node, $event)"
+      ></app-node-detail>
+      <ng-template #gone>
+        <app-empty icon="server" title="That node is not on the list" line="It was forgotten, or the address names a node this organization does not have.">
+          <button class="btn" type="button" (click)="closeDetail()">All nodes</button>
+        </app-empty>
+      </ng-template>
+    </ng-container>
+
+    <!-- Every node, grouped by the organization it serves. -->
+    <app-list *ngIf="!openId || loading" label="Nodes" rows="groups" [loading]="loading" [foot]="nodesFoot">
+      <ng-container listToolbar *ngIf="!loading && nodes.length">
+        <span class="search-field toolbar-search">
+          <lucide-icon name="search" [size]="16" aria-hidden="true"></lucide-icon>
+          <input
+            class="input"
+            type="search"
+            placeholder="Search nodes"
+            aria-label="Search nodes"
+            [ngModel]="filters.query"
+            (ngModelChange)="setFilter('query', $event)"
+          />
+        </span>
+        <app-select
+          class="nodes-filter"
+          label="State"
+          [choices]="stateChoices"
+          [ngModel]="filters.state"
+          (ngModelChange)="setFilter('state', $event)"
+        ></app-select>
+        <app-select
+          class="nodes-filter is-wide"
+          *ngIf="scopeChoices.length"
+          label="Organization"
+          [choices]="scopeChoices"
+          [ngModel]="filters.scope"
+          (ngModelChange)="setFilter('scope', $event)"
+        ></app-select>
+        <button class="btn ghost sm" type="button" *ngIf="filtering" (click)="clearFilters()">Clear</button>
+      </ng-container>
+
+      <section class="nodes-group" *ngFor="let group of groups; trackBy: byGroup" [attr.aria-label]="group.name">
+        <h3 class="nodes-group-head">
+          <span class="nodes-group-name">{{ group.name }}</span>
+          <span class="nodes-group-count">{{ group.connected }} of {{ plural(group.nodes.length, "node") }} connected</span>
+        </h3>
+        <div class="nodes-group-rows" role="list" [attr.aria-label]="'Nodes of ' + group.name">
+          <app-row
+            *ngFor="let node of group.nodes; trackBy: byNode"
+            class="node-row"
+            [class.is-away]="!node.live"
+            (click)="open(node)"
+          >
+            <lucide-icon rowMark name="server" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
+            <button rowName class="node-open" type="button" [attr.aria-label]="'Open ' + nodeLabel(node)">{{ nodeLabel(node) }}</button>
+            <span rowChips class="chip" [class.live]="stateOf(node).tone === 'live'" [class.danger]="stateOf(node).tone === 'danger'">{{ stateOf(node).word }}</span>
+            <span rowChips class="chip warn" *ngIf="node.live && draining(node)">Draining</span>
+            <ng-container rowMeta>
+              <span class="node-facts">
+                <span *ngFor="let fact of nodeFacts(node)">{{ fact }}</span>
+              </span>
+              <span class="node-note" *ngIf="node.note">{{ node.note }}</span>
+            </ng-container>
+            <lucide-icon rowActions class="node-chevron" name="chevron-right" [size]="18" aria-hidden="true"></lucide-icon>
+          </app-row>
+        </div>
+      </section>
+
+      <app-empty
+        *ngIf="!nodes.length"
+        icon="server"
+        title="No nodes yet"
+        line="A node joins by itself: make an enrollment token, put it in the node's identity folder, and start it pointed at this deployment."
+      >
+        <a class="btn" [href]="docs" target="_blank" rel="noopener">How a node joins</a>
+      </app-empty>
+      <app-empty
+        *ngIf="nodes.length && !shownNodes.length"
+        icon="search-x"
+        title="No node matches"
+        line="Nothing listed fits the search and filters."
+      >
+        <button class="btn" type="button" (click)="clearFilters()">Clear the filters</button>
+      </app-empty>
+    </app-list>
+  </ng-container>
+
+  <!-- ── What lets a node join ──────────────────────────────────────── -->
+  <section class="nodes-view" *ngIf="view === 'tokens' && canListTokens" aria-label="Enrollment tokens">
+    <p class="nodes-view-note">A node joins by enrolling with one of these: it is given the token, and the issuer certifies it. A token says what its nodes will be, never which node.</p>
+    <app-list label="Enrollment tokens" [loading]="loading" [foot]="tokensFoot">
+      <ng-container listToolbar *ngIf="!loading">
+        <app-switch *ngIf="spentCount" label="Show spent" [(ngModel)]="showSpent"></app-switch>
+        <button
+          *ngIf="canCreateToken"
+          class="btn primary sm toolbar-end"
+          type="button"
+          (click)="startCreate()"
+        >
+          <lucide-icon name="plus" [size]="16" aria-hidden="true"></lucide-icon>
+          Make a token
+        </button>
+      </ng-container>
+
+      <app-row
+        *ngFor="let token of visibleTokens"
+        class="authority-row"
+        [class.is-revoked]="!tokenLive(token)"
+        [name]="tokenName(token)"
+      >
+        <lucide-icon rowMark name="key-round" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
+        <span rowChips class="chip" [class.live]="tokenLive(token)" [class.danger]="token.withdrawn">{{ tokenWord(token) }}</span>
+        <span rowChips class="chip">{{ token.metadata.scope ? "This organization" : "Shared" }}</span>
+        <span rowChips class="chip" *ngFor="let label of token.metadata.labels || []">{{ label }}</span>
+        <ng-container rowMeta>
+          <span class="node-facts authority-facts">
+            <span *ngFor="let fact of tokenFacts(token)">{{ fact }}</span>
+          </span>
+        </ng-container>
+        <button
+          rowActions
+          class="btn danger sm"
+          type="button"
+          *ngIf="canRevoke(token)"
+          [attr.aria-label]="'Withdraw ' + token._id"
+          [disabled]="busy === token._id"
+          (click)="revoke(token)"
+        >
+          {{ busy === token._id ? "Withdrawing…" : "Withdraw" }}
+        </button>
+      </app-row>
+
+      <app-empty
+        *ngIf="!visibleTokens.length"
+        icon="key-round"
+        [title]="spentCount ? 'No token can enroll a node' : 'No tokens yet'"
+        [line]="canCreateToken
+          ? 'Make a token, and give it to the runtime or sandbox that is to join.'
+          : 'An administrator makes the token a node joins with.'"
+      ></app-empty>
+    </app-list>
+  </section>
+
+  <!-- ── Where chats run ────────────────────────────────────────────── -->
+  <section class="nodes-view" *ngIf="view === 'placement' && canSeePlacement" aria-label="Where chats run">
+    <ng-container *ngIf="!loading; else placementLoading">
+      <p class="nodes-view-note">Where this organization's chats run: on its own nodes first, or on them only.</p>
+      <p class="form-notice" *ngIf="!canSetPlacement">Only an administrator changes this.</p>
+      <app-choice-cards
+        label="Where chats run"
+        [choices]="placements"
+        [disabled]="!canSetPlacement || savingPlacement"
+        [ngModel]="placement"
+        (ngModelChange)="choosePlacement($event)"
+      ></app-choice-cards>
+      <p class="form-notice nodes-own" [class.is-warn]="placement === 'own_only' && !ownConnected">
+        <lucide-icon name="server" [size]="16" aria-hidden="true"></lucide-icon>
+        {{ ownConnectedLine }}
+      </p>
+    </ng-container>
+    <ng-template #placementLoading>
+      <div class="form" aria-busy="true" aria-label="Loading where chats run">
+        <span class="sk sk-field"></span>
+        <span class="sk sk-field"></span>
+      </div>
+    </ng-template>
+  </section>
+</ng-container>
+
+<!-- ── Making a token: on the dialog shell ─────────────────────────── -->
+<ng-template #editor>
+  <h2 mat-dialog-title>{{ made ? "Your enrollment token" : "Make an enrollment token" }}</h2>
+
+  <ng-container *ngIf="made; else tokenForm">
+    <mat-dialog-content>
+      <div class="form">
+        <p class="dialog-note">Shown this once: only its hash is kept. Put it in the node's identity folder as its <code>token</code> file, beside <code>enroll</code> and <code>roots.pem</code>.</p>
+        <span class="authority-key">
+          <code class="mono">{{ made.token }}</code>
+          <button class="icon-btn sm authority-copy" type="button" aria-label="Copy the token" matTooltip="Copy" (click)="copyMade()">
+            <lucide-icon name="copy" [size]="14" aria-hidden="true"></lucide-icon>
+          </button>
+        </span>
+      </div>
+    </mat-dialog-content>
+    <mat-dialog-actions>
+      <button class="btn primary" type="button" (click)="closeDialog()">Done</button>
+    </mat-dialog-actions>
+  </ng-container>
+
+  <ng-template #tokenForm>
+    <form (ngSubmit)="save()">
+      <mat-dialog-content>
+        <div class="form">
+          <app-field label="For">
+            <app-segmented name="kind" [choices]="kinds" [(ngModel)]="form.kind"></app-segmented>
+          </app-field>
+
+          <app-field label="Nodes it may enroll" help="Empty for any number." [error]="errorFor('uses')">
+            <input class="input" name="uses" inputmode="numeric" autocomplete="off" [(ngModel)]="form.uses" />
+          </app-field>
+
+          <app-field label="Days it enrolls" help="After that it enrolls nobody; the nodes it enrolled keep renewing." [error]="errorFor('days')">
+            <input class="input" name="days" inputmode="decimal" autocomplete="off" [(ngModel)]="form.days" />
+          </app-field>
+
+          <app-field label="Labels" help="Optional, separated by commas: every node it enrolls carries them.">
+            <input class="input" name="labels" autocomplete="off" [(ngModel)]="form.labels" />
+          </app-field>
+
+          <app-field *ngIf="operator" label="Nodes it enrolls serve">
+            <app-choice-cards name="scope" [choices]="scopes" [(ngModel)]="form.scope"></app-choice-cards>
+          </app-field>
+
+          <p class="form-notice is-error" role="alert" *ngIf="formError">{{ formError }}</p>
+        </div>
+      </mat-dialog-content>
+      <mat-dialog-actions>
+        <button class="btn" type="button" [disabled]="saving" (click)="closeDialog()">Cancel</button>
+        <button class="btn primary" type="submit" [disabled]="saving">{{ saving ? "Making…" : "Make" }}</button>
+      </mat-dialog-actions>
+    </form>
+  </ng-template>
+</ng-template>
+
+<!-- ── Naming a node ───────────────────────────────────────────────── -->
+<ng-template #editDialog>
+  <h2 mat-dialog-title>Edit {{ edit.title }}</h2>
+  <form (ngSubmit)="saveEdit()">
+    <mat-dialog-content>
+      <div class="form">
+        <p class="dialog-note">A name and a note for people. The runtime is still known by its id.</p>
+        <app-field label="Name" help="Empty shows its id.">
+          <input
+            class="input"
+            name="name"
+            autocomplete="off"
+            [placeholder]="edit.id"
+            [maxlength]="nameMax"
+            [(ngModel)]="edit.name"
+          />
+        </app-field>
+        <app-field label="Note" [help]="edit.note.length + ' of ' + noteMax + ' characters'">
+          <textarea class="input" name="note" rows="4" [maxlength]="noteMax" [(ngModel)]="edit.note"></textarea>
+        </app-field>
+        <p class="form-notice is-error" role="alert" *ngIf="formError">{{ formError }}</p>
+      </div>
+    </mat-dialog-content>
+    <mat-dialog-actions>
+      <button class="btn" type="button" [disabled]="saving" (click)="closeDialog()">Cancel</button>
+      <button class="btn primary" type="submit" [disabled]="saving">{{ saving ? "Saving…" : "Save" }}</button>
+    </mat-dialog-actions>
+  </form>
+</ng-template>
+
+<!-- ── Refusing a node, with a reason ──────────────────────────────── -->
+<ng-template #refuseDialog>
+  <h2 mat-dialog-title>Refuse {{ refusing ? nodeLabel(refusing) : "" }}?</h2>
+  <form (ngSubmit)="submitRefuse()">
+    <mat-dialog-content>
+      <div class="form">
+        <p class="dialog-note">
+          Every call from it is refused whatever its certificate says, until it is allowed again.
+          Its chats are placed on another runtime when next needed.
+        </p>
+        <app-field label="Reason" [help]="'Optional; kept with the refusal. ' + reason.length + ' of ' + reasonMax + ' characters.'">
+          <textarea class="input" name="reason" rows="3" [maxlength]="reasonMax" placeholder="Why it is refused" [(ngModel)]="reason"></textarea>
+        </app-field>
+        <p class="form-notice is-error" role="alert" *ngIf="formError">{{ formError }}</p>
+      </div>
+    </mat-dialog-content>
+    <mat-dialog-actions>
+      <button class="btn" type="button" [disabled]="!!busy" (click)="closeDialog()">Cancel</button>
+      <button class="btn danger primary" type="submit" [disabled]="!!busy">{{ busy ? "Refusing…" : "Refuse" }}</button>
+    </mat-dialog-actions>
+  </form>
+</ng-template>

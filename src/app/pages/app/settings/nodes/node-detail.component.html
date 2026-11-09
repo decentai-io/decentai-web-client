@@ -1,0 +1,199 @@
+<button class="btn ghost sm detail-back" type="button" (click)="back.emit()">
+  <lucide-icon name="arrow-left" [size]="16" aria-hidden="true"></lucide-icon>
+  All nodes
+</button>
+
+<!-- ── Who it is and how it stands ──────────────────────────────────── -->
+<header class="detail-head">
+  <span class="detail-mark" [class.is-live]="state === 'connected'" [class.is-refused]="state === 'refused'" aria-hidden="true">
+    <lucide-icon name="server" [size]="22" [strokeWidth]="1.75"></lucide-icon>
+  </span>
+  <div class="detail-words">
+    <h2 class="detail-name" id="node-detail-title">{{ label }}</h2>
+    <div class="detail-chips">
+      <span class="chip" [ngClass]="{ live: state === 'connected', danger: state === 'refused' }">{{ stateWord }}</span>
+      <span class="chip">{{ organization }}</span>
+      <span class="chip warn" *ngIf="node.draining && node.live">Draining</span>
+    </div>
+    <p class="detail-id">
+      <code>{{ node.node_id }}</code>
+      <button
+        class="icon-btn sm"
+        type="button"
+        [attr.aria-label]="copied ? 'Copied' : 'Copy the runtime\'s id'"
+        [matTooltip]="copied ? 'Copied' : 'Copy the id'"
+        (click)="copyId()"
+      >
+        <lucide-icon [name]="copied ? 'check' : 'copy'" [size]="14" aria-hidden="true"></lucide-icon>
+      </button>
+    </p>
+    <p class="detail-note" *ngIf="node.note">{{ node.note }}</p>
+  </div>
+  <div class="detail-actions">
+    <button class="btn sm" type="button" *ngIf="can.edit" [attr.aria-label]="'Edit ' + label" (click)="edit.emit()">
+      <lucide-icon name="pencil" [size]="14" aria-hidden="true"></lucide-icon>
+      Edit
+    </button>
+    <ng-container *ngIf="drainable">
+      <button class="btn sm" type="button" *ngIf="!node.draining" [disabled]="!!busy"
+              [attr.aria-label]="'Drain ' + label" (click)="drainAll.emit(true)">
+        <lucide-icon name="pause" [size]="14" aria-hidden="true"></lucide-icon>
+        Drain
+      </button>
+      <button class="btn sm" type="button" *ngIf="node.draining" [disabled]="!!busy"
+              [attr.aria-label]="'Let ' + label + ' take chats again'" (click)="drainAll.emit(false)">
+        <lucide-icon name="play" [size]="14" aria-hidden="true"></lucide-icon>
+        Resume
+      </button>
+    </ng-container>
+    <button
+      class="btn danger sm"
+      type="button"
+      *ngIf="can.refuse && !node.refused"
+      [attr.aria-label]="'Refuse ' + label"
+      [disabled]="busy === node.node_id"
+      (click)="refuse.emit()"
+    >
+      Refuse
+    </button>
+    <button
+      class="btn sm"
+      type="button"
+      *ngIf="can.allow && node.refused"
+      [attr.aria-label]="'Allow ' + label + ' again'"
+      [disabled]="busy === node.node_id"
+      (click)="allow.emit()"
+    >
+      Allow
+    </button>
+    <span *ngIf="can.forget" [matTooltip]="forgetWhy" [matTooltipDisabled]="!forgetWhy">
+      <button
+        class="btn ghost sm"
+        type="button"
+        [attr.aria-label]="'Forget ' + label"
+        [disabled]="!!forgetWhy || busy === node.node_id"
+        (click)="forget.emit()"
+      >
+        <lucide-icon name="trash-2" [size]="14" aria-hidden="true"></lucide-icon>
+        Forget
+      </button>
+    </span>
+  </div>
+</header>
+
+<div class="form-notice is-error detail-notice" role="status" *ngIf="node.refused">
+  <p><strong>Refused.</strong> Every call from it is refused until it is allowed again, whatever its certificate says.</p>
+</div>
+
+<!-- ── What is known of it ──────────────────────────────────────────── -->
+<section class="form-section" aria-labelledby="node-about-title">
+  <h3 class="form-section-title" id="node-about-title">About</h3>
+  <dl class="detail-facts">
+    <div class="detail-fact">
+      <dt>State</dt>
+      <dd>{{ stateLine }}</dd>
+    </div>
+    <div class="detail-fact">
+      <dt>Serves</dt>
+      <dd>{{ shared ? "Every organization that does not keep to its own" : organization }}</dd>
+    </div>
+    <div class="detail-fact">
+      <dt>First heard from</dt>
+      <dd [title]="fullDate(node.since)">{{ node.since ? relativeDate(node.since) : "—" }}</dd>
+    </div>
+    <div class="detail-fact">
+      <dt>Labels</dt>
+      <dd>
+        <span class="detail-labels" *ngIf="node.labels.length; else noLabels">
+          <span class="chip" *ngFor="let label of node.labels">{{ label }}</span>
+        </span>
+        <ng-template #noLabels>None</ng-template>
+      </dd>
+    </div>
+  </dl>
+</section>
+
+<!-- ── Its sandboxes ────────────────────────────────────────────────── -->
+<section class="form-section" aria-labelledby="node-sandboxes-title">
+  <h3 class="form-section-title" id="node-sandboxes-title">
+    Sandboxes <span class="detail-count">{{ node.sandboxes.length }}</span>
+  </h3>
+  <p class="form-section-note">
+    No new process is started on a sandbox that drains; the agents running there finish.
+    <ng-container *ngIf="!node.live && node.sandboxes.length">As it last reported them.</ng-container>
+  </p>
+
+  <app-list label="Sandboxes" rows="table" *ngIf="node.sandboxes.length; else noSandboxes">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Sandbox</th>
+          <th scope="col">State</th>
+          <th scope="col">Memory</th>
+          <th scope="col" class="num cell-minor">Processes</th>
+          <th scope="col" class="cell-minor">Agents running</th>
+          <th scope="col" class="cell-actions"><span class="visually-hidden">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let sandbox of node.sandboxes; trackBy: bySandbox">
+          <td class="cell-main">
+            <code class="detail-code">{{ sandbox.sandbox_id }}</code>
+            <span class="detail-sandbox-labels">{{ sandbox.machine }}<ng-container *ngIf="sandbox.base"> · {{ sandbox.base }}</ng-container></span>
+          </td>
+          <td class="cell-fact">
+            <span class="chip" [ngClass]="sandboxState(sandbox).tone">{{ sandboxState(sandbox).word }}</span>
+          </td>
+          <td class="cell-fact">
+            <span class="detail-memory" *ngIf="sandbox.room as room; else unknown">
+              <span class="detail-number">
+                {{ bytes(room.memory_used) }}<span class="detail-of" *ngIf="room.memory_max"> of {{ bytes(room.memory_max) }}</span>
+              </span>
+              <span
+                class="detail-meter"
+                *ngIf="share(room.memory_used, room.memory_max) !== null"
+                role="img"
+                [attr.aria-label]="memoryTitle(sandbox)"
+              >
+                <span
+                  [style.width.%]="share(room.memory_used, room.memory_max)"
+                  [class.is-high]="share(room.memory_used, room.memory_max)! >= 90"
+                ></span>
+              </span>
+            </span>
+          </td>
+          <td class="num cell-minor">
+            <ng-container *ngIf="sandbox.room as room; else unknown">
+              {{ room.processes }}<span class="detail-of"> of {{ room.processes_max }}</span>
+            </ng-container>
+          </td>
+          <td class="cell-minor">{{ agentsLine(sandbox) }}</td>
+          <td class="cell-actions">
+            <button
+              class="btn sm"
+              type="button"
+              *ngIf="drainable"
+              [attr.aria-label]="(sandbox.draining ? 'Let ' + sandbox.sandbox_id + ' take work again' : 'Drain ' + sandbox.sandbox_id) + ' on ' + label"
+              [disabled]="!!busy"
+              (click)="drain.emit({ sandbox: sandbox, on: !sandbox.draining })"
+            >
+              {{ busy === node.node_id + "#" + sandbox.sandbox_id ? "…" : sandbox.draining ? "Resume" : "Drain" }}
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </app-list>
+  <ng-template #noSandboxes>
+    <p class="detail-empty">{{ node.live ? "It reports no sandbox." : "It reported no sandbox." }}</p>
+  </ng-template>
+  <ng-template #unknown><span class="detail-minor">—</span></ng-template>
+</section>
+
+<!-- ── The chats it holds ───────────────────────────────────────────── -->
+<section class="form-section" aria-labelledby="node-chats-title">
+  <h3 class="form-section-title" id="node-chats-title">
+    Chats <span class="detail-count">{{ node.held_chats + node.held_elsewhere }}</span>
+  </h3>
+  <p class="form-section-note">{{ chatsLine }} A chat is placed on another runtime when it is next needed, once this one stops.</p>
+</section>

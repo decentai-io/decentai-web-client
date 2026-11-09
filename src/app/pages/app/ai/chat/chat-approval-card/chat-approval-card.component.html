@@ -1,0 +1,224 @@
+@switch (card.kind) {
+  @case ('approval') {
+    <!-- An agent's call waiting for the person's yes. -->
+    <div class="approval-card" role="group" aria-label="Approval required">
+      <div class="approval-head">
+        <lucide-icon class="approval-icon" name="shield-alert" [size]="20" aria-hidden="true"></lucide-icon>
+        <div class="approval-title-wrap">
+          <span class="approval-title">{{ who }} asks to run “{{ functionLabel }}”</span>
+          <span class="approval-subtitle">Nothing runs until you allow it.</span>
+        </div>
+      </div>
+      <div class="approval-body">
+        <div class="approval-row">
+          <span class="approval-label">Function</span>
+          <code class="approval-value">{{ request.function }}</code>
+        </div>
+        @if (callLabel) {
+          <div class="approval-row">
+            <span class="approval-label">It would</span>
+            <span class="approval-value">{{ callLabel }}</span>
+          </div>
+        }
+        @if (levelLabel) {
+          <div class="approval-row">
+            <span class="approval-label">Risk level</span>
+            <span class="approval-level" [matTooltip]="'Level ' + request.level">{{ levelLabel }}</span>
+          </div>
+        }
+        <mat-checkbox class="check-row" [checked]="remember" (change)="remember = !remember">
+          <span class="check-name">Remember my answer</span>
+          <span class="check-hint">For this agent and function{{ request.record ? ' on this record' : '' }}. You can take it back on the agent's page.</span>
+        </mat-checkbox>
+      </div>
+      <ng-container *ngTemplateOutlet="allowDeny"></ng-container>
+    </div>
+  }
+
+  @case ('network') {
+    <!-- Code an agent wants to run, and the hosts it would reach. -->
+    <div class="approval-card question-card code-card" role="group" [attr.aria-label]="who + ' wants to reach the network'">
+      <div class="approval-head">
+        <lucide-icon class="approval-icon" name="globe" [size]="20" aria-hidden="true"></lucide-icon>
+        <div class="approval-title-wrap">
+          <span class="approval-title">{{ who }} wants to reach {{ request.hosts?.join(', ') }}</span>
+          <span class="question-text">{{ request.purpose }}</span>
+        </div>
+      </div>
+      @if (request.code?.text) {
+        <button type="button" class="btn ghost sm approval-more" (click)="shown = !codeOpen" [attr.aria-expanded]="codeOpen">
+          <lucide-icon [name]="codeOpen ? 'chevron-up' : 'chevron-down'" [size]="16" aria-hidden="true"></lucide-icon>
+          {{ codeOpen ? 'Hide the code' : 'Show the code' }}{{ request.code.language ? ' · ' + request.code.language : '' }}
+        </button>
+        @if (codeOpen) {
+          <pre class="record-json code-text" tabindex="0" aria-label="The code"><code [innerHTML]="codeHtml"></code></pre>
+        }
+      }
+      <ng-container *ngTemplateOutlet="allowDeny"></ng-container>
+    </div>
+  }
+
+  @case ('question') {
+    <div class="approval-card question-card" role="group" [attr.aria-label]="'Question from ' + who">
+      <div class="approval-head">
+        <lucide-icon class="approval-icon" name="circle-question-mark" [size]="20" aria-hidden="true"></lucide-icon>
+        <div class="approval-title-wrap">
+          <span class="approval-title">{{ who }} asks</span>
+          @if (request.text) { <span class="question-text">{{ request.text }}</span> }
+        </div>
+      </div>
+      @if (request.table) {
+        <app-informative-table [title]="request.table.title || 'Table'" [data]="tableRows" [cols]="request.table.columns || []" [justTable]="true"></app-informative-table>
+      }
+      @if (chartData) {
+        <app-chart-viewer [data]="chartData" [title]="request.chart.title || ''" [chartType]="request.chart.type"></app-chart-viewer>
+      }
+      @if (request.expects === 'file') {
+        <!-- A document is the answer: chosen here, uploaded as the
+             person's own by the page, which answers with its record. -->
+        <div class="question-file">
+          <input #picker type="file" class="question-file-input" (change)="fileChosen($event)" aria-label="Attach a file" />
+          <button type="button" class="btn primary" [disabled]="busy" (click)="picker.click()">
+            <lucide-icon name="paperclip" [size]="16" aria-hidden="true"></lucide-icon>
+            Attach a file
+          </button>
+        </div>
+      } @else if (request.expects === 'choice') {
+        <div class="question-choices">
+          @for (choice of request.choices || []; track choice) {
+            <button type="button" class="btn" [disabled]="busy" (click)="answerWith(choice)">{{ choice }}</button>
+          }
+        </div>
+      } @else {
+        <form class="question-reply" (submit)="$event.preventDefault(); answerWith(reply)">
+          <input class="input" name="reply" [(ngModel)]="reply" maxlength="2000" aria-label="Your answer" placeholder="Your answer" />
+          <button type="submit" class="btn primary" [disabled]="busy || !reply.trim()">
+            <lucide-icon name="send" [size]="16" aria-hidden="true"></lucide-icon>
+            Send
+          </button>
+        </form>
+      }
+      <button type="button" class="btn ghost sm question-decline" [disabled]="busy" (click)="decline()">Decline</button>
+    </div>
+  }
+
+  @case ('form') {
+    <!-- A secret's empty fields, a site's sign-in, or an account to
+         connect: typed into the record, never onto the card. -->
+    <div class="approval-card question-card" role="group" [attr.aria-label]="request.label || 'A sign-in'">
+      <div class="approval-head">
+        <lucide-icon class="approval-icon" name="key-round" [size]="20" aria-hidden="true"></lucide-icon>
+        <div class="approval-title-wrap">
+          <span class="approval-title">{{ who }} needs {{ request.label || 'a sign-in' }}</span>
+          <span class="question-text">
+            {{ request.connect ? 'Connect the account it uses.' : 'Kept with your secrets, encrypted, and never shown to the assistant.' }}
+          </span>
+        </div>
+      </div>
+      <form class="cred-form" (submit)="$event.preventDefault(); submitForm()" autocomplete="off">
+        @for (ask of asked; track ask.key) {
+          <label class="cred-field">
+            <span class="cred-label">
+              {{ ask.label }}
+              @if (ask.form && !ask.form.remember) { <span class="cred-once">asked each time</span> }
+            </span>
+            @if (ask.options.length) {
+              <select class="input" [name]="ask.key" [(ngModel)]="typed[ask.key]" [attr.aria-label]="ask.label">
+                @for (option of ask.options; track option) { <option [value]="option">{{ option }}</option> }
+              </select>
+            } @else {
+              <input class="input" [name]="ask.key" [(ngModel)]="typed[ask.key]"
+                     [type]="ask.secret ? 'password' : ask.number ? 'number' : 'text'"
+                     [attr.autocomplete]="ask.secret ? 'new-password' : 'off'"
+                     [required]="ask.required" maxlength="2000" [attr.aria-label]="ask.label" />
+            }
+          </label>
+        }
+        <div class="approval-actions">
+          <button type="submit" class="btn primary" [disabled]="busy || !formReady">
+            <lucide-icon [name]="request.connect ? 'link' : 'lock'" [size]="16" aria-hidden="true"></lucide-icon>
+            {{ request.connect ? 'Connect' : 'Save' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+  @case ('skill') {
+    <!-- A skill the assistant offers to save: whole, as plain text —
+         interpolated, so nothing in it is rendered or run. -->
+    <div class="approval-card question-card skill-card" role="group" [attr.aria-label]="'Save ' + request.skill?.name + ' as a skill'">
+      <div class="approval-head">
+        <lucide-icon class="approval-icon" name="book-open" [size]="20" aria-hidden="true"></lucide-icon>
+        <div class="approval-title-wrap">
+          <span class="approval-title">The assistant offers to save a skill</span>
+          <span class="question-text">Saved as your own skill, visible only to you until you share it on the Skills page.</span>
+        </div>
+      </div>
+      <div class="approval-body">
+        <div class="approval-row">
+          <span class="approval-label">Name</span>
+          <span class="approval-value">{{ request.skill?.name }}</span>
+        </div>
+        <div class="approval-row">
+          <span class="approval-label">When to use</span>
+          <span class="approval-value">{{ request.skill?.description }}</span>
+        </div>
+      </div>
+      <button type="button" class="btn ghost sm approval-more" (click)="shown = !skillOpen" [attr.aria-expanded]="skillOpen">
+        <lucide-icon [name]="skillOpen ? 'chevron-up' : 'chevron-down'" [size]="16" aria-hidden="true"></lucide-icon>
+        {{ skillOpen ? 'Hide the skill' : 'Show the skill' }}
+      </button>
+      @if (skillOpen) {
+        <pre class="record-json code-text skill-text" tabindex="0" aria-label="The skill's instructions">{{ request.skill?.text }}</pre>
+      }
+      <ng-container *ngTemplateOutlet="saveDecline; context: { yes: 'Save skill', no: 'Don’t save' }"></ng-container>
+    </div>
+  }
+
+  @case ('memory') {
+    <!-- A fact the assistant offers to keep, word for word. -->
+    <div class="approval-card question-card" role="group" aria-label="Remember this about you">
+      <div class="approval-head">
+        <lucide-icon class="approval-icon" name="brain-circuit" [size]="20" aria-hidden="true"></lucide-icon>
+        <div class="approval-title-wrap">
+          <span class="approval-title">The assistant offers to remember this</span>
+          <span class="question-text">Kept for your later chats. You can change or delete it on the Memory page.</span>
+        </div>
+      </div>
+      <div class="approval-body">
+        <div class="approval-row">
+          <span class="approval-label">It would remember</span>
+          <span class="approval-value">{{ request.text }}</span>
+        </div>
+      </div>
+      <ng-container *ngTemplateOutlet="saveDecline; context: { yes: 'Remember', no: 'Don’t remember' }"></ng-container>
+    </div>
+  }
+}
+
+<ng-template #allowDeny>
+  <div class="approval-actions">
+    <button type="button" class="btn" [disabled]="busy" (click)="allow(false)">
+      <lucide-icon name="x" [size]="16" aria-hidden="true"></lucide-icon>
+      Don't allow
+    </button>
+    <button type="button" class="btn primary" [disabled]="busy" (click)="allow(true)">
+      <lucide-icon name="check" [size]="16" aria-hidden="true"></lucide-icon>
+      Allow
+    </button>
+  </div>
+</ng-template>
+
+<ng-template #saveDecline let-yes="yes" let-no="no">
+  <div class="approval-actions">
+    <button type="button" class="btn" [disabled]="busy" (click)="save(false)">
+      <lucide-icon name="x" [size]="16" aria-hidden="true"></lucide-icon>
+      {{ no }}
+    </button>
+    <button type="button" class="btn primary" [disabled]="busy" (click)="save(true)">
+      <lucide-icon name="check" [size]="16" aria-hidden="true"></lucide-icon>
+      {{ yes }}
+    </button>
+  </div>
+</ng-template>

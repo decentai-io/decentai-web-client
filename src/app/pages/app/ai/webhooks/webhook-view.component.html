@@ -1,0 +1,128 @@
+<header class="webhook-head">
+  <div class="webhook-words">
+    <h2 class="webhook-title">{{ webhook.name }}</h2>
+    <p class="webhook-kind">
+      <span class="chip" [class.accent]="webhook.enabled">{{ webhook.enabled ? "On" : "Off" }}</span>
+      <span class="chip" *ngIf="webhook.require_signature">Signed</span>
+    </p>
+  </div>
+  <app-switch *ngIf="mayUpdate" label="On" [labelHidden]="true"
+              [matTooltip]="webhook.enabled ? 'On: calls are taken' : 'Off: calls are refused'"
+              [disabled]="busy" [ngModel]="webhook.enabled" (ngModelChange)="setEnabled.emit($event)"></app-switch>
+  <button class="icon-btn sm" type="button" aria-label="Close the webhook" (click)="closed.emit()">
+    <lucide-icon name="x" [size]="16" aria-hidden="true"></lucide-icon>
+  </button>
+</header>
+
+<p class="webhook-note" *ngIf="webhook.role === 'viewer'">
+  {{ webhook.owner?.name || 'A colleague' }} shared it with you. You see the calls it receives; its settings, its secret and its chat stay with them.
+</p>
+<p class="webhook-note" *ngIf="webhook.role === 'handed'">
+  {{ webhook.owner?.name || 'A colleague' }} is handing it to you. Accept it, and it is yours, with its chat.
+</p>
+
+<div class="webhook-actions" *ngIf="isOwner">
+  <button class="btn sm" type="button" *ngIf="mayUpdate" [disabled]="busy" (click)="edit.emit()">Edit</button>
+  <button class="btn sm" type="button" *ngIf="mayTest" [disabled]="busy" (click)="test.emit()">Send a test</button>
+  <button class="btn sm" type="button" *ngIf="mayShare" [disabled]="busy" (click)="share.emit()">Share</button>
+  <button class="btn sm" type="button" *ngIf="mayRotate" [disabled]="busy" (click)="rotate.emit()">Replace the secret</button>
+  <button class="btn sm" type="button" *ngIf="mayHandOver" [disabled]="busy" (click)="handOver.emit()">Hand over</button>
+  <button class="btn sm" type="button" *ngIf="mayWithdraw" [disabled]="busy" (click)="withdraw.emit()">Withdraw the hand-over</button>
+  <button class="btn ghost danger sm" type="button" *ngIf="mayDelete" [disabled]="busy" (click)="remove.emit()">Delete</button>
+</div>
+
+<app-segmented *ngIf="isOwner" label="What to show" [choices]="tabs" [(ngModel)]="tab"></app-segmented>
+
+<!-- ── Calls ───────────────────────────────────────────────────── -->
+<section aria-labelledby="webhook-runs-title" *ngIf="tab === 'executions'">
+  <div class="webhook-runs-head">
+    <h3 class="webhook-section" id="webhook-runs-title">Calls</h3>
+    <span class="webhook-runs-tools">
+      <a class="webhook-link" *ngIf="isOwner && webhook.chat_id" [routerLink]="['/ai/chats', webhook.chat_id]">Open the chat</a>
+      <button class="icon-btn sm" type="button" aria-label="Read the calls again" matTooltip="Refresh"
+              [disabled]="loading" (click)="load()">
+        <lucide-icon name="refresh-cw" [size]="16" aria-hidden="true"></lucide-icon>
+      </button>
+    </span>
+  </div>
+
+  <div *ngIf="loading && !executions.length" aria-busy="true" aria-label="Loading calls">
+    <span class="sk sk-field"></span>
+  </div>
+  <p class="form-notice is-error" role="alert" *ngIf="problem">{{ problem }}</p>
+  <p class="webhook-note" *ngIf="!loading && !problem && !executions.length">
+    Nothing has arrived yet. Calls show here as they arrive, refused ones too.
+  </p>
+
+  <ul class="webhook-runs" *ngIf="executions.length">
+    <li *ngFor="let run of executions">
+      <p class="webhook-run">
+        <span class="run-when" [matTooltip]="whenInFull(run)">{{ when(run) }}</span>
+        <span class="chip" [class.accent]="run.outcome === 'accepted'" [class.danger]="run.outcome === 'refused'">
+          {{ run.outcome === "accepted" ? "Accepted" : run.outcome === "test" ? "Test" : "Refused" }}
+        </span>
+        <span class="run-took" *ngIf="run.outcome === 'refused' && run.status">HTTP {{ run.status }}</span>
+      </p>
+      <p class="run-why" *ngIf="run.reason">{{ run.reason }}</p>
+    </li>
+  </ul>
+  <button class="btn sm" type="button" *ngIf="more" [disabled]="loading" (click)="load(true)">Older calls</button>
+  <p class="webhook-note" *ngIf="executions.length">
+    Newest first, kept for 30 days. What its chat did with each is in the chat.
+  </p>
+</section>
+
+<!-- ── Settings: the owner's ───────────────────────────────────── -->
+<section aria-labelledby="webhook-settings-title" *ngIf="tab === 'settings' && isOwner">
+  <div class="webhook-runs-head">
+    <h3 class="webhook-section" id="webhook-settings-title">Settings</h3>
+    <button class="btn sm" type="button" *ngIf="mayUpdate" [disabled]="busy" (click)="edit.emit()">Edit</button>
+  </div>
+
+  <dl class="webhook-facts">
+    <dt>Address</dt>
+    <dd class="webhook-copy">
+      <code class="webhook-code">{{ url }}</code>
+      <button class="btn sm" type="button" (click)="copy('url')">{{ copied === "url" ? "Copied" : "Copy" }}</button>
+    </dd>
+
+    <dt>Example call</dt>
+    <dd>
+      <div class="webhook-copy">
+        <pre class="webhook-code webhook-curl">{{ curl }}</pre>
+        <button class="btn sm" type="button" (click)="copy('curl')">{{ copied === "curl" ? "Copied" : "Copy" }}</button>
+      </div>
+      <span class="webhook-aside">
+        Set <code class="webhook-code">WEBHOOK_SECRET</code> to the secret first, or put the secret in its place.
+        Lost it? Replace the secret to get a new one. A body is JSON of at most 64 KiB, at most 60 calls a minute.
+      </span>
+    </dd>
+
+    <dt>Signature</dt>
+    <dd>{{ webhook.require_signature ? "Required: each call is signed with the secret (HMAC-SHA256)." : "Not required." }}</dd>
+
+    <dt>Instruction</dt>
+    <dd class="webhook-prompt">{{ webhook.instruction }}</dd>
+
+    <dt>Fields</dt>
+    <dd>
+      <span *ngIf="!fields.length">None: a caller posts an empty object.</span>
+      <ul class="webhook-fields" *ngIf="fields.length">
+        <li *ngFor="let field of fields">
+          <code class="webhook-code">{{ field.name }}</code>
+          <span class="webhook-aside">{{ typeWord(field.type) }}{{ field.required ? ", required" : "" }}</span>
+          <span class="webhook-field-what" *ngIf="field.description">{{ field.description }}</span>
+        </li>
+      </ul>
+    </dd>
+
+    <dt>Trust level</dt>
+    <dd>{{ trustWord }}</dd>
+
+    <dt>Chat</dt>
+    <dd>
+      <a class="webhook-link" [routerLink]="['/ai/chats', webhook.chat_id]">Open the chat</a>
+      <span class="webhook-aside">Its model and agents are the chat's own settings.</span>
+    </dd>
+  </dl>
+</section>

@@ -1,0 +1,156 @@
+<app-page
+  title="Skills"
+  sentence="Instructions you write for the assistant, which it reads when they apply to a conversation."
+  [wide]="true"
+>
+  <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
+  <p class="form-notice" role="status" *ngIf="notice">{{ notice }}</p>
+
+  <!-- Skills another member handed over: theirs until accepted. -->
+  <app-list label="Handed to you" *ngIf="handed.length">
+    <app-row *ngFor="let skill of handed">
+      <lucide-icon rowMark name="sparkles" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
+      <span rowName>{{ skill.name }}</span>
+      <ng-container rowMeta>
+        <span class="skill-row-summary">{{ skill.description }}</span>
+        <span class="skill-row-facts"><span>{{ handedBy(skill) }} is handing it to you</span></span>
+      </ng-container>
+      <button rowState class="btn sm" type="button" [disabled]="busyId === skill.id" (click)="accept(skill, false)">Decline</button>
+      <button rowState class="btn primary sm" type="button" [disabled]="busyId === skill.id" (click)="accept(skill, true)">Accept</button>
+    </app-row>
+  </app-list>
+
+  <div class="side-layout" [class.has-opened]="opened">
+    <app-filter-column
+      *ngIf="skills.length && !opened"
+      label="Filter skills"
+      [groups]="filters"
+      [chosen]="{ show: show }"
+      (choose)="go({ show: $event.value === 'all' ? '' : $event.value })"
+    ></app-filter-column>
+
+    <app-list label="Skills" [loading]="loading" [foot]="foot" [class.side-alone]="!skills.length">
+      <ng-container listToolbar *ngIf="skills.length">
+        <span class="search-field toolbar-search">
+          <lucide-icon name="search" [size]="16" aria-hidden="true"></lucide-icon>
+          <input
+            class="input"
+            type="search"
+            placeholder="Search skills"
+            aria-label="Search skills"
+            [ngModel]="query"
+            (ngModelChange)="go({ q: $event })"
+          />
+        </span>
+        <app-select
+          class="toolbar-sort"
+          label="Sort skills"
+          [choices]="sortChoices"
+          [ngModel]="sort"
+          (ngModelChange)="go({ sort: $event === 'written' ? '' : $event })"
+        ></app-select>
+        <!-- The example to start from is offered on the editor's page. -->
+        <button class="icon-btn primary toolbar-end" type="button" *ngIf="canCreate" (click)="startCreate()"
+                aria-label="Write a skill" matTooltip="Write a skill">
+          <lucide-icon name="plus" [size]="18" aria-hidden="true"></lucide-icon>
+        </button>
+      </ng-container>
+
+      <app-row *ngFor="let skill of shownSkills" [class.is-current]="skill.id === openId">
+        <lucide-icon rowMark name="sparkles" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
+        <!-- The name is the way in: reading a skill is not editing it. -->
+        <a rowName class="skill-row-title" [routerLink]="['/data/skills', skill.id]" queryParamsHandling="preserve"
+           [attr.aria-current]="skill.id === openId ? 'true' : null">{{ skill.name }}</a>
+        <ng-container rowMeta>
+          <span class="skill-row-summary">{{ skill.description }}</span>
+          <span class="skill-row-facts">
+            <span *ngIf="author(skill)">{{ author(skill) }}</span>
+            <span *ngIf="written(skill)" [matTooltip]="writtenInFull(skill)">written {{ written(skill) }}</span>
+            <span class="chip" [matTooltip]="sharing(skill).names">{{ sharing(skill).word }}</span>
+            <span class="chip warn" *ngIf="skill.handing as handing">Offered to {{ share.personName(handing.to) || "a colleague" }}</span>
+          </span>
+        </ng-container>
+
+        <button rowActions class="icon-btn sm" type="button"
+                [attr.aria-label]="'More for ' + skill.name" [matMenuTriggerFor]="skillMenu"
+                [matMenuTriggerData]="{ skill: skill }">
+          <lucide-icon name="ellipsis-vertical" [size]="16" aria-hidden="true"></lucide-icon>
+        </button>
+      </app-row>
+
+      <app-empty
+        *ngIf="!loading && !skills.length"
+        icon="sparkles"
+        title="No skills yet"
+        line="The assistant works without them. A skill is how you teach it something your organization does its own way: a format, a rule, a method it should follow without being reminded."
+      >
+        <ng-container *ngIf="canCreate">
+          <!-- Icons alone, as on the Data pages' toolbars; the words are
+               their tooltips, and read out. -->
+          <button class="icon-btn primary" type="button" (click)="startCreate()"
+                  aria-label="Write a skill" matTooltip="Write a skill">
+            <lucide-icon name="plus" [size]="18" aria-hidden="true"></lucide-icon>
+          </button>
+          <button class="icon-btn" type="button" (click)="startCreate(true)"
+                  aria-label="Start from an example" matTooltip="Start from an example">
+            <lucide-icon name="file-text" [size]="18" aria-hidden="true"></lucide-icon>
+          </button>
+        </ng-container>
+      </app-empty>
+      <app-empty
+        *ngIf="skills.length && !shownSkills.length"
+        icon="search-x"
+        title="No skill matches"
+        line="Try another search, or show all of them."
+      >
+        <button class="btn" type="button" (click)="go({ q: '', show: '' })">Show all</button>
+      </app-empty>
+    </app-list>
+
+    <!-- The skill the address names: beside the list on a wide screen,
+         in its place on a narrow one. -->
+    <app-skill-view
+      class="side-opened"
+      *ngIf="opened as skill"
+      [skill]="skill"
+      [author]="author(skill)"
+      [sharing]="sharing(skill).word"
+      (closed)="closeOpened()"
+    >
+      <button skillActions class="btn sm" type="button" *ngIf="mayChange(skill)" (click)="startEdit(skill)">Edit</button>
+      <button skillActions class="icon-btn sm" type="button" *ngIf="mayChange(skill)"
+              [attr.aria-label]="'More for ' + skill.name" [matMenuTriggerFor]="skillMenu"
+              [matMenuTriggerData]="{ skill: skill, opened: true }">
+        <lucide-icon name="ellipsis-vertical" [size]="16" aria-hidden="true"></lucide-icon>
+      </button>
+    </app-skill-view>
+  </div>
+
+  <mat-menu #skillMenu="matMenu" xPosition="before">
+    <ng-template matMenuContent let-skill="skill" let-opened="opened">
+      <a mat-menu-item *ngIf="!opened" [routerLink]="['/data/skills', skill.id]" queryParamsHandling="preserve">Read</a>
+      <ng-container *ngIf="mayChange(skill)">
+        <button mat-menu-item *ngIf="!opened" (click)="startEdit(skill)">Edit</button>
+        <button mat-menu-item (click)="openShare(skill)">Share</button>
+        <button mat-menu-item *ngIf="!skill.handing" (click)="requestTransfer(skill)">Hand over</button>
+        <button mat-menu-item *ngIf="skill.handing" [disabled]="busyId === skill.id" (click)="withdraw(skill)">Withdraw the hand-over</button>
+        <button mat-menu-item [disabled]="busyId === skill.id" (click)="askDelete(skill)">Delete</button>
+      </ng-container>
+    </ng-template>
+  </mat-menu>
+
+  <app-share-dialog *ngIf="share.ref"
+                    [share]="share"
+                    heading="Who can use this skill"
+                    note="The chats of the people you share with can read it when it applies."
+                    [allowOrganization]="!!share.peers.everyone"
+                    [problem]="shareProblem"
+                    (save)="saveShare()" (closed)="share.close()">
+  </app-share-dialog>
+
+  <app-transfer-dialog *ngIf="transferTarget as item"
+                       [subject]="'the skill “' + item.name + '”'" [ownerId]="item.created_by"
+                       note="Once they accept, it is theirs to change and delete. Everyone it is shared with keeps seeing it."
+                       [busy]="transferring" (chosen)="transfer($event)" (closed)="closeTransfer()">
+  </app-transfer-dialog>
+</app-page>

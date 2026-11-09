@@ -1,0 +1,70 @@
+<p class="form-section-note fn-intro">
+  Everything this agent can be asked to do, and the level of each. A function runs without
+  asking when its level is at or below the chat's trust level, and asks first when it is above.
+  Who may call it is the organization's policy.
+</p>
+
+<!-- The legend covers only the levels this agent reaches: four rows to
+     explain two is noise. -->
+<dl class="fn-legend" *ngIf="summary.length">
+  <ng-container *ngFor="let level of summary">
+    <dt>
+      <span class="lvl" [attr.data-level]="level.name"><span class="lvl-dot"></span>{{ level.count }} {{ level.name }}</span>
+    </dt>
+    <dd>{{ meanings[level.name] }}</dd>
+  </ng-container>
+</dl>
+
+<ul class="fn-rows" *ngIf="functions.length">
+  <li class="fn-row" *ngFor="let item of functions">
+    <div class="fn-row-head">
+      <code class="fn-name">{{ item.fn.id }}</code>
+      <span *ngIf="item.fn.name && item.fn.name !== item.fn.id">{{ item.fn.name }}</span>
+      <span class="lvl" [attr.data-level]="levelLabel(item.fn.level)" [matTooltip]="'Level ' + item.fn.level">
+        <span class="lvl-dot"></span>{{ levelLabel(item.fn.level) }}
+      </span>
+      <span class="chip" *ngIf="item.fn.schedulable">can be scheduled</span>
+      <span class="fn-timeout">{{ item.fn.timeout_seconds || 60 }} s to finish</span>
+    </div>
+
+    <p class="fn-about" *ngIf="item.fn.description">{{ item.fn.description }}</p>
+
+    <!-- What it takes, calls, is scoped by and returns: behind one
+         disclosure, since a list is read by name first. -->
+    <details class="fold fn-more" [open]="expanded"
+             *ngIf="item.params.length || item.fn.calls?.length || item.scopes.length || item.returns.length">
+      <summary>What it takes and returns</summary>
+      <dl class="fn-facts">
+        <ng-container *ngIf="item.params.length">
+          <dt>Takes</dt>
+          <dd>
+            <code *ngFor="let param of item.params" [class.is-required]="param.required"
+                  [matTooltip]="param.required ? 'Required' : 'Optional'">{{ param.name }}<em>{{ param.type }}</em></code>
+          </dd>
+        </ng-container>
+        <!-- What it may ask of the runtime: the model, the chat's person,
+             its records, a host opened for one call. -->
+        <ng-container *ngIf="item.fn.calls?.length">
+          <dt>Calls</dt>
+          <dd><code *ngFor="let call of item.fn.calls">{{ call }}</code></dd>
+        </ng-container>
+        <!-- A policy can narrow a scope to particular values; this says
+             which input carries the value it is narrowed on. -->
+        <ng-container *ngIf="item.scopes.length">
+          <dt>Scoped by</dt>
+          <dd>
+            <span class="fn-scope" *ngFor="let scope of item.scopes">
+              <code>{{ scope.name }}</code> from <code>{{ scope.from }}</code><ng-container *ngIf="!scope.required"> (optional)</ng-container>
+            </span>
+          </dd>
+        </ng-container>
+        <ng-container *ngIf="item.returns.length">
+          <dt>Returns</dt>
+          <dd><code *ngFor="let field of item.returns">{{ field.name }}<em>{{ field.type }}</em></code></dd>
+        </ng-container>
+      </dl>
+    </details>
+  </li>
+</ul>
+
+<app-empty *ngIf="!functions.length" icon="square-terminal" title="This agent declares no functions"></app-empty>

@@ -1,0 +1,51 @@
+<h2 mat-dialog-title>Agents and servers</h2>
+
+<mat-dialog-content>
+  @if (isLoading) {
+    <div class="form" aria-busy="true" aria-label="Loading installed agents">
+      <span class="sk sk-field"></span>
+      <span class="sk sk-field"></span>
+    </div>
+  } @else if (agents.length === 0 && servers.length === 0) {
+    <app-empty
+      icon="bot"
+      title="No agents are available to this chat"
+      line="An administrator installs agents, and your organization's policies say which you may use."
+    ></app-empty>
+  } @else {
+    <p class="dialog-note">Only what is checked can work in this chat.</p>
+    <mat-checkbox class="check-row" [checked]="agentChoice.all" (change)="allAgents($event.checked)">
+      <span class="check-name">Every agent you may use</span>
+      <span class="check-hint">Those installed later too.</span>
+    </mat-checkbox>
+    @for (agent of agents; track agent.agent_id) {
+      <mat-checkbox class="check-row" [checked]="agentChoice.has(agent.agent_id)" [disabled]="agentChoice.all"
+                    (change)="agentChoice.toggle(agent.agent_id)">
+        <span class="check-name">{{ agent.name }}</span>
+        @if (agent.manifest.agent.description) { <span class="check-hint">{{ agent.manifest.agent.description }}</span> }
+      </mat-checkbox>
+    }
+
+    <!-- The person's own MCP servers, and those shared with them. -->
+    @if (servers.length) {
+      <p class="form-section-title dialog-section">MCP servers</p>
+      <mat-checkbox class="check-row" [checked]="serverChoice.all" (change)="allServers($event.checked)">
+        <span class="check-name">Every server you may use</span>
+        <span class="check-hint">Those added later too.</span>
+      </mat-checkbox>
+      @for (server of servers; track server.id) {
+        <mat-checkbox class="check-row" [checked]="serverChoice.has(server.id)" [disabled]="serverChoice.all"
+                      (change)="serverChoice.toggle(server.id)">
+          <span class="check-name">{{ server.name }}</span>
+          <span class="check-hint">{{ server.address }}</span>
+        </mat-checkbox>
+      }
+    }
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions>
+  <button class="btn ghost dialog-aside" type="button" (click)="reset()">Reset to my defaults</button>
+  <button class="btn" type="button" (click)="close()">Cancel</button>
+  <button class="btn primary" type="button" [disabled]="isLoading" (click)="save()">Save</button>
+</mat-dialog-actions>

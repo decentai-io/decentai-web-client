@@ -1,0 +1,289 @@
+/* The Nodes page. The lists, rows, chips, fields, the switch of views
+   and the dialogs are the shared ones; here are the counts at the
+   head, the line of views with how fresh it is, a group of nodes under
+   its organization, what a row says, and the PEM box. */
+:host {
+  display: block;
+}
+
+/* ── The counts ───────────────────────────────────────────────────── */
+.nodes-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.nodes-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+}
+
+.nodes-tile dt {
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
+}
+
+.nodes-tile dd {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nodes-tile-number {
+  color: var(--ink);
+  font-size: var(--t-xl);
+  font-weight: 600;
+  line-height: var(--lh-xl);
+  font-variant-numeric: tabular-nums;
+}
+
+.nodes-tile-of {
+  color: var(--ink-3);
+  font-size: var(--t-md);
+  font-weight: 400;
+}
+
+.nodes-tile-note {
+  color: var(--ink-3);
+  font-size: var(--t-xs);
+  line-height: var(--lh-xs);
+}
+
+.nodes-tile-note.is-warn {
+  color: var(--warn-ink);
+}
+
+/* As tall as a number and its note, so the tiles do not move when the
+   counts arrive. */
+.nodes-tile-sk {
+  display: block;
+  width: 48px;
+  height: calc(var(--lh-xl) + var(--lh-xs) + 2px);
+}
+
+/* ── The views, and how fresh ─────────────────────────────────────── */
+.nodes-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 20px;
+}
+
+.nodes-updated {
+  margin-left: auto;
+  color: var(--ink-3);
+  font-size: var(--t-xs);
+  line-height: var(--lh-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.nodes-updated.is-warn {
+  color: var(--warn-ink);
+}
+
+.is-spinning {
+  animation: spin 0.9s linear infinite;
+}
+
+.nodes-bar + .form-notice,
+.form-notice + .form-notice {
+  margin-bottom: 16px;
+}
+
+.nodes-view-note {
+  margin-bottom: 16px;
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
+}
+
+/* Three filters beside the search on one line where the page is wide. */
+.nodes-filter {
+  flex: 0 1 152px;
+  min-width: 120px;
+}
+
+.nodes-filter.is-wide {
+  flex-basis: 184px;
+}
+
+/* ── A group of nodes, under the organization it serves ───────────── */
+.nodes-group + .nodes-group {
+  margin-top: 20px;
+}
+
+.nodes-group-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 0 0 8px;
+  padding: 0 8px;
+}
+
+.nodes-group-name {
+  color: var(--ink);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  line-height: var(--lh-sm);
+}
+
+.nodes-group-count {
+  color: var(--ink-3);
+  font-size: var(--t-xs);
+  font-weight: 400;
+  line-height: var(--lh-xs);
+}
+
+.nodes-group-rows {
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+}
+
+/* ── What a row says ──────────────────────────────────────────────── */
+.node-row {
+  cursor: pointer;
+}
+
+.node-row.is-away ::ng-deep .row-mark {
+  background: var(--surface-2);
+  color: var(--ink-3);
+}
+
+.node-open {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.node-open:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.node-facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 0;
+}
+
+/* A dot between the facts, none before the first of a line's. */
+.node-facts > span + span::before {
+  content: '·';
+  margin: 0 6px;
+  color: var(--ink-3);
+}
+
+.node-note {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.node-chevron {
+  color: var(--ink-3);
+}
+
+/* ── An authority's row ───────────────────────────────────────────── */
+.authority-row.is-revoked ::ng-deep .row-mark {
+  background: var(--surface-2);
+  color: var(--ink-3);
+}
+
+.authority-row.is-pointed {
+  background: var(--accent-wash);
+}
+
+.authority-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.authority-copy {
+  margin: -4px 0;
+}
+
+.authority-facts {
+  margin-top: 2px;
+}
+
+.authority-nodes {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.authority-nodes:hover:not(:disabled) {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.authority-nodes:disabled {
+  color: var(--ink-3);
+  cursor: default;
+}
+
+.authority-pem {
+  min-height: 140px;
+  resize: vertical;
+  font-size: var(--t-xs);
+}
+
+/* ── Where chats run ──────────────────────────────────────────────── */
+.nodes-own {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+@media (max-width: 700px) {
+  .nodes-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .nodes-tile {
+    padding: 12px;
+  }
+
+  .nodes-bar app-segmented {
+    flex: 1 1 100%;
+  }
+
+  .nodes-updated {
+    margin-left: 0;
+  }
+
+  .nodes-filter {
+    flex: 1 1 140px;
+  }
+}

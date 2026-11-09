@@ -1,0 +1,13 @@
+<app-entry-card [title]="title" [sentence]="sentence" [busy]="busy">
+  <form class="form" (ngSubmit)="connect()">
+    <app-field label="Engine address"
+               help="Where your organization's DecentAI engine is: https://decentai.example.com, or http://localhost:4280 on this computer."
+               [error]="(tried ? serverProblem : '') || problem">
+      <input class="input" type="text" name="server" inputmode="url" autocomplete="url" autofocus
+             spellcheck="false" autocapitalize="off" placeholder="https://decentai.example.com"
+             [(ngModel)]="server" [disabled]="busy" />
+    </app-field>
+    <button class="btn primary connect-wide" type="submit" [disabled]="busy">{{ busy ? "Checking…" : "Connect" }}</button>
+    <button class="connect-link" type="button" *ngIf="changing" (click)="cancel()" [disabled]="busy">Keep the current engine</button>
+  </form>
+</app-entry-card>

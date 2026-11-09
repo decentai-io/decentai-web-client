@@ -1,0 +1,87 @@
+<div class="form" *ngIf="loading" aria-busy="true" aria-label="Loading chat defaults">
+  <span class="sk sk-field"></span>
+  <span class="sk sk-field"></span>
+  <span class="sk sk-field"></span>
+</div>
+
+<app-empty *ngIf="loadError" icon="cloud-off" title="Chat defaults could not be loaded" [line]="loadError">
+  <button class="btn" type="button" (click)="load()">Try again</button>
+</app-empty>
+
+<ng-container *ngIf="!loading && !loadError">
+  <div class="form-section">
+    <app-field *ngIf="canChooseModel" label="Model" help="Remembered from the model you last picked in a chat.">
+      <app-select [choices]="modelChoices" [(ngModel)]="draft.value.model"></app-select>
+    </app-field>
+
+    <app-field label="Effort" help="How hard the model is asked to think.">
+      <app-select [choices]="effortChoices" [(ngModel)]="draft.value.effort"></app-select>
+    </app-field>
+
+    <app-field
+      label="Trust level"
+      help="How much a chat may do without asking."
+      [link]="{ text: 'What no agent may reach at all is under Safety.', to: '/settings/safety' }"
+    >
+      <app-select [choices]="trustChoices" [(ngModel)]="draft.value.trust"></app-select>
+    </app-field>
+
+    <app-field label="Turn budget" help="How many turns the assistant may take on one message before it stops.">
+      <app-select [choices]="turnChoices" [(ngModel)]="draft.value.turn_budget"></app-select>
+    </app-field>
+
+    <app-field label="Agents and servers" help="Every one also takes in those installed or added later.">
+      <span class="choose-line">
+        {{ listWords(draft.value.agents, 'agent') }} · {{ listWords(draft.value.mcp_servers, 'server') }}
+        <button class="btn ghost sm" type="button" (click)="chooseReach()">Choose…</button>
+      </span>
+    </app-field>
+
+    <app-field label="Skills" help="Every one also takes in those written later.">
+      <span class="choose-line">
+        {{ listWords(draft.value.skills, 'skill') }}
+        <button class="btn ghost sm" type="button" (click)="chooseSkills()">Choose…</button>
+      </span>
+    </app-field>
+  </div>
+
+  <!-- Not one of the saved defaults: this device's own, kept as it is set. -->
+  <div class="form-section" *ngIf="dictationChoices.length || readingChoices.length">
+    <h2 class="form-section-title">Speech on this device</h2>
+    <p class="form-section-note">Kept in this browser. {{ speechNote }}</p>
+    <app-field label="Writing down what you say" [help]="dictationHelp" *ngIf="dictationChoices.length">
+      <app-segmented
+        label="Writing down what you say"
+        [choices]="dictationChoices"
+        [ngModel]="dictationBy"
+        (ngModelChange)="setDictation($event)"
+      ></app-segmented>
+    </app-field>
+    <app-field label="Reading replies aloud" [help]="readingHelp" *ngIf="readingChoices.length">
+      <app-segmented
+        label="Reading replies aloud"
+        [choices]="readingChoices"
+        [ngModel]="readingBy"
+        (ngModelChange)="setReading($event)"
+      ></app-segmented>
+    </app-field>
+  </div>
+
+  <div class="form-section" *ngIf="readAloud.available">
+    <app-switch
+      label="Read replies aloud"
+      help="On this device only."
+      [note]="readAloudNote"
+      [ngModel]="readAloud.automatic"
+      (ngModelChange)="setReadAloud($event)"
+    ></app-switch>
+  </div>
+
+  <app-save-bar
+    [dirty]="draft.dirty"
+    [saving]="saving"
+    [error]="saveError"
+    (save)="save()"
+    (discard)="draft.discard()"
+  ></app-save-bar>
+</ng-container>

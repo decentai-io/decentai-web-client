@@ -1,0 +1,12 @@
+/* The source form, in the dialog shell: the fields, the switch and the
+   buttons are the shared ones. Here is the one part that is not a
+   field. */
+.source-needs {
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
+}
+
+.source-needs p {
+  margin-top: 8px;
+}
