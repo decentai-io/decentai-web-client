@@ -5,7 +5,7 @@
  * noise: a table becomes a run of bars and dashes, a link its address,
  * a heading a word with no pause after it. This turns the marks into
  * what they mean before anything is spoken — the same here and on the
- * phone (decentai-mobile, src/lib/speakable.ts).
+ * phone (decentai-mobile-client, src/lib/speakable.ts).
  *
  * - A table is read row by row, each value with its column's name:
  *   "Row 1: Name, Ada; Role, Engineer." Past TABLE_ROWS rows it says
