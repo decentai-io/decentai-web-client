@@ -122,6 +122,34 @@ describe('ModelProvidersComponent', () => {
     expect(component.blankValues).toEqual({ 'aws-region': 'eu-central-1' });
   });
 
+  it('asks Azure for its endpoint whole, as the portal shows it, and keeps it as pasted', async () => {
+    const calls: Record<string, any> = {};
+    const component = create([], calls);
+    const azure = { id: 'azure', name: 'Azure', protocol: 'openai',
+                    endpoint: 'https://<azure-resource-name>.openai.azure.com/openai/v1' } as any;
+    component.providers = [...catalog, azure];
+    component.startCreate();
+    component.selectProvider(azure);
+
+    expect(component.asksEndpoint).toBeTrue();
+    expect(component.blanks).toEqual([]);
+    expect(component.draft.address).toBe('');
+    expect(component.blocker).toBe('Paste your endpoint.');
+
+    component.setEndpoint('https://foundry-dirir.cognitiveservices.azure.com/openai/v1/');
+    component.draft.key = 'k';
+    component.draft.models = ['gpt-5.6-sol'];
+    await component.save();
+    expect(calls['created'][0].address).toBe('https://foundry-dirir.cognitiveservices.azure.com/openai/v1/');
+    expect(calls['created'][0].name).toBe('Azure');
+
+    component.startEdit(connection('Azure', {
+      provider: 'azure', address: 'https://foundry-dirir.cognitiveservices.azure.com/openai/v1/',
+    }));
+    expect(component.blanks).toEqual([]);
+    expect(component.draft.address).toBe('https://foundry-dirir.cognitiveservices.azure.com/openai/v1/');
+  });
+
   it('saves a server of one’s own with no key, and names it after where it is', async () => {
     const calls: Record<string, any> = {};
     const component = create([], calls);

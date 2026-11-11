@@ -254,11 +254,6 @@ export class ModelProvidersComponent extends DataPageBase {
       help: 'Where the models are called: us-central1, europe-west4, … or global.',
       example: 'us-central1',
     },
-    'azure-resource-name': {
-      label: 'Azure resource name',
-      help: 'The first part of your resource’s endpoint, as the Azure portal shows it.',
-      example: 'my-resource',
-    },
     'cloudflare-account-id': {
       label: 'Cloudflare account ID',
       help: 'In the Cloudflare dashboard, on the Workers AI overview.',
@@ -385,9 +380,14 @@ export class ModelProvidersComponent extends DataPageBase {
     this.choosing = false;
     this.draft = { ...this.blankDraft(), provider: provider.id };
     this.resetEditor(true);
-    this.endpointTemplate = /<[^>]+>/.test(provider.endpoint) ? provider.endpoint : '';
-    for (const blank of this.blanks) this.blankValues[blank] = this.blankDefaults[blank] ?? '';
-    this.draft.address = this.filled(provider.endpoint);
+    if (this.asksEndpoint) {
+      this.endpointTemplate = '';
+      this.draft.address = '';
+    } else {
+      this.endpointTemplate = /<[^>]+>/.test(provider.endpoint) ? provider.endpoint : '';
+      for (const blank of this.blanks) this.blankValues[blank] = this.blankDefaults[blank] ?? '';
+      this.draft.address = this.filled(provider.endpoint);
+    }
     this.draft.name = this.freeName(provider.endpoint ? provider.name : '');
   }
 
@@ -427,6 +427,13 @@ export class ModelProvidersComponent extends DataPageBase {
       (mark, blank) => (this.blankValues[blank] ?? '').trim() || mark);
   }
 
+  /** Whether the address is asked for whole, as the provider's portal
+   *  shows it: Azure's endpoint is the customer's own, on one of several
+   *  hosts, so it is pasted, not put together from a name. */
+  get asksEndpoint(): boolean {
+    return this.chosen?.id === 'azure';
+  }
+
   setName(name: string): void {
     this.draft.name = name;
     this.nameIsAuto = false;
@@ -458,7 +465,7 @@ export class ModelProvidersComponent extends DataPageBase {
     // it is shown as those parts. One that is not — a gateway — stays an
     // address.
     const template = this.chosen?.endpoint ?? '';
-    const parts = /<[^>]+>/.test(template) ? this.blanksIn(template, connection.address) : null;
+    const parts = /<[^>]+>/.test(template) && !this.asksEndpoint ? this.blanksIn(template, connection.address) : null;
     if (parts) {
       this.endpointTemplate = template;
       this.blankValues = parts;
@@ -487,7 +494,9 @@ export class ModelProvidersComponent extends DataPageBase {
     if (!this.draft.provider) return at('provider', 'Choose a provider.');
     const blank = this.blanks.find((name) => !(this.blankValues[name] ?? '').trim());
     if (blank) return at(`blank:${blank}`, `Enter your ${this.blankLabel(blank)}.`);
-    if (!this.draft.address.trim()) return at('address', 'Enter the address the server answers at.');
+    if (!this.draft.address.trim()) {
+      return at('address', this.asksEndpoint ? 'Paste your endpoint.' : 'Enter the address the server answers at.');
+    }
     if (/[<>]/.test(this.draft.address)) {
       return at('address', 'Fill in the address: replace each <...> with your own account’s value.');
     }
