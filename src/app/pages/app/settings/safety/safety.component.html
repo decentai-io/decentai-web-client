@@ -64,11 +64,6 @@
     <app-field label="Webhooks and notifications outside" [help]="webhooksMeaning">
       <app-segmented [choices]="webhooks" [disabled]="!canEdit" [(ngModel)]="draft.value.webhooks"></app-segmented>
     </app-field>
-    <app-field label="The most a webhook's chat may do without asking"
-               help="A webhook runs with nobody there to ask. Agents act up to this level on their own; above it, they wait for the person.">
-      <app-choice-cards label="The most a webhook's chat may do without asking" [choices]="trust" [disabled]="!canEdit"
-                        [(ngModel)]="draft.value.webhook_trust"></app-choice-cards>
-    </app-field>
   </section>
 
   <section class="form-section">

@@ -47,7 +47,7 @@ type Placement = OrgSettings['runtimes'];
 /** What the token form holds. */
 interface TokenForm {
   kind: 'runtime' | 'sandbox';
-  /** How many nodes it may enroll; '' for any number. */
+  /** How many nodes it may enroll, as typed. */
   uses: string;
   /** How many days it enrolls. */
   days: string;
@@ -675,8 +675,8 @@ export class NodesComponent extends DataPageBase implements OnInit, OnDestroy {
    *  so the form refuses before the round trip. */
   private get missingField(): { field: string; message: string } | null {
     const uses = this.form.uses.trim();
-    if (uses && !(/^\d+$/.test(uses) && Number(uses) >= 1)) {
-      return { field: 'uses', message: 'A whole number of nodes, 1 or more; empty for any number.' };
+    if (!(/^\d+$/.test(uses) && Number(uses) >= 1)) {
+      return { field: 'uses', message: 'A whole number of nodes, 1 or more.' };
     }
     const days = Number(this.form.days);
     if (!(days > 0 && days <= 365)) return { field: 'days', message: 'More than 0 days, and 365 at most.' };
@@ -702,7 +702,7 @@ export class NodesComponent extends DataPageBase implements OnInit, OnDestroy {
       const form = this.form;
       const result = await this.service.createToken({
         kind: form.kind,
-        uses: form.uses.trim() ? Number(form.uses) : null,
+        uses: Number(form.uses),
         days: Number(form.days),
         labels: form.labels.split(',').map((label) => label.trim()).filter(Boolean),
         shared: this.operator && form.scope === 'shared',

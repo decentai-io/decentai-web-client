@@ -34,7 +34,9 @@ interface Asked {
  *
  * - approval: to let an agent's call through, its level above the chat's
  *   trust or a policy that says ask; the answer may be remembered for the
- *   agent, its function and the record.
+ *   agent, its function and the record. Or a person's MCP tool, its level
+ *   above the chat's trust: shown with its inputs, and never remembered,
+ *   since the tool's own level says whether it asks.
  * - network: the code an agent wants to run, what it is for, and the
  *   hosts it would reach.
  * - question: what an agent's `chat` expects: words, a choice, or a file.
@@ -76,7 +78,8 @@ export class ChatApprovalCardComponent {
   }
 
   get who(): string {
-    return this.agentName || this.card?.agent || 'The assistant';
+    return this.request.server ? `${this.request.server}, an MCP server,`
+      : this.agentName || this.card?.agent || 'The assistant';
   }
 
   // ── Approval ─────────────────────────────────────────────────────────

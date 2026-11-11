@@ -34,11 +34,11 @@ describe('NodesService', () => {
   it('makes a token that enrolls for so many seconds, shared only when asked', async () => {
     const { service, sent } = create();
 
-    await service.createToken({ kind: 'runtime', uses: null, days: 7, labels: [], shared: false });
+    await service.createToken({ kind: 'runtime', uses: 1, days: 7, labels: [], shared: false });
     await service.createToken({ kind: 'sandbox', uses: 2, days: 0.5, labels: ['gpu'], shared: true });
 
     expect(sent[0]).toEqual({
-      endpoint: 'Nodes:Authority:create', data: { kind: 'runtime', expires: 604800, labels: [], shared: false },
+      endpoint: 'Nodes:Authority:create', data: { kind: 'runtime', expires: 604800, uses: 1, labels: [], shared: false },
     });
     expect(sent[1]).toEqual({
       endpoint: 'Nodes:Authority:create', data: { kind: 'sandbox', expires: 43200, uses: 2, labels: ['gpu'], shared: true },

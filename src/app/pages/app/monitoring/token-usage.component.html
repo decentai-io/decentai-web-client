@@ -17,7 +17,9 @@
     <div class="ov-tile">
       <dt>Tokens in</dt>
       <dd class="ov-value">{{ number(total.input) }}</dd>
-      <dd class="ov-sub">What the models were shown</dd>
+      <dd class="ov-sub">
+        What the models were shown{{ total.cached ? ", and " + number(total.cached) + " more through the cache" : "" }}
+      </dd>
     </div>
     <div class="ov-tile">
       <dt>Tokens out</dt>

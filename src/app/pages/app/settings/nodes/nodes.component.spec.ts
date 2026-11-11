@@ -364,13 +364,14 @@ describe('NodesComponent', () => {
       expect(copied).toEqual(['dct_secret']);
     });
 
-    it('takes an empty number of nodes as any number', async () => {
+    it('asks for a number of nodes: a token enrolls as many as it says', async () => {
       const { component, called } = create();
       component.form = { ...component.form, uses: ' ' };
 
       await component.save();
 
-      expect((called('createToken')[0].args[0] as any).uses).toBeNull();
+      expect(component.errorFor('uses')).toContain('1 or more');
+      expect(called('createToken').length).toBe(0);
     });
 
     it('says what is wrong, under its field, before asking', async () => {

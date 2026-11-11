@@ -8,11 +8,11 @@ import { AuthService } from 'src/app/services/auth.service';
 import { OrgSettings, SettingsOrgService } from 'src/app/services/settings-org.service';
 
 /** The organization's settings this page edits. */
-type Safety = Pick<OrgSettings, 'blocked_hosts' | 'guardrail' | 'mcp' | 'webhooks' | 'webhook_trust' | 'notification_text'>;
+type Safety = Pick<OrgSettings, 'blocked_hosts' | 'guardrail' | 'mcp' | 'webhooks' | 'notification_text'>;
 
 /** The platform's own start, before anything is read. */
 const STANDARD: Safety = {
-  blocked_hosts: [], guardrail: '', mcp: 'allowed', webhooks: 'allowed', webhook_trust: 1, notification_text: 'shown',
+  blocked_hosts: [], guardrail: '', mcp: 'allowed', webhooks: 'allowed', notification_text: 'shown',
 };
 
 /**
@@ -47,13 +47,6 @@ export class SafetyComponent implements OnInit, HasUnsavedChanges {
   readonly webhooks: Choice<Safety['webhooks']>[] = [
     { value: 'allowed', name: 'Allowed' },
     { value: 'blocked', name: 'Nobody may' },
-  ];
-
-  readonly trust: Choice<Safety['webhook_trust']>[] = [
-    { value: 0, name: '0', hint: 'Only reads.' },
-    { value: 1, name: '1', hint: 'Changes the person’s own records.' },
-    { value: 2, name: '2', hint: 'Wider changes.' },
-    { value: 3, name: '3', hint: 'Acts outside the platform.' },
   ];
 
   readonly notificationText: Choice<Safety['notification_text']>[] = [
@@ -124,8 +117,8 @@ export class SafetyComponent implements OnInit, HasUnsavedChanges {
   };
 
   private take(settings: OrgSettings): void {
-    const { blocked_hosts, guardrail, mcp, webhooks, webhook_trust, notification_text } = settings;
-    this.draft.take({ blocked_hosts, guardrail, mcp, webhooks, webhook_trust, notification_text });
+    const { blocked_hosts, guardrail, mcp, webhooks, notification_text } = settings;
+    this.draft.take({ blocked_hosts, guardrail, mcp, webhooks, notification_text });
   }
 
   async save(): Promise<void> {

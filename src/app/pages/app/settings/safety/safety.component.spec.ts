@@ -4,7 +4,7 @@ import { SafetyComponent } from './safety.component';
 describe('SafetyComponent', () => {
   const saved = {
     blocked_hosts: ['tracker.test'], guardrail: 'Answer in French.', runtimes: 'prefer_own', mcp: 'allowed',
-    webhooks: 'allowed', webhook_trust: 1, notification_text: 'shown', speech: 'none', speech_connection: '',
+    webhooks: 'allowed', notification_text: 'shown', speech: 'none', speech_connection: '',
     transcription_model: '', speech_model: '', speech_voice: '', model: '',
   };
 
@@ -37,13 +37,13 @@ describe('SafetyComponent', () => {
     expect(component.unsavedChangesTo()).toBe('');
 
     component.draft.value.guardrail = 'Answer in English.';
-    component.draft.value.webhook_trust = 0;
+    component.draft.value.webhooks = 'blocked';
     expect(component.unsavedChangesTo()).toBe('Safety');
     await component.save();
 
     expect(calls['saved']).toEqual({
-      blocked_hosts: ['tracker.test'], guardrail: 'Answer in English.', mcp: 'allowed', webhooks: 'allowed',
-      webhook_trust: 0, notification_text: 'shown',
+      blocked_hosts: ['tracker.test'], guardrail: 'Answer in English.', mcp: 'allowed', webhooks: 'blocked',
+      notification_text: 'shown',
     });
     expect(component.draft.dirty).toBeFalse();
   });

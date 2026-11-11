@@ -11,6 +11,8 @@ export interface TokenTotal {
   calls: number;
   input: number;
   output: number;
+  /** Read from the prompt cache or written to it. */
+  cached: number;
   cost: number;
   unpriced: number;
 }
@@ -20,12 +22,14 @@ export function addUp(rows: TokenRow[], key: (row: TokenRow) => string): TokenTo
   const totals = new Map<string, TokenTotal>();
   for (const row of rows) {
     const name = key(row);
-    const total = totals.get(name) ?? { key: name, calls: 0, input: 0, output: 0, cost: 0, unpriced: 0 };
+    const total = totals.get(name) ?? { key: name, calls: 0, input: 0, output: 0, cached: 0, cost: 0, unpriced: 0 };
     totals.set(name, total);
+    const cached = (row.cache_read ?? 0) + (row.cache_write ?? 0);
     total.calls += row.calls;
     total.input += row.input;
     total.output += row.output;
-    if (row.cost === null) total.unpriced += row.input + row.output;
+    total.cached += cached;
+    if (row.cost === null) total.unpriced += row.input + row.output + cached;
     else total.cost += row.cost;
   }
   return [...totals.values()].sort((a, b) => b.input + b.output - (a.input + a.output));
@@ -75,7 +79,7 @@ export class TokenUsageComponent implements OnInit {
   /** The chart as its table: every value, without the colour. */
   asTable = false;
 
-  private static readonly NONE: TokenTotal = { key: '', calls: 0, input: 0, output: 0, cost: 0, unpriced: 0 };
+  private static readonly NONE: TokenTotal = { key: '', calls: 0, input: 0, output: 0, cached: 0, cost: 0, unpriced: 0 };
 
   total = TokenUsageComponent.NONE;
   models: TokenTotal[] = [];
@@ -179,7 +183,7 @@ export class TokenUsageComponent implements OnInit {
 
   /** A row's cost, or a dash where none of its tokens has a price. */
   rowCost(total: TokenTotal): string {
-    return total.unpriced && total.unpriced === total.input + total.output ? '—' : this.money(total.cost);
+    return total.unpriced && total.unpriced === total.input + total.output + total.cached ? '—' : this.money(total.cost);
   }
 
   byDay(_: number, column: Column): string { return column.day.key; }

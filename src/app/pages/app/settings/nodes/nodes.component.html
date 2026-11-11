@@ -273,7 +273,7 @@
             <app-segmented name="kind" [choices]="kinds" [(ngModel)]="form.kind"></app-segmented>
           </app-field>
 
-          <app-field label="Nodes it may enroll" help="Empty for any number." [error]="errorFor('uses')">
+          <app-field label="Nodes it may enroll" help="One for each node you start with it." [error]="errorFor('uses')">
             <input class="input" name="uses" inputmode="numeric" autocomplete="off" [(ngModel)]="form.uses" />
           </app-field>
 

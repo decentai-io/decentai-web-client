@@ -3,12 +3,14 @@ import { Injectable } from '@angular/core';
 import { Failure, RequestService } from './request.service';
 import { Shared } from './skills.service';
 
-/** One tool a server offers, as a runtime last read it, and whether the
- *  person's chats may call it. */
+/** One tool a server offers, as a runtime last read it, whether the
+ *  person's chats may call it, and its level: a chat whose trust is below
+ *  it asks before each call (2 unless the person changes it). */
 export interface McpTool {
   name: string;
   description: string;
   on: boolean;
+  level?: number;
 }
 
 /** A remote MCP server the person added. Its credential headers are kept
@@ -49,8 +51,11 @@ export class McpService {
   }
 
   /** `headers` left out keeps the credential; a new address needs it
-   *  again. `tools` switches tools on and off, by name. */
-  update(id: string, fields: Partial<{ name: string; address: string; headers: McpHeaders; tools: Record<string, boolean> }>) {
+   *  again. `tools` switches tools on and off, and `levels` sets their
+   *  levels, by name. */
+  update(id: string, fields: Partial<{
+    name: string; address: string; headers: McpHeaders; tools: Record<string, boolean>; levels: Record<string, number>;
+  }>) {
     return this.request.gateway<{ item: McpServer }>('Mcp:Server:update', { id, ...fields });
   }
 

@@ -2,7 +2,7 @@ import { SpeechComponent } from './speech.component';
 
 describe('SpeechComponent', () => {
   const settings = {
-    blocked_hosts: [], guardrail: '', runtimes: 'prefer_own', mcp: 'allowed', webhooks: 'allowed', webhook_trust: 1,
+    blocked_hosts: [], guardrail: '', runtimes: 'prefer_own', mcp: 'allowed', webhooks: 'allowed',
     notification_text: 'shown', speech: 'none', speech_connection: '', transcription_model: '', speech_model: '',
     speech_voice: '', model: '',
   };

@@ -34,8 +34,8 @@ export interface EnrolledNode {
 /** What the token form sends. */
 export interface TokenDraft {
   kind: 'runtime' | 'sandbox';
-  /** How many nodes it may enroll; null for any number. */
-  uses: number | null;
+  /** How many nodes it may enroll. */
+  uses: number;
   /** How long it enrolls, in days. */
   days: number;
   labels: string[];
@@ -151,7 +151,7 @@ export class NodesService {
     return this.request.gateway('Nodes:Authority:create', {
       kind: draft.kind,
       expires: Math.round(draft.days * 86400),
-      ...(draft.uses ? { uses: draft.uses } : {}),
+      uses: draft.uses,
       labels: draft.labels,
       shared: draft.shared,
     });

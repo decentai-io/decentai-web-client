@@ -15,8 +15,6 @@ export interface OrgSettings {
   mcp: 'allowed' | 'blocked';
   /** Whether webhooks may wake chats, and notifications go outside. */
   webhooks: 'allowed' | 'blocked';
-  /** The highest trust a webhook's chat may run at. */
-  webhook_trust: 0 | 1 | 2 | 3;
   /** `hidden`: every notification says only that something happened. */
   notification_text: 'shown' | 'hidden';
   /** What writes speech down and says replies aloud. */

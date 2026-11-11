@@ -6,6 +6,7 @@ import { fullDate } from 'src/app/components/ui/dates';
 import { AuthService } from 'src/app/services/auth.service';
 import { ConfirmService } from 'src/app/services/confirm.service';
 import { McpServer, McpService, McpTool } from 'src/app/services/mcp.service';
+import { LEVEL_MEANINGS, PERMISSION_LEVELS } from 'src/app/pages/app/agents/agent-shared';
 import { CredentialDraft, lastRead } from './mcp-shared';
 
 /** How long "Saved" stays beside a tool. */
@@ -13,9 +14,10 @@ const SAVED_FOR_MS = 2000;
 
 /**
  * One MCP server, looked over: where it is, when a runtime last read its
- * tools, and every tool it offers with its switch. This is where a
- * person decides what chats may call, so each tool saves itself and says
- * so on its own row, and nothing else on the page waits for it.
+ * tools, and every tool it offers with its switch and its level. This is
+ * where a person decides what chats may call, and what they ask first, so
+ * each tool saves itself and says so on its own row, and nothing else on
+ * the page waits for it.
  *
  * A tool a server offers for the first time is off until it is switched
  * on. Someone it was shared with sees it as its owner left it.
@@ -40,6 +42,8 @@ export class McpServerComponent implements OnInit, OnDestroy {
   busy: '' | 'read' | 'all' = '';
 
   query = '';
+  /** A tool's level by its index, in the words every page uses. */
+  readonly levels = PERMISSION_LEVELS;
   /** How each tool's last save went, by name: on its way, done, or why not. */
   private saves = new Map<string, string>();
 
@@ -129,13 +133,29 @@ export class McpServerComponent implements OnInit, OnDestroy {
     return !!said && said !== 'Saving…' && said !== 'Saved';
   }
 
-  /** One tool's switch. Only its row waits and says how it went; a
-   *  refusal leaves the tool as it was, with the reason. */
-  async setTool(tool: McpTool, on: boolean): Promise<void> {
+  levelOf(tool: McpTool): number {
+    return tool.level ?? 2;
+  }
+
+  levelMeaning(tool: McpTool): string {
+    return LEVEL_MEANINGS[this.levels[this.levelOf(tool)]] || '';
+  }
+
+  setTool(tool: McpTool, on: boolean): Promise<void> {
+    return this.saveTool(tool, { tools: { [tool.name]: on } });
+  }
+
+  setLevel(tool: McpTool, level: number): Promise<void> {
+    return this.saveTool(tool, { levels: { [tool.name]: level } });
+  }
+
+  /** One tool's switch or level. Only its row waits and says how it went;
+   *  a refusal leaves the tool as it was, with the reason. */
+  private async saveTool(tool: McpTool, change: Parameters<McpService['update']>[1]): Promise<void> {
     const server = this.server;
     if (!server || !this.mine) return;
     this.saves.set(tool.name, 'Saving…');
-    const result = await this.service.update(server.id, { tools: { [tool.name]: on } });
+    const result = await this.service.update(server.id, change);
     if (result.error || !result.item) {
       this.saves.set(tool.name, result.error || 'That could not be saved.');
       // The switch goes back to what the tool is.

@@ -67,11 +67,11 @@
     </div>
   </dl>
 
-  <!-- ── The tools: each with its switch ─────────────────────────────── -->
+  <!-- ── The tools: each with its switch and its level ───────────────── -->
   <section aria-labelledby="server-tools-title">
     <h2 class="form-section-title" id="server-tools-title">Tools</h2>
 
-    <app-list label="The tools this server offers" [foot]="tools.length ? 'A chat that uses this server can call the tools that are on.' : ''">
+    <app-list label="The tools this server offers" [foot]="tools.length ? 'A chat that uses this server can call the tools that are on. A tool whose level is above the chat’s trust asks first.' : ''">
       <ng-container listToolbar *ngIf="tools.length">
         <span class="search-field toolbar-search">
           <lucide-icon name="search" [size]="16" aria-hidden="true"></lucide-icon>
@@ -102,6 +102,11 @@
               <span class="tool-save" role="status" [class.is-failed]="saveFailed(tool)">{{ saveOf(tool) }}</span>
             </p>
           </div>
+
+          <select class="input tool-level" [attr.aria-label]="'Level of ' + tool.name" [matTooltip]="levelMeaning(tool)"
+                  [disabled]="!mine" [ngModel]="levelOf(tool)" (ngModelChange)="setLevel(tool, $event)">
+            <option *ngFor="let name of levels; let level = index" [ngValue]="level">{{ name }}</option>
+          </select>
         </li>
       </ul>
 

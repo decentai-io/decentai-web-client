@@ -26,10 +26,18 @@
             <span class="approval-level" [matTooltip]="'Level ' + request.level">{{ levelLabel }}</span>
           </div>
         }
-        <mat-checkbox class="check-row" [checked]="remember" (change)="remember = !remember">
-          <span class="check-name">Remember my answer</span>
-          <span class="check-hint">For this agent and function{{ request.record ? ' on this record' : '' }}. You can take it back on the agent's page.</span>
-        </mat-checkbox>
+        @if (request.inputs) {
+          <div class="approval-row">
+            <span class="approval-label">With</span>
+            <code class="approval-value">{{ request.inputs }}</code>
+          </div>
+        }
+        @if (!request.server) {
+          <mat-checkbox class="check-row" [checked]="remember" (change)="remember = !remember">
+            <span class="check-name">Remember my answer</span>
+            <span class="check-hint">For this agent and function{{ request.record ? ' on this record' : '' }}. You can take it back on the agent's page.</span>
+          </mat-checkbox>
+        }
       </div>
       <ng-container *ngTemplateOutlet="allowDeny"></ng-container>
     </div>

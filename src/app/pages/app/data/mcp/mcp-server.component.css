@@ -129,7 +129,7 @@
 
 .tool-row {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(0, 2fr);
+  grid-template-columns: minmax(180px, 1fr) minmax(0, 2fr) auto;
   align-items: start;
   gap: 8px 16px;
   padding: 12px 16px;
@@ -183,7 +183,11 @@
   color: var(--danger-ink);
 }
 
-/* Under 900px the words go under the switch. */
+.tool-level {
+  width: auto;
+}
+
+/* Under 900px the words and the level go under the switch. */
 @media (max-width: 900px) {
   .tool-row {
     grid-template-columns: minmax(0, 1fr);

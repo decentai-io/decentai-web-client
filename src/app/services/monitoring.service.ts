@@ -23,8 +23,12 @@ export interface TokenRow {
   /** The person's and the agent's names, for the organization's rows. */
   person?: string;
   agent_name?: string;
+  /** Shown to the model, apart from what the cache gave or kept. */
   input: number;
   output: number;
+  /** Read from the provider's prompt cache, and written to it; missing on rows from before they were counted. */
+  cache_read?: number;
+  cache_write?: number;
   calls: number;
   cost: number | null;
 }
