@@ -175,6 +175,22 @@
       </app-field>
 
       <app-field
+        *ngIf="asksEndpoint"
+        label="Endpoint"
+        help="As the Azure portal shows it, under Keys and Endpoint."
+        [error]="errorFor('address')"
+      >
+        <input
+          class="input"
+          type="url"
+          name="endpoint"
+          placeholder="https://my-resource.cognitiveservices.azure.com/openai/v1/"
+          [ngModel]="draft.address"
+          (ngModelChange)="setEndpoint($event)"
+        />
+      </app-field>
+
+      <app-field
         *ngFor="let blank of blanks"
         [label]="blankLabel(blank)"
         [help]="blankHelp(blank)"
@@ -226,7 +242,8 @@
 
       <app-field
         label="Models"
-        help="The provider's own ids for the models chats may use; for Azure, your deployments' names. None named, every model the platform knows for the provider is offered."
+        [help]="asksEndpoint ? 'Your deployments’ names, as you named them in Azure.'
+          : 'The provider’s own ids for the models chats may use. None named, every model the platform knows for the provider is offered.'"
       >
         <app-token-list
           name="models"
@@ -273,7 +290,7 @@
           <input class="input" name="name" placeholder="Anthropic" [ngModel]="draft.name" (ngModelChange)="setName($event)" />
         </app-field>
         <app-field
-          *ngIf="!endpointIsYours"
+          *ngIf="!endpointIsYours && !asksEndpoint"
           label="Address"
           help="Filled in for you. Change it only to reach this provider through a gateway of your own."
           [error]="errorFor('address')"
