@@ -10,7 +10,7 @@ describe('ActivityOverviewComponent', () => {
   function create(summary: any, asked: number[] = []) {
     return new ActivityOverviewComponent({
       summary: async (days: number) => { asked.push(days); return summary; },
-      usage: async () => ({ agents: [{ agent: 'mail', processes: 2, memory: 10 }, { agent: 'web', processes: 1, memory: 5 }] }),
+      usage: async () => ({ agents: [{ agent: 'mail', processes: 2, memory: 10, cpu: 0.5 }, { agent: 'web', processes: 1, memory: 5, cpu: 0 }] }),
     } as any);
   }
 

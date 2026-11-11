@@ -170,6 +170,10 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     return this.agents.reduce((sum, agent) => sum + agent.processes, 0);
   }
 
+  get cpu(): number {
+    return this.agents.reduce((sum, agent) => sum + agent.cpu, 0);
+  }
+
   /** An agent's row is the same row from one asking to the next: the
    *  numbers change in place. */
   byAgent(_: number, agent: AgentUsage): string { return agent.agent; }

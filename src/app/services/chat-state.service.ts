@@ -95,10 +95,12 @@ export class ChatStateService {
    *  keeps are numbered without gaps: the next one is taken, one taken
    *  already, replayed, is not taken twice, and one past the next says
    *  some were missed (`gap`). `saying` and `screen` are never kept, and
-   *  carry the number of the last kept event: they are taken as they come. */
+   *  carry the number of the last kept event before them: they come
+   *  another way than kept events, so one older than a kept event the page
+   *  took already arrived late, and is skipped. */
   sequence(event: ChatEvent): 'take' | 'skip' | 'gap' {
-    if (event.event === 'saying' || event.event === 'screen') return 'take';
     const latest = this.value.latestEventSeq;
+    if (event.event === 'saying' || event.event === 'screen') return event.seq < latest ? 'skip' : 'take';
     if (event.seq <= latest) return 'skip';
     if (event.seq > latest + 1) return 'gap';
     this.patch({ latestEventSeq: event.seq });

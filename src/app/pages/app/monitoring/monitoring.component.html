@@ -38,6 +38,10 @@
           <dt>Memory they hold now</dt>
           <dd>{{ bytes(memory) }}</dd>
         </div>
+        <div class="mon-tile">
+          <dt>Processor cores in use</dt>
+          <dd>{{ cpu | number: '1.0-2' }}</dd>
+        </div>
       </dl>
 
       <app-empty
@@ -53,6 +57,7 @@
             <tr>
               <th scope="col">Agent</th>
               <th scope="col">Memory</th>
+              <th scope="col" class="num cell-minor">Cores</th>
               <th scope="col" class="num cell-minor">Processes</th>
             </tr>
           </thead>
@@ -67,6 +72,7 @@
                   </span>
                 </span>
               </td>
+              <td class="num cell-minor">{{ agent.cpu | number: '1.0-2' }}</td>
               <td class="num cell-minor">{{ agent.processes }}</td>
             </tr>
           </tbody>

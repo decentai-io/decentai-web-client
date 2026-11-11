@@ -4,11 +4,13 @@ import { TrailLine, TrailPage, trailPage } from './audit.service';
 import { Failure, RequestService } from './request.service';
 
 /** One running agent of the organization's, as its runtimes report it:
- *  how many processes it has, and the memory they hold, in bytes. */
+ *  how many processes it has, the memory they hold, in bytes, and the
+ *  processor's cores they used over the last second. */
 export interface AgentUsage {
   agent: string;
   processes: number;
   memory: number;
+  cpu: number;
 }
 
 /** Tokens a model used, added up by day and whatever else the rows are

@@ -26,8 +26,9 @@ describe('ChatStateService', () => {
     expect(state.sequence(event(4))).toBe('skip');
     expect(state.sequence(event(5))).toBe('take');
     expect(state.value.latestEventSeq).toBe(5);
-    // Words being written carry the last kept number, and pass.
+    // Words being written carry the last kept number, and pass; ones from before a kept event taken came late.
     expect(state.sequence(event(5, 'saying'))).toBe('take');
+    expect(state.sequence(event(4, 'saying'))).toBe('skip');
     expect(state.value.latestEventSeq).toBe(5);
     expect(state.sequence(event(7))).toBe('gap');
     expect(state.value.latestEventSeq).toBe(5);

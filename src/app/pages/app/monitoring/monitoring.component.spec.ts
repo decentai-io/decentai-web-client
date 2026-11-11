@@ -53,12 +53,13 @@ describe('MonitoringComponent', () => {
 
   it('says what each running agent holds, against the most any holds', async () => {
     const component = create({
-      usage: { agents: [{ agent: 'mail', processes: 2, memory: 1000 }, { agent: 'web', processes: 1, memory: 500 }] },
+      usage: { agents: [{ agent: 'mail', processes: 2, memory: 1000, cpu: 0.25 }, { agent: 'web', processes: 1, memory: 500, cpu: 0.5 }] },
     });
     await component.readUsage();
 
     expect(component.processes).toBe(3);
     expect(component.memory).toBe(1500);
+    expect(component.cpu).toBe(0.75);
     expect(component.share(component.agents[1])).toBe(50);
     expect(component.updated).toBe('Updated just now');
   });
