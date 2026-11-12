@@ -19,7 +19,7 @@ import { LucideAngularModule } from 'lucide-angular';
   styleUrl: './empty.component.css',
   host: { role: 'status' },
   template: `
-    <lucide-icon class="empty-icon" [name]="icon" [size]="24" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
+    <lucide-icon class="empty-icon" [name]="icon" [size]="28" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
     <p class="empty-title">{{ title }}</p>
     <p class="empty-line" *ngIf="line">{{ line }}</p>
     <div class="empty-action"><ng-content></ng-content></div>

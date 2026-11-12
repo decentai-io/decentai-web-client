@@ -11,8 +11,9 @@ import {
 } from 'src/app/services/agents.service';
 import { ConfirmService } from 'src/app/services/confirm.service';
 import { DataPageBase } from '../../data-page-base';
-import { CardChip } from '../agent-card.component';
-import { agentFacts } from '../agent-shared';
+import { hueOf } from 'src/app/components/ui/agent-mark.component';
+import { CardChip, CardLevel } from '../agent-card.component';
+import { AgentStat, agentFacts, agentStats, iconOf, levelBar } from '../agent-shared';
 import { SourceDraft } from './source-form.component';
 
 /** Which of a source's agents are shown, and in what order. */
@@ -342,6 +343,35 @@ export class MarketplaceComponent extends DataPageBase implements OnInit, OnDest
     return facts;
   }
 
+  /** The same facts as pills with their icons, as the card shows them. */
+  offerStats(offer: CatalogOffer): AgentStat[] {
+    const stats = agentStats(offer.manifest);
+    const held = this.installedOf(offer);
+    if (offer.status === 'update_available' && held) stats.push({ icon: 'history', text: `v${held.version} installed` });
+    return this.kept(this.statsKept, offer, stats);
+  }
+
+  /** Its functions by level, as a card's thin bar. */
+  offerLevels(offer: CatalogOffer): CardLevel[] {
+    return this.kept(this.levelsKept, offer, levelBar(offer.manifest));
+  }
+
+  offerIcon(offer: CatalogOffer): string {
+    return iconOf(offer.manifest);
+  }
+
+  /** The same array for the same offer until it changes: a new one on
+   *  every check would redraw the card's pills under the pointer. */
+  private kept<T>(cache: WeakMap<CatalogOffer, { key: string; value: T }>, offer: CatalogOffer, value: T): T {
+    const key = JSON.stringify(value);
+    const held = cache.get(offer);
+    if (held && held.key === key) return held.value;
+    cache.set(offer, { key, value });
+    return value;
+  }
+  private statsKept = new WeakMap<CatalogOffer, { key: string; value: AgentStat[] }>();
+  private levelsKept = new WeakMap<CatalogOffer, { key: string; value: CardLevel[] }>();
+
   /** The installed agent of an offer's id, if any. */
   installedOf(offer: CatalogOffer): InstalledAgent | undefined {
     return this.installed.find((agent) => agent.agent_id === this.idOf(offer));
@@ -522,6 +552,17 @@ export class MarketplaceComponent extends DataPageBase implements OnInit, OnDest
     this.review = { source, offers };
     this.error = '';
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
+  }
+
+  /** Several agents' names, as one phrase. */
+  namesOf(offers: CatalogOffer[]): string {
+    const names = offers.map((offer) => this.nameOf(offer));
+    return names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names.join('');
+  }
+
+  /** The hue an agent's name gives its mark: its review's header wears it. */
+  hueOfOffer(offer: CatalogOffer): number {
+    return hueOf(this.nameOf(offer));
   }
 
   /** What was installed before, for an update to be read against. */

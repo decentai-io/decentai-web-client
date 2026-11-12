@@ -10,9 +10,14 @@ import {
 } from 'src/app/services/agents.service';
 import { AuthService } from 'src/app/services/auth.service';
 import { ChatMarkdownService } from '../ai/chat/chat-message/chat-markdown.service';
+import { hueOf } from 'src/app/components/ui/agent-mark.component';
 import {
-  AgentNetwork, Standing, credentialHost, levelTally, networkNote, networkOf, resourcesOf,
+  AgentNetwork, AgentTile, KeptItem, Standing, agentTiles, credentialHost, iconOf, keptItems, levelBar, levelMeaning,
+  levelTally, networkNote, networkOf, resourcesOf,
 } from './agent-shared';
+
+/** How long a README is shown whole; a longer one is folded. */
+const README_FOLD_CHARS = 900;
 
 export type DetailTab = 'overview' | 'functions';
 
@@ -34,6 +39,8 @@ export type DetailTab = 'overview' | 'functions';
   // A README is somebody else's markdown: what it would load from
   // elsewhere is taken out, as in a chat.
   providers: [{ provide: MarkdownService, useClass: ChatMarkdownService }],
+  // The page wears the hue the agent's name gives its mark.
+  host: { '[style.--hue]': 'hue' },
 })
 export class AgentDetailComponent implements OnChanges {
   @Input({ required: true }) agent!: InstalledAgent;
@@ -58,6 +65,18 @@ export class AgentDetailComponent implements OnChanges {
   tabs: Choice<DetailTab>[] = [];
   network: AgentNetwork = networkOf(null);
   readme = '';
+  readmeLong = false;
+  readmeOpen = false;
+  hue = hueOf('');
+  icon = '';
+  tiles: AgentTile[] = [];
+  kept: KeptItem[] = [];
+  bar: Array<{ name: string; count: number; share: number; index: number }> = [];
+  barWords = '';
+  /** The host it was installed from, short; the whole address is under
+   *  Identity. */
+  sourceHost = '';
+  readonly meaningOf = levelMeaning;
 
   samples: SampleSummary | null = null;
   /** The person loaded the samples, and may remove them. */
@@ -83,6 +102,18 @@ export class AgentDetailComponent implements OnChanges {
     this.tabs = [{ value: 'overview', name: 'Overview' }, { value: 'functions', name: `Functions ${count}` }];
     this.network = networkOf(this.agent.manifest);
     this.readme = headingsDown(this.agent.readme || '', 2);
+    this.readmeLong = (this.agent.readme || '').length > README_FOLD_CHARS;
+    this.hue = hueOf(this.agent.name);
+    this.icon = iconOf(this.agent.manifest);
+    this.tiles = agentTiles(this.agent.manifest);
+    this.kept = keptItems(this.agent.manifest);
+    this.bar = levelBar(this.agent.manifest);
+    this.barWords = this.bar.map((level) => `${level.count} ${level.name.toLowerCase()}`).join(', ');
+    try {
+      this.sourceHost = this.agent.source_url ? new URL(this.agent.source_url).host : '';
+    } catch {
+      this.sourceHost = this.agent.source_url || '';
+    }
     // The same agent read again, as its check ends, is not another agent.
     if (change.previousValue?.agent_id === this.agent.agent_id) return;
     void this.readSamples();

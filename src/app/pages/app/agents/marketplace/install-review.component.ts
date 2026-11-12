@@ -1,11 +1,13 @@
 import { Component, Input } from '@angular/core';
 import { MarkdownService } from 'ngx-markdown';
 
+import { hueOf } from 'src/app/components/ui/agent-mark.component';
 import { headingsDown } from 'src/app/components/ui/markdown-levels';
 import { AgentSource, CatalogOffer, Manifest } from 'src/app/services/agents.service';
 import { ChatMarkdownService } from '../../ai/chat/chat-message/chat-markdown.service';
 import {
-  AgentNetwork, credentialHost, levelLabel, levelTally, networkNote, networkOf, resourcesOf,
+  AgentNetwork, AgentTile, KeptItem, agentTiles, credentialHost, iconOf, keptItems, levelBar, levelLabel,
+  levelMeaning, levelTally, networkNote, networkOf, resourcesOf,
 } from '../agent-shared';
 
 /** The machines a program may be built for, as a person reads them. */
@@ -41,6 +43,8 @@ let created = 0;
   // A README is somebody else's markdown: what it would load from
   // elsewhere is taken out, as in a chat.
   providers: [{ provide: MarkdownService, useClass: ChatMarkdownService }],
+  // The review wears the hue its agent's name gives its mark.
+  host: { '[style.--hue]': 'hue' },
 })
 export class InstallReviewComponent {
   @Input({ required: true }) source!: AgentSource;
@@ -66,13 +70,61 @@ export class InstallReviewComponent {
     return this.manifest.agent.name || this.manifest.agent.id;
   }
 
+  get hue(): number {
+    return hueOf(this.name);
+  }
+
+  get icon(): string {
+    return iconOf(this.manifest);
+  }
+
   get tally(): Array<{ name: string; count: number }> {
     return levelTally(this.manifest);
   }
 
+  /** Its functions by level, as the parts of one bar; the same array
+   *  until the manifest changes. */
+  get bar(): Array<{ name: string; count: number; share: number; index: number }> {
+    if (this.barOf !== this.manifest) {
+      this.barOf = this.manifest;
+      this.barShown = levelBar(this.manifest);
+    }
+    return this.barShown;
+  }
+  private barOf: Manifest | null = null;
+  private barShown: Array<{ name: string; count: number; share: number; index: number }> = [];
+
+  get barWords(): string {
+    return this.bar.map((level) => `${level.count} ${level.name.toLowerCase()}`).join(', ');
+  }
+
+  readonly meaningOf = levelMeaning;
+
+  /** The numbers at its head, the same array until the manifest changes. */
+  get tiles(): AgentTile[] {
+    if (this.tilesOf !== this.manifest) {
+      this.tilesOf = this.manifest;
+      this.tilesShown = agentTiles(this.manifest);
+    }
+    return this.tilesShown;
+  }
+  private tilesOf: Manifest | null = null;
+  private tilesShown: AgentTile[] = [];
+
   get resources() {
     return resourcesOf(this.manifest);
   }
+
+  /** Every secret, record and file it keeps, one row each. */
+  get kept(): KeptItem[] {
+    if (this.keptOf !== this.manifest) {
+      this.keptOf = this.manifest;
+      this.keptShown = keptItems(this.manifest);
+    }
+    return this.keptShown;
+  }
+  private keptOf: Manifest | null = null;
+  private keptShown: KeptItem[] = [];
 
   /** The kinds a group keeps, by name. */
   kindsOf(group: { items: { id: string; label?: string }[] }): string {

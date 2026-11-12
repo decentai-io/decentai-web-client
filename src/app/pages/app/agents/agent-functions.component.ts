@@ -1,7 +1,7 @@
 import { Component, Input, OnChanges } from '@angular/core';
 
 import { AgentFunction, Manifest } from 'src/app/services/agents.service';
-import { LEVEL_MEANINGS, levelLabel, levelTally } from './agent-shared';
+import { LEVEL_MEANINGS, levelBar, levelLabel, levelMeaning, levelTally } from './agent-shared';
 
 /** One input or output of a function, read from its JSON Schema. */
 interface Param {
@@ -36,15 +36,24 @@ export class AgentFunctionsComponent implements OnChanges {
   @Input({ required: true }) manifest!: Manifest;
   /** Every function with what it takes and returns open. */
   @Input() expanded = false;
+  /** The level bar and what each level means, above the functions: left
+   *  out where the page around says it already. */
+  @Input() legend = true;
 
   functions: ReadFunction[] = [];
   summary: Array<{ name: string; count: number }> = [];
+  bar: Array<{ name: string; count: number; share: number; index: number }> = [];
+  barWords = '';
 
   readonly levelLabel = levelLabel;
   readonly meanings = LEVEL_MEANINGS;
 
+  readonly meaningOf = levelMeaning;
+
   ngOnChanges(): void {
     this.summary = levelTally(this.manifest);
+    this.bar = levelBar(this.manifest);
+    this.barWords = this.bar.map((level) => `${level.count} ${level.name.toLowerCase()}`).join(', ');
     this.functions = (this.manifest?.functions || []).map((fn) => ({
       fn,
       params: this.paramsOf(fn.inputs),

@@ -1,45 +1,80 @@
-/* One agent as a review reads it. Alone: two columns — the agent's own
-   account and its functions, wide; the facts approving agrees to, in a
-   card beside them that stays in view. Among several: one column, each
-   agent's sections under their titles. The level chips and the host
-   chips are the agents' own (agent-shared.css); the functions are the
-   Functions tab's. */
+/* One agent as a review reads it. Alone: its numbers as tiles, then two
+   columns, the agent's own account and its functions wide, the facts
+   installing agrees to in panels beside them that stay in view. Among
+   several: the same, compact. The tiles, the panels, the prompts, the
+   level bar and the chips are the agents' own (agent-shared.css); the
+   functions are the Functions tab's. --hue is the agent's, set on the
+   host. */
 :host {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-/* Among several, each begins with its own name. */
+/* ── Among several: each begins with its own name ──────────────────── */
 .reading-head {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.reading-head app-agent-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+}
+
+.reading-head-words {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
 }
 
 .reading-head h2 {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 12px;
+  gap: 4px 10px;
   color: var(--ink);
-  font-size: var(--t-md);
+  font-size: var(--t-lg);
   font-weight: 600;
-  line-height: var(--lh-md);
+  line-height: var(--lh-lg);
 }
 
-.reading-note {
+.reading-head-about {
   max-width: 72ch;
-  margin-top: 8px;
   color: var(--ink-2);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  font-size: var(--t-base);
+  line-height: var(--lh-read);
+}
+
+/* The tiles sit tight to what follows: the panels have their own gap. */
+.agent-tiles {
+  margin-bottom: 4px;
+}
+
+.agent-tiles.is-brief .agent-tile {
+  gap: 10px;
+  padding: 10px 12px;
+  box-shadow: none;
+}
+
+.agent-tiles.is-brief .agent-tile-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+}
+
+.agent-tiles.is-brief .agent-tile-value {
+  font-size: var(--t-md);
+  line-height: var(--lh-md);
 }
 
 /* ── Alone: the two columns ─────────────────────────────────────── */
 .reading-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-columns: minmax(0, 1fr) 360px;
   align-items: start;
   gap: 20px;
 }
@@ -61,49 +96,38 @@
   min-width: 0;
 }
 
+.reading-side .agent-panel {
+  padding: 18px;
+}
+
+.reading-side .agent-panel-head {
+  margin-bottom: 14px;
+}
+
 @media (max-width: 1100px) {
   .reading-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  /* Narrow, the facts come first: they are what approving agrees to. */
+  /* Narrow, the facts come first, two by two: they are what installing
+     agrees to. */
   .reading-side {
     position: static;
     order: -1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   }
 }
 
-/* A card: a surface with a little depth, its title with an icon. */
-.reading-card {
-  min-width: 0;
-  padding: 20px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-1);
+/* The panel's icon for what the agent is for wears its hue. */
+.agent-panel-icon.is-hued {
+  background: hsl(var(--hue, 152) 62% 93%);
+  color: hsl(var(--hue, 152) 58% 28%);
 }
 
-.reading-card-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  color: var(--ink);
-  font-size: var(--t-md);
-  font-weight: 600;
-  line-height: var(--lh-md);
-}
-
-.reading-card-title lucide-icon {
-  display: flex;
-  color: var(--accent-ink);
-}
-
-.reading-count {
-  margin-left: auto;
-  color: var(--ink-3);
-  font-size: var(--t-sm);
-  font-weight: 500;
+:host-context(.dark) .agent-panel-icon.is-hued {
+  background: hsl(var(--hue, 152) 34% 20%);
+  color: hsl(var(--hue, 152) 62% 78%);
 }
 
 /* ── The README: read as an article ─────────────────────────────── */
@@ -127,10 +151,10 @@
 }
 
 .reading-readme.is-folded {
-  max-height: 420px;
+  max-height: 360px;
   overflow: hidden;
-  -webkit-mask-image: linear-gradient(#000 75%, transparent);
-  mask-image: linear-gradient(#000 75%, transparent);
+  -webkit-mask-image: linear-gradient(#000 70%, transparent);
+  mask-image: linear-gradient(#000 70%, transparent);
 }
 
 .reading-more {
@@ -139,21 +163,32 @@
 
 /* ── What an update changes ─────────────────────────────────────── */
 .reading-changes {
-  padding: 16px 20px;
+  padding: 18px 22px;
   border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--line));
   border-radius: var(--r-lg);
   background: var(--warn-soft);
 }
 
-.reading-changes .reading-card-title {
-  margin-bottom: 8px;
+.reading-changes-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: var(--ink);
+  font-size: var(--t-md);
+  font-weight: 600;
+  line-height: var(--lh-md);
 }
 
-.reading-changes .reading-card-title lucide-icon {
+.reading-changes-title lucide-icon {
+  display: flex;
   color: var(--warn-ink);
 }
 
 .reading-changes ul {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   padding-left: 20px;
   color: var(--ink);
   font-size: var(--t-sm);
@@ -161,35 +196,137 @@
   list-style: disc;
 }
 
-.reading-changes li + li {
-  margin-top: 4px;
-}
-
-/* ── At a glance: one fact under another, a hairline between ────── */
-.reading-facts {
+/* ── What it keeps: a row each, its kind as an icon tile ─────────── */
+.reading-items {
   display: flex;
   flex-direction: column;
+  gap: 12px;
+  list-style: none;
 }
 
-.reading-facts .reading-card-title {
-  margin-bottom: 4px;
+.reading-items li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
 }
 
-.fact {
-  padding: 14px 0;
+.reading-item-icon {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--surface-2);
+  color: var(--ink-2);
 }
 
-.fact + .fact {
-  border-top: 1px solid var(--line);
+.reading-item-icon[data-kind="secrets"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
 }
 
-.fact:last-child {
-  padding-bottom: 0;
+.reading-item-words {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  color: var(--ink);
 }
 
-.fact-name {
-  margin-bottom: 8px;
+.reading-item-words strong {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  font-weight: 600;
+}
+
+.reading-item-kind {
   color: var(--ink-3);
+  font-size: var(--t-xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* A slot's description can be long: two lines here, all of it in the
+   tooltip. */
+.reading-item-about {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--ink-2);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.reading-nothing {
+  margin-top: 0;
+}
+
+/* ── What it runs on ────────────────────────────────────────────── */
+.reading-machines {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.reading-machine {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--r-full);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
+}
+
+.reading-machine lucide-icon {
+  display: flex;
+  color: var(--ink-3);
+}
+
+.agent-panel-note code {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+}
+
+/* A machine it can't run on: said outright. */
+.reading-download-none {
+  color: var(--warn-ink);
+  font-size: var(--t-sm);
+}
+
+.reading-address {
+  overflow-wrap: anywhere;
+}
+
+/* ── Among several: the facts in a grid of small parts ──────────── */
+.reading-brief {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.reading-brief-part {
+  min-width: 0;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+
+.reading-brief-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  color: var(--ink-2);
   font-size: var(--t-xs);
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -197,106 +334,19 @@
   text-transform: uppercase;
 }
 
-.reading-levels {
+.reading-brief-title lucide-icon {
   display: flex;
-  flex-wrap: wrap;
+}
+
+.reading-brief .lvl-legend {
+  margin-top: 10px;
   gap: 6px;
 }
 
-/* A thing it needs or keeps: its icon, its name, a line about it. */
-.reading-items {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  list-style: none;
-}
-
-.reading-items li {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
-}
-
-.reading-items lucide-icon {
-  display: flex;
-  flex: none;
-  margin-top: 2px;
-  color: var(--ink-2);
-}
-
-.reading-item-words {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  color: var(--ink);
-}
-
-.reading-item-words strong {
-  font-weight: 600;
-}
-
-/* A slot's description can be long: three lines here, all of it in the
-   tooltip. */
-.reading-item-about {
-  display: -webkit-box;
-  overflow: hidden;
-  color: var(--ink-2);
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-}
-
-.reading-functions {
-  margin-top: 8px;
+.reading-brief .reading-item-icon {
+  background: var(--surface);
 }
 
 .reading-functions app-agent-functions {
   margin-top: 12px;
-}
-
-/* ── What it downloads: a line a machine, its size and digest beside ─ */
-.reading-downloads {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  list-style: none;
-}
-
-.reading-downloads li {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 2px 12px;
-  color: var(--ink);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
-}
-
-.reading-download-what {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.reading-download-size {
-  flex: none;
-  color: var(--ink-2);
-  font-variant-numeric: tabular-nums;
-}
-
-.reading-downloads code,
-.reading-note code {
-  font-family: var(--font-mono);
-  font-size: var(--t-xs);
-}
-
-/* A machine it can't run on: said outright, on a line of its own. */
-.reading-download-none {
-  flex-basis: 100%;
-  color: var(--warn-ink);
-}
-
-.reading-address {
-  overflow-wrap: anywhere;
 }

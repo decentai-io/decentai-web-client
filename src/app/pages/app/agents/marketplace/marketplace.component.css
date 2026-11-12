@@ -156,18 +156,53 @@
   margin-bottom: 16px;
 }
 
-/* Among several, each agent is a section of its own. */
+/* Several under review: their marks, overlapping, where one's would be. */
+.review-marks {
+  display: flex;
+  padding-left: 12px;
+}
+
+.agent-hero .review-marks app-agent-mark {
+  width: 48px;
+  height: 48px;
+  margin-left: -12px;
+  border-radius: 14px;
+  box-shadow: 0 0 0 3px var(--surface), 0 6px 14px -8px rgb(0 0 0 / 0.35);
+  font-size: var(--t-base);
+}
+
+/* Among several, each agent is a card of its own. */
 .review app-install-review.is-one-of-several {
-  padding: 24px 0;
-  border-top: 1px solid var(--line);
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+}
+
+.review app-install-review.is-one-of-several + app-install-review.is-one-of-several {
+  margin-top: 16px;
 }
 
 .review-foot {
-  max-width: 72ch;
-  margin-top: 32px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 880px;
+  margin-top: 28px;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
   color: var(--ink-2);
   font-size: var(--t-sm);
   line-height: var(--lh-sm);
+}
+
+.review-foot lucide-icon {
+  display: flex;
+  flex: none;
+  margin-top: 1px;
+  color: var(--accent-ink);
 }
 
 /* Stays at the foot of the column as the review scrolls, over what is

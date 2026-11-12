@@ -1,6 +1,8 @@
 <app-page guide="agents#installing"
   *ngIf="!review"
   title="Marketplace"
+  icon="store"
+  [hue]="160"
   sentence="Agents from the catalogs this organization saved, reviewed before they are installed."
   [wide]="true"
 >
@@ -102,10 +104,12 @@
         <app-agent-card
           *ngFor="let offer of pagedOffers"
           [name]="nameOf(offer)"
+          [icon]="offerIcon(offer)"
           [version]="'v' + offer.manifest.agent.version"
           [chip]="offerChip(offer)"
           [description]="offer.manifest.agent.description || ''"
-          [facts]="offerFacts(offer)"
+          [stats]="offerStats(offer)"
+          [levels]="offerLevels(offer)"
           [problems]="offer.errors"
           [link]="offerLink(source, offer)"
           [selectable]="installable(offer) && selectableOffers(source).length > 1"
@@ -167,22 +171,40 @@
     {{ sourceName(open.source) }}
   </a>
 
-  <header class="agent-head">
-    <app-agent-mark size="lg" *ngIf="open.offers.length === 1" [name]="nameOf(open.offers[0])"></app-agent-mark>
-    <div class="agent-head-words">
-      <h1 class="agent-head-name">
+  <!-- The agent's header band, in the hue its name gives it: what it is,
+       where it comes from, and the one decision, at the right. -->
+  <header class="agent-hero" [style.--hue]="open.offers.length === 1 ? hueOfOffer(open.offers[0]) : 172">
+    <app-agent-mark size="lg" *ngIf="open.offers.length === 1" [name]="nameOf(open.offers[0])" [icon]="offerIcon(open.offers[0])"></app-agent-mark>
+    <span class="review-marks" *ngIf="open.offers.length > 1" aria-hidden="true">
+      <app-agent-mark *ngFor="let offer of open.offers.slice(0, 4)" [name]="nameOf(offer)" [icon]="offerIcon(offer)"></app-agent-mark>
+    </span>
+    <div class="agent-hero-words">
+      <p class="agent-hero-eyebrow">
+        <lucide-icon name="store" [size]="14" aria-hidden="true"></lucide-icon>
+        From {{ sourceName(open.source) }}
+        <ng-container *ngIf="open.offers.length === 1 && open.offers[0].status === 'update_available'"> · an update</ng-container>
+      </p>
+      <h1 class="agent-hero-name">
         <ng-container *ngIf="open.offers.length === 1; else several">
           {{ nameOf(open.offers[0]) }}
-          <span class="agent-head-version">v{{ open.offers[0].manifest.agent.version }}</span>
+          <span class="agent-hero-version">v{{ open.offers[0].manifest.agent.version }}</span>
           <span class="chip accent" *ngIf="open.offers[0].status === 'installed'">Installed</span>
           <span class="chip" *ngIf="open.offers[0].status === 'other_source'">From another source</span>
-          <span class="chip" *ngIf="approvedOf(open.offers[0]) && installedOf(open.offers[0]) as held">replaces v{{ held.version }}</span>
+          <span class="chip warn" *ngIf="approvedOf(open.offers[0]) && installedOf(open.offers[0]) as held">replaces v{{ held.version }}</span>
         </ng-container>
         <ng-template #several>Review {{ open.offers.length }} agents</ng-template>
       </h1>
-      <p class="agent-head-source">From {{ sourceName(open.source) }}</p>
+      <p class="agent-hero-about" *ngIf="open.offers.length === 1 && open.offers[0].manifest.agent.description">
+        {{ open.offers[0].manifest.agent.description }}
+      </p>
+      <p class="agent-hero-about" *ngIf="open.offers.length > 1">
+        {{ namesOf(open.offers) }}. Each is read below: what it keeps, where it connects, and how far it may go.
+      </p>
+      <p class="agent-hero-tags" *ngIf="open.offers.length === 1 && open.offers[0].manifest.agent.tags?.length">
+        <span *ngFor="let tag of open.offers[0].manifest.agent.tags">{{ tag }}</span>
+      </p>
     </div>
-    <div class="agent-head-actions"><ng-container *ngTemplateOutlet="reviewActions"></ng-container></div>
+    <div class="agent-hero-actions"><ng-container *ngTemplateOutlet="reviewActions"></ng-container></div>
   </header>
 
   <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
@@ -200,8 +222,9 @@
 
   <ng-container *ngIf="!reviewOnly">
     <p class="review-foot">
-      Installing keeps this exact version for this organization, and a runtime checks it before any
-      chat uses it. A newer version is reviewed again.
+      <lucide-icon name="shield-check" [size]="16" aria-hidden="true"></lucide-icon>
+      <span>Installing keeps this exact version for this organization, and a runtime checks it before any
+      chat uses it. A newer version is reviewed again.</span>
     </p>
     <!-- The same two buttons as at the top, where a person who has read
          to the end is. -->
