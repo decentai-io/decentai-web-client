@@ -28,11 +28,11 @@ export const AIRoutes: Routes = [
     canActivate: [permissionGuard],
     data: { requiredAction: 'ai:chat:open' },
   },
-  // Waiting for you: every card open across the person's chats, answered
+  // Approvals: every card open across the person's chats, answered
   // in one place.
   {
     path: 'waiting',
-    title: 'Waiting for you',
+    title: 'Approvals',
     component: WaitingComponent,
     canActivate: [permissionGuard],
     data: { requiredAction: 'ai:activity:list' },

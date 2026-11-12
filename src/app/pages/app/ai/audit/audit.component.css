@@ -1,6 +1,22 @@
-/* Audit. The page frame, the list and the rows are the shared ones;
-   here are the filter row, who did a thing, the way to its chat, and
-   what a row opens to. */
+/* Audit. The page frame and its band, the tiles, the pills, the list
+   and the rows are the shared ones; here are the filter row, the days,
+   who did a thing, the way to its chat, and what a row opens to. */
+
+/* A tile that is a button fills its place in the row. */
+.ui-tiles > li {
+  display: flex;
+  min-width: 0;
+}
+
+.ui-tiles > li > .ui-tile {
+  flex: 1;
+  min-width: 0;
+}
+
+button.ui-tile:disabled {
+  cursor: default;
+}
+
 .audit-filters {
   display: flex;
   flex: 1;
@@ -13,6 +29,26 @@
 .audit-filters .toolbar-search {
   flex: 1 1 120px;
   min-width: 0;
+}
+
+.audit-scope {
+  flex: none;
+}
+
+/* A day, with its icon in the page's hue. */
+.audit-day {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.audit-day lucide-icon {
+  display: flex;
+  color: hsl(var(--hue, 262) 50% 45%);
+}
+
+:host-context(.dark) .audit-day lucide-icon {
+  color: hsl(var(--hue, 262) 62% 76%);
 }
 
 /* As wide as its button whether or not the row has a chat, so the
@@ -41,6 +77,22 @@
   color: var(--ink-2);
   font-size: var(--t-sm);
   line-height: var(--lh-sm);
+}
+
+.audit-refs + .audit-refs {
+  margin-top: 6px;
+}
+
+.audit-refs lucide-icon {
+  display: flex;
+  color: var(--ink-3);
+}
+
+/* What a line touched, each id a chip. */
+.audit-refs code {
+  padding: 1px 8px;
+  border-radius: var(--r-full);
+  background: var(--surface-2);
 }
 
 .audit-refs code,

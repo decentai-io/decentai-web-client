@@ -9,72 +9,112 @@
 </app-empty>
 
 <ng-container *ngIf="!loading && !loadError">
-  <div class="form-section">
-    <app-field *ngIf="canChooseModel" label="Model" help="Remembered from the model you last picked in a chat.">
-      <app-select [choices]="modelChoices" [(ngModel)]="model"></app-select>
-    </app-field>
+  <!-- What a new chat starts with, at a glance: each a pill. -->
+  <p class="ui-pills defaults-summary" aria-label="A new chat starts with">
+    <span class="ui-pill is-accent"><lucide-icon name="gauge" [size]="12" aria-hidden="true"></lucide-icon>Effort: {{ nameOf(effortChoices, draft.value.effort) }}</span>
+    <span class="ui-pill"><lucide-icon name="shield-check" [size]="12" aria-hidden="true"></lucide-icon>Trust: {{ nameOf(trustChoices, draft.value.trust) }}</span>
+    <span class="ui-pill"><lucide-icon name="timer" [size]="12" aria-hidden="true"></lucide-icon>Turns: {{ nameOf(turnChoices, draft.value.turn_budget) }}</span>
+  </p>
 
-    <app-field label="Effort" help="How hard the model is asked to think.">
-      <app-select [choices]="effortChoices" [(ngModel)]="draft.value.effort"></app-select>
-    </app-field>
+  <div class="ui-panels">
+    <!-- The model and how hard it thinks. -->
+    <section class="ui-panel" aria-labelledby="defaults-model-title">
+      <div class="ui-panel-head">
+        <span class="ui-panel-icon is-hued"><lucide-icon name="brain-circuit" [size]="16" aria-hidden="true"></lucide-icon></span>
+        <h2 class="ui-panel-title" id="defaults-model-title">Thinking</h2>
+      </div>
+      <div class="form">
+        <app-field *ngIf="canChooseModel" label="Model" help="Remembered from the model you last picked in a chat.">
+          <app-select [choices]="modelChoices" [(ngModel)]="model"></app-select>
+        </app-field>
 
-    <app-field
-      label="Trust level"
-      help="How much a chat may do without asking."
-      [link]="{ text: 'What no agent may reach at all is under Safety.', to: '/settings/safety' }"
-    >
-      <app-select [choices]="trustChoices" [(ngModel)]="draft.value.trust"></app-select>
-    </app-field>
+        <app-field label="Effort" help="How hard the model is asked to think.">
+          <app-select [choices]="effortChoices" [(ngModel)]="draft.value.effort"></app-select>
+        </app-field>
+      </div>
+    </section>
 
-    <app-field label="Turn budget" help="How many turns the assistant may take on one message before it stops.">
-      <app-select [choices]="turnChoices" [(ngModel)]="draft.value.turn_budget"></app-select>
-    </app-field>
+    <!-- How far a chat goes on its own. -->
+    <section class="ui-panel" aria-labelledby="defaults-trust-title">
+      <div class="ui-panel-head">
+        <span class="ui-panel-icon is-hued"><lucide-icon name="shield-check" [size]="16" aria-hidden="true"></lucide-icon></span>
+        <h2 class="ui-panel-title" id="defaults-trust-title">How far it goes</h2>
+      </div>
+      <div class="form">
+        <app-field
+          label="Trust level"
+          help="How much a chat may do without asking."
+          [link]="{ text: 'What no agent may reach at all is under Safety.', to: '/settings/safety' }"
+        >
+          <app-select [choices]="trustChoices" [(ngModel)]="draft.value.trust"></app-select>
+        </app-field>
 
-    <app-field label="Agents and servers" help="Every one also takes in those installed or added later.">
-      <span class="choose-line">
-        {{ listWords(draft.value.agents, 'agent') }} · {{ listWords(draft.value.mcp_servers, 'server') }}
-        <button class="btn ghost sm" type="button" (click)="chooseReach()">Choose…</button>
-      </span>
-    </app-field>
+        <app-field label="Turn budget" help="How many turns the assistant may take on one message before it stops.">
+          <app-select [choices]="turnChoices" [(ngModel)]="draft.value.turn_budget"></app-select>
+        </app-field>
+      </div>
+    </section>
 
-    <app-field label="Skills" help="Every one also takes in those written later.">
-      <span class="choose-line">
-        {{ listWords(draft.value.skills, 'skill') }}
-        <button class="btn ghost sm" type="button" (click)="chooseSkills()">Choose…</button>
-      </span>
-    </app-field>
-  </div>
+    <!-- What a new chat may reach. -->
+    <section class="ui-panel" aria-labelledby="defaults-reach-title">
+      <div class="ui-panel-head">
+        <span class="ui-panel-icon is-hued"><lucide-icon name="package" [size]="16" aria-hidden="true"></lucide-icon></span>
+        <h2 class="ui-panel-title" id="defaults-reach-title">What it reaches</h2>
+      </div>
+      <div class="form">
+        <app-field label="Agents and servers" help="Every one also takes in those installed or added later.">
+          <span class="choose-line">
+            <span class="ui-pill"><lucide-icon name="bot" [size]="12" aria-hidden="true"></lucide-icon>{{ listWords(draft.value.agents, 'agent') }}</span>
+            <span class="ui-pill"><lucide-icon name="server" [size]="12" aria-hidden="true"></lucide-icon>{{ listWords(draft.value.mcp_servers, 'server') }}</span>
+            <button class="btn ghost sm" type="button" (click)="chooseReach()">Choose…</button>
+          </span>
+        </app-field>
 
-  <!-- Not one of the saved defaults: this device's own, kept as it is set. -->
-  <div class="form-section" *ngIf="dictationChoices.length || readingChoices.length">
-    <h2 class="form-section-title">Speech on this device</h2>
-    <p class="form-section-note">Kept in this browser. {{ speechNote }}</p>
-    <app-field label="Writing down what you say" [help]="dictationHelp" *ngIf="dictationChoices.length">
-      <app-segmented
-        label="Writing down what you say"
-        [choices]="dictationChoices"
-        [ngModel]="dictationBy"
-        (ngModelChange)="setDictation($event)"
-      ></app-segmented>
-    </app-field>
-    <app-field label="Reading replies aloud" [help]="readingHelp" *ngIf="readingChoices.length">
-      <app-segmented
-        label="Reading replies aloud"
-        [choices]="readingChoices"
-        [ngModel]="readingBy"
-        (ngModelChange)="setReading($event)"
-      ></app-segmented>
-    </app-field>
-  </div>
+        <app-field label="Skills" help="Every one also takes in those written later.">
+          <span class="choose-line">
+            <span class="ui-pill"><lucide-icon name="sparkles" [size]="12" aria-hidden="true"></lucide-icon>{{ listWords(draft.value.skills, 'skill') }}</span>
+            <button class="btn ghost sm" type="button" (click)="chooseSkills()">Choose…</button>
+          </span>
+        </app-field>
+      </div>
+    </section>
 
-  <div class="form-section" *ngIf="readAloud.available">
-    <app-switch
-      label="Read replies aloud"
-      help="On this device only."
-      [note]="readAloudNote"
-      [ngModel]="readAloud.automatic"
-      (ngModelChange)="setReadAloud($event)"
-    ></app-switch>
+    <!-- Not one of the saved defaults: this device's own, kept as it is set. -->
+    <section class="ui-panel" *ngIf="dictationChoices.length || readingChoices.length || readAloud.available" aria-labelledby="defaults-speech-title">
+      <div class="ui-panel-head">
+        <span class="ui-panel-icon"><lucide-icon name="mic" [size]="16" aria-hidden="true"></lucide-icon></span>
+        <h2 class="ui-panel-title" id="defaults-speech-title">Speech on this device</h2>
+        <span class="ui-pill"><lucide-icon name="monitor" [size]="12" aria-hidden="true"></lucide-icon>This browser</span>
+      </div>
+      <div class="form">
+        <app-field label="Writing down what you say" [help]="dictationHelp" *ngIf="dictationChoices.length">
+          <app-segmented
+            label="Writing down what you say"
+            [choices]="dictationChoices"
+            [ngModel]="dictationBy"
+            (ngModelChange)="setDictation($event)"
+          ></app-segmented>
+        </app-field>
+        <app-field label="Reading replies aloud" [help]="readingHelp" *ngIf="readingChoices.length">
+          <app-segmented
+            label="Reading replies aloud"
+            [choices]="readingChoices"
+            [ngModel]="readingBy"
+            (ngModelChange)="setReading($event)"
+          ></app-segmented>
+        </app-field>
+
+        <app-switch
+          *ngIf="readAloud.available"
+          label="Read replies aloud"
+          help="On this device only."
+          [note]="readAloudNote"
+          [ngModel]="readAloud.automatic"
+          (ngModelChange)="setReadAloud($event)"
+        ></app-switch>
+      </div>
+      <p class="ui-panel-note" *ngIf="dictationChoices.length || readingChoices.length">Kept in this browser. {{ speechNote }}</p>
+    </section>
   </div>
 
   <app-save-bar

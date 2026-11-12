@@ -1,33 +1,55 @@
-<p class="form-section-note fn-intro">
-  Everything this agent can be asked to do, and the level of each. A function runs without
-  asking when its level is at or below the chat's trust level, and asks first when it is above.
-  Who may call it is the organization's policy.
-</p>
+<!-- How far its functions may go, as a bar and its legend: only the
+     levels this agent reaches, since four rows to explain two is noise.
+     Left out where the page around it says so already (`legend`). -->
+<ng-container *ngIf="legend">
+  <p class="form-section-note fn-intro">
+    Everything this agent can be asked to do. A function runs without asking when its level is at or
+    below the chat's trust level, and asks first when it is above. Who may call it is the
+    organization's policy.
+  </p>
+  <div class="fn-summary" *ngIf="bar.length">
+    <div class="lvl-bar" role="img" [attr.aria-label]="barWords">
+      <span class="lvl-bar-part" *ngFor="let level of bar" [attr.data-index]="level.index" [style.flex-grow]="level.count"></span>
+    </div>
+    <ul class="lvl-legend">
+      <li *ngFor="let level of bar">
+        <span class="lvl-swatch" [attr.data-index]="level.index"></span>
+        <span class="lvl-legend-name"><em>{{ level.count }}</em>{{ level.name }}</span>
+        <span class="lvl-legend-about">{{ meaningOf(level.name) }}</span>
+      </li>
+    </ul>
+  </div>
+</ng-container>
 
-<!-- The legend covers only the levels this agent reaches: four rows to
-     explain two is noise. -->
-<dl class="fn-legend" *ngIf="summary.length">
-  <ng-container *ngFor="let level of summary">
-    <dt>
-      <span class="lvl" [attr.data-level]="level.name"><span class="lvl-dot"></span>{{ level.count }} {{ level.name }}</span>
-    </dt>
-    <dd>{{ meanings[level.name] }}</dd>
-  </ng-container>
-</dl>
-
-<ul class="fn-rows" *ngIf="functions.length">
-  <li class="fn-row" *ngFor="let item of functions">
-    <div class="fn-row-head">
-      <code class="fn-name">{{ item.fn.id }}</code>
-      <span *ngIf="item.fn.name && item.fn.name !== item.fn.id">{{ item.fn.name }}</span>
-      <span class="lvl" [attr.data-level]="levelLabel(item.fn.level)" [matTooltip]="'Level ' + item.fn.level">
+<!-- Each function a card, its edge in its level's colour. -->
+<ul class="fn-cards" *ngIf="functions.length">
+  <li class="fn-card" *ngFor="let item of functions" [attr.data-index]="item.fn.level">
+    <div class="fn-card-head">
+      <span class="fn-card-titles">
+        <span class="fn-title">{{ item.fn.name || item.fn.id }}</span>
+        <code class="fn-name" *ngIf="item.fn.name && item.fn.name !== item.fn.id">{{ item.fn.id }}</code>
+      </span>
+      <span class="lvl" [attr.data-level]="levelLabel(item.fn.level)" [matTooltip]="meaningOf(levelLabel(item.fn.level))">
         <span class="lvl-dot"></span>{{ levelLabel(item.fn.level) }}
       </span>
-      <span class="chip" *ngIf="item.fn.schedulable">can be scheduled</span>
-      <span class="fn-timeout">{{ item.fn.timeout_seconds || 60 }} s to finish</span>
     </div>
 
-    <p class="fn-about" *ngIf="item.fn.description">{{ item.fn.description }}</p>
+    <p class="fn-about" *ngIf="item.fn.description" [title]="item.fn.description">{{ item.fn.description }}</p>
+
+    <p class="fn-meta">
+      <span class="fn-meta-item" matTooltip="How long it has to finish; the clock stops while a person decides">
+        <lucide-icon name="timer" [size]="13" aria-hidden="true"></lucide-icon>{{ item.fn.timeout_seconds || 60 }} s
+      </span>
+      <span class="fn-meta-item is-accent" *ngIf="item.fn.schedulable">
+        <lucide-icon name="calendar-clock" [size]="13" aria-hidden="true"></lucide-icon>can be scheduled
+      </span>
+      <span class="fn-meta-item" *ngIf="item.params.length">
+        <lucide-icon name="arrow-right" [size]="13" aria-hidden="true"></lucide-icon>{{ item.params.length }} {{ item.params.length === 1 ? "input" : "inputs" }}
+      </span>
+      <span class="fn-meta-item" *ngIf="item.fn.calls?.length" [matTooltip]="item.fn.calls!.join(', ')">
+        <lucide-icon name="zap" [size]="13" aria-hidden="true"></lucide-icon>calls {{ item.fn.calls!.length }}
+      </span>
+    </p>
 
     <!-- What it takes, calls, is scoped by and returns: behind one
          disclosure, since a list is read by name first. -->

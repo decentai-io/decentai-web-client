@@ -1,0 +1,106 @@
+<div class="insp-sections">
+  @if (error) {
+    <p class="form-notice is-error" role="alert">{{ error }}</p>
+  }
+
+  <section class="insp-section" aria-labelledby="setup-how">
+    <h3 class="insp-label" id="setup-how">How it works</h3>
+
+    <div class="setup-field">
+      <span class="setup-name">Trust level</span>
+      <app-segmented label="Trust level" [choices]="trustChoices" [ngModel]="settings.trust"
+                     (ngModelChange)="changeSettings.emit({ trust: $event })"></app-segmented>
+      <span class="insp-meta setup-hint">{{ trustHint }}</span>
+    </div>
+
+    <div class="setup-field">
+      <span class="setup-name">Turn budget</span>
+      <app-segmented label="Turn budget" [choices]="budgetChoices" [ngModel]="settings.turn_budget"
+                     (ngModelChange)="changeSettings.emit({ turn_budget: $event })"></app-segmented>
+      <span class="insp-meta setup-hint">{{ budgetHint }}</span>
+    </div>
+
+    <ul class="insp-list setup-rows">
+      <li class="insp-row">
+        <span class="insp-main">
+          <span class="setup-name">Model</span>
+          <span class="insp-meta">{{ model }}</span>
+        </span>
+        <span class="insp-aside">Change it under the message box</span>
+      </li>
+      <li class="insp-row">
+        <span class="insp-main">
+          <span class="setup-name">Agents</span>
+          <span class="insp-meta">{{ agentWords }}</span>
+        </span>
+        <button class="btn ghost sm" type="button" (click)="changeAgents.emit()">Change</button>
+      </li>
+      <li class="insp-row">
+        <span class="insp-main">
+          <span class="setup-name">MCP servers</span>
+          <span class="insp-meta">{{ chosen(settings.mcp_servers) }}</span>
+        </span>
+        <button class="btn ghost sm" type="button" (click)="changeAgents.emit()">Change</button>
+      </li>
+      <li class="insp-row">
+        <span class="insp-main">
+          <span class="setup-name">Skills</span>
+          <span class="insp-meta">{{ chosen(settings.skills) }}</span>
+        </span>
+        <button class="btn ghost sm" type="button" (click)="changeSkills.emit()">Change</button>
+      </li>
+      <li class="insp-row">
+        <span class="insp-main">
+          <span class="setup-name">Time zone</span>
+          <span class="insp-meta">{{ settings.time_zone }}</span>
+        </span>
+        @if (browserZone && browserZone !== settings.time_zone) {
+          <button class="btn ghost sm" type="button" (click)="changeSettings.emit({ time_zone: browserZone })">
+            Use {{ browserZone }}
+          </button>
+        }
+      </li>
+    </ul>
+  </section>
+
+  <section class="insp-section" aria-labelledby="setup-remembered">
+    <h3 class="insp-label" id="setup-remembered">
+      Remembered decisions <span class="insp-label-count">{{ remembered.length }}</span>
+    </h3>
+    <ul class="insp-list">
+      @for (one of remembered; track one.id) {
+        <li class="insp-row">
+          <span class="insp-main">
+            <span class="insp-name">{{ rememberedBy(one) }} · {{ one.function }}</span>
+            @if (one.record) { <span class="insp-meta">{{ one.record }}</span> }
+          </span>
+          <span class="chip" [class.accent]="one.allowed" [class.warn]="!one.allowed">{{ one.allowed ? 'Allowed' : 'Declined' }}</span>
+          <button class="btn ghost sm" type="button" [disabled]="forgetting.has(one.id)" (click)="forget(one)">Forget</button>
+        </li>
+      } @empty {
+        <li class="insp-note">None for this chat's agents.</li>
+      }
+    </ul>
+    <p class="insp-meta setup-hint">Yours, so they apply in every chat. Forget one, and its next call asks you again.</p>
+  </section>
+
+  <section class="insp-section" aria-labelledby="setup-asked">
+    <h3 class="insp-label" id="setup-asked">What it asked you <span class="insp-label-count">{{ cards.length }}</span></h3>
+    <ul class="insp-list">
+      @for (card of cards; track card.card_id) {
+        <li class="insp-row">
+          <span class="insp-row-icon" [class.is-warn]="card.status === 'open'">
+            <lucide-icon [name]="cardIcon(card)" [size]="14" aria-hidden="true"></lucide-icon>
+          </span>
+          <span class="insp-main">
+            <span class="insp-name" [title]="question(card)">{{ question(card) }}</span>
+            <span class="insp-meta">{{ cardMeta(card) }}</span>
+          </span>
+          <span class="chip setup-outcome" [class.warn]="card.status === 'open'" [title]="outcome(card)">{{ outcome(card) }}</span>
+        </li>
+      } @empty {
+        <li class="insp-note">It has asked you nothing yet.</li>
+      }
+    </ul>
+  </section>
+</div>

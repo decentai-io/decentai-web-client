@@ -1,8 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import {
-  ArrowLeft, Check, ChevronDown, ChevronRight, CloudOff, Copy, Globe, KeyRound, LucideAngularModule,
-  MessageSquare, Pause, Pencil, Play, Plus, RefreshCw, Search, SearchX, Server, Trash2,
+  ArrowLeft, Building2, Check, ChevronDown, ChevronRight, CloudOff, Copy, ExternalLink, Globe, Info, KeyRound, Lock,
+  LucideAngularModule, MessageSquare, MessageSquareText, Network, Package, Pause, Pencil, Play, Plus, RefreshCw, Search,
+  SearchX, Server, Trash2,
 } from 'lucide-angular';
 
 import { AuthService } from 'src/app/services/auth.service';
@@ -22,8 +23,9 @@ const ALL = [
 ];
 
 const ICONS = {
-  ArrowLeft, Check, ChevronDown, ChevronRight, CloudOff, Copy, Globe, KeyRound, MessageSquare, Pause,
-  Pencil, Play, Plus, RefreshCw, Search, SearchX, Server, Trash2,
+  ArrowLeft, Building2, Check, ChevronDown, ChevronRight, CloudOff, Copy, ExternalLink, Globe, Info, KeyRound, Lock,
+  MessageSquare, MessageSquareText, Network, Package, Pause, Pencil, Play, Plus, RefreshCw, Search, SearchX, Server,
+  Trash2,
 };
 
 /** A token made a day ago, enrolling for a week more. */

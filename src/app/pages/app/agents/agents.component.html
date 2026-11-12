@@ -20,6 +20,8 @@
 <app-page guide="agents"
   *ngIf="!openAgent"
   title="Agents"
+  icon="bot"
+  [hue]="160"
   sentence="The agents installed here. Open one to read what it does, what it keeps and where it connects."
   [wide]="true"
 >
@@ -69,10 +71,12 @@
       <app-agent-card
         *ngFor="let agent of pagedAgents"
         [name]="agent.name"
+        [icon]="iconOf(agent)"
         [version]="'v' + agent.version"
         [chip]="standing(agent)"
         [description]="agent.manifest.agent.description || ''"
-        [facts]="facts(agent)"
+        [stats]="stats(agent)"
+        [levels]="levels(agent)"
         [problems]="agent.error ? [agent.error] : []"
         [link]="['/agents', agent.agent_id]"
         [selectable]="canUninstall"

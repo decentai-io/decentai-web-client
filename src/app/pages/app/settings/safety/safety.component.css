@@ -1,6 +1,33 @@
-/* The Safety page: the rows are the shared form system; the box the
-   organization's rules are written in runs as wide as a form reads,
-   with its counter under it at the right, quiet until the last tenth. */
+/* The Safety page: a panel a concern (styles/controls.scss `.ui-panel`),
+   what reaches outside three side by side. The box the organization's
+   rules are written in runs as wide as a form reads, with its counter
+   under it at the right, quiet until the last tenth. */
+.safety-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Who may change it, said with a lock. */
+.safety-locked {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.safety-locked lucide-icon {
+  display: flex;
+}
+
+/* A panel's one line of what it is about, under its title. */
+.safety-lead {
+  max-width: 72ch;
+  margin: -6px 0 16px;
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
+}
+
 .rules-text {
   min-height: 160px;
   resize: vertical;

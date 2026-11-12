@@ -16,6 +16,16 @@ import { connects, identifier, isConnected, secretTitle } from './secret-shared'
 
 type Show = 'mine' | 'shared';
 
+/** A number over the list: its icon, the number, its word, and the
+ *  "whose" it narrows the list to, when it is one. */
+interface Tile {
+  icon: string;
+  value: number;
+  label: string;
+  show?: Show;
+  warn?: boolean;
+}
+
 /**
  * Secrets: what a person stores for agents to act with. Each is a record
  * of a resource an installed agent declares: typed in here, or an account
@@ -119,6 +129,29 @@ export class SecretsComponent extends RecordPage implements OnInit, OnDestroy {
   /** The secrets of the chosen "whose": what the agents are counted in. */
   private get pool(): AppRecord[] {
     return this.records.filter((secret) => this.isMine(secret) === (this.show === 'mine'));
+  }
+
+  /** How many secrets, whose, the agents using them, and how the
+   *  accounts they connect stand. */
+  get tiles(): Tile[] {
+    const mine = this.records.filter((secret) => this.isMine(secret)).length;
+    const agents = new Set(this.records.flatMap((secret) => secret.agents.map((entry) => entry.agent)));
+    const accounts = this.records.filter((secret) => this.connectsAccount(secret));
+    const waiting = accounts.filter((secret) => this.notConnected(secret)).length;
+    const tiles: Tile[] = [
+      { icon: 'key-round', value: this.records.length, label: this.records.length === 1 ? 'Secret' : 'Secrets' },
+      { icon: 'user', value: mine, label: 'Yours', show: 'mine' },
+      { icon: 'users', value: this.records.length - mine, label: 'Shared with you', show: 'shared' },
+      { icon: 'bot', value: agents.size, label: agents.size === 1 ? 'Agent using them' : 'Agents using them' },
+    ];
+    if (accounts.length) tiles.push({ icon: 'log-in', value: accounts.length - waiting, label: 'Accounts connected' });
+    if (waiting) tiles.push({ icon: 'triangle-alert', value: waiting, label: 'Not connected yet', warn: true });
+    return tiles;
+  }
+
+  /** A tile is known by its icon, so the row is not drawn again. */
+  byIcon(_: number, tile: Tile): string {
+    return tile.icon;
   }
 
   get chosen(): Record<string, string> {

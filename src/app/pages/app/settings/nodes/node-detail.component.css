@@ -9,12 +9,28 @@
   margin: 0 0 16px -8px;
 }
 
+/* Its head: a band washed in the section's hue (--hue, from the
+   settings shell), the mark large and lifted, the actions at the right. */
 .detail-head {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 16px;
+  gap: 16px 20px;
   margin-bottom: 20px;
+  padding: 24px;
+  border: 1px solid color-mix(in srgb, hsl(var(--hue, 262) 50% 50%) 16%, var(--line));
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(80% 160% at 0% 0%, hsl(var(--hue, 262) 70% 93% / 0.8), transparent 60%),
+    var(--surface);
+  box-shadow: var(--shadow-1);
+}
+
+:host-context(.dark) .detail-head {
+  border-color: color-mix(in srgb, hsl(var(--hue, 262) 40% 50%) 20%, var(--line));
+  background:
+    radial-gradient(80% 160% at 0% 0%, hsl(var(--hue, 262) 40% 19% / 0.9), transparent 60%),
+    var(--surface);
 }
 
 .detail-mark {
@@ -22,11 +38,41 @@
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: var(--r-md);
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
   background: var(--surface-2);
   color: var(--ink-2);
+  box-shadow: 0 6px 16px -8px rgb(0 0 0 / 0.3), inset 0 0 0 1px rgb(255 255 255 / 0.5);
+}
+
+:host-context(.dark) .detail-mark {
+  box-shadow: 0 8px 18px -8px rgb(0 0 0 / 0.6), inset 0 0 0 1px rgb(255 255 255 / 0.06);
+}
+
+.detail-mark lucide-icon,
+.chip lucide-icon {
+  display: flex;
+}
+
+/* The panels under the head, one under another. */
+.detail-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* A panel's line of what it is about, under its title. */
+.detail-lead {
+  max-width: 72ch;
+  margin: -6px 0 16px;
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
+}
+
+.detail-lead.is-last {
+  margin-bottom: 0;
 }
 
 .detail-mark.is-live {
@@ -50,9 +96,10 @@
 .detail-name {
   margin: 0;
   color: var(--ink);
-  font-size: var(--t-lg);
+  font-size: var(--t-xl);
+  letter-spacing: -0.01em;
   font-weight: 600;
-  line-height: var(--lh-lg);
+  line-height: var(--lh-xl);
   overflow-wrap: anywhere;
 }
 
@@ -126,6 +173,8 @@
 }
 
 .detail-fact dt {
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
   color: var(--ink-3);
   font-size: var(--t-xs);
   font-weight: 500;

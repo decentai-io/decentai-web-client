@@ -1,5 +1,13 @@
 <ng-container *ngIf="!made">
-  <h2 mat-dialog-title>{{ editing ? 'Edit ' + editing.name : 'Make a webhook' }}</h2>
+  <h2 mat-dialog-title class="dialog-band">
+    <span class="opened-mark" aria-hidden="true">
+      <lucide-icon [name]="editing ? 'pencil' : 'webhook'" [size]="20" [strokeWidth]="1.75"></lucide-icon>
+    </span>
+    <span class="dialog-band-words">
+      <span class="dialog-band-title">{{ editing ? 'Edit ' + editing.name : 'Make a webhook' }}</span>
+      <span class="dialog-band-line">An address, and what your assistant does with what arrives.</span>
+    </span>
+  </h2>
   <form (ngSubmit)="save()">
     <mat-dialog-content>
       <p class="dialog-note" *ngIf="!editing">
@@ -19,7 +27,10 @@
         </app-field>
 
         <fieldset class="hook-fields">
-          <legend class="hook-legend">Fields</legend>
+          <legend class="hook-legend">
+            <span class="hook-legend-icon" aria-hidden="true"><lucide-icon name="file-braces" [size]="14"></lucide-icon></span>
+            Fields
+          </legend>
           <p class="hook-help">What a caller posts, as one JSON object. A body with anything else, or without a required field, is refused.</p>
           <div class="hook-field" *ngFor="let field of fields; let i = index">
             <div class="hook-field-line">
@@ -67,27 +78,35 @@
 </ng-container>
 
 <ng-container *ngIf="made">
-  <h2 mat-dialog-title>{{ made.name }}</h2>
+  <h2 mat-dialog-title class="dialog-band">
+    <span class="opened-mark" aria-hidden="true">
+      <lucide-icon name="key-round" [size]="20" [strokeWidth]="1.75"></lucide-icon>
+    </span>
+    <span class="dialog-band-words">
+      <span class="dialog-band-title">{{ made.name }}</span>
+      <span class="dialog-band-line">Its address and its secret, ready to copy.</span>
+    </span>
+  </h2>
   <mat-dialog-content>
     <div class="form">
       <app-field label="Address" help="Where a service posts its events.">
         <div class="hook-once">
           <code class="hook-code">{{ url }}</code>
-          <button class="btn sm" type="button" (click)="copy('url')">{{ copied['url'] ? 'Copied' : 'Copy' }}</button>
+          <button class="btn sm" type="button" (click)="copy('url')"><lucide-icon [name]="copied['url'] ? 'check' : 'copy'" [size]="14" aria-hidden="true"></lucide-icon>{{ copied['url'] ? 'Copied' : 'Copy' }}</button>
         </div>
       </app-field>
 
       <app-field label="Secret" [help]="made.require_signature ? 'What each call is signed with.' : 'Sent as a bearer token in the Authorization header.'">
         <div class="hook-once">
           <code class="hook-code">{{ secret }}</code>
-          <button class="btn sm" type="button" (click)="copy('secret')">{{ copied['secret'] ? 'Copied' : 'Copy' }}</button>
+          <button class="btn sm" type="button" (click)="copy('secret')"><lucide-icon [name]="copied['secret'] ? 'check' : 'copy'" [size]="14" aria-hidden="true"></lucide-icon>{{ copied['secret'] ? 'Copied' : 'Copy' }}</button>
         </div>
       </app-field>
 
       <app-field label="An example call" help="With every field filled in. Replace the values with real ones. A body is at most 64 KiB, and at most 60 calls a minute are taken.">
         <div class="hook-once">
           <pre class="hook-code">{{ curl }}</pre>
-          <button class="btn sm" type="button" (click)="copy('curl')">{{ copied['curl'] ? 'Copied' : 'Copy' }}</button>
+          <button class="btn sm" type="button" (click)="copy('curl')"><lucide-icon [name]="copied['curl'] ? 'check' : 'copy'" [size]="14" aria-hidden="true"></lucide-icon>{{ copied['curl'] ? 'Copied' : 'Copy' }}</button>
         </div>
       </app-field>
 
@@ -97,6 +116,7 @@
       </p>
 
       <p class="made-note" [class.is-warning]="warned" role="status">
+        <lucide-icon [name]="warned || copyFailed ? 'triangle-alert' : 'eye-off'" [size]="16" aria-hidden="true"></lucide-icon>
         {{ warned ? 'You have not copied the secret, and it cannot be shown again. Press Done again to close.'
                   : copyFailed ? 'Could not copy. Select the text and copy it yourself.'
                   : 'The secret is shown once. Copy it now.' }}

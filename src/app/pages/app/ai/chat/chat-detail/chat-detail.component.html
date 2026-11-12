@@ -60,7 +60,7 @@
         }
         <!-- Everything about this chat, beside the conversation. -->
         <button type="button" class="icon-btn" [class.is-on]="panelOpen" (click)="panelOpen = !panelOpen"
-                [attr.aria-pressed]="panelOpen" matTooltip="About this chat" aria-label="About this chat">
+                [attr.aria-pressed]="panelOpen" matTooltip="Inspect this chat" aria-label="Inspect this chat">
           <lucide-icon name="info" [size]="18" aria-hidden="true"></lucide-icon>
         </button>
         <!-- The two things done most from a chat, out of the menu. -->
@@ -121,7 +121,7 @@
   @if (isNarrow) {
     <button mat-menu-item (click)="panelOpen = true">
       <lucide-icon name="info" [size]="16" aria-hidden="true"></lucide-icon>
-      <span>About this chat</span>
+      <span>Inspect this chat</span>
     </button>
     <a mat-menu-item routerLink="/ai/chats">
       <lucide-icon name="square-pen" [size]="16" aria-hidden="true"></lucide-icon>
@@ -311,17 +311,23 @@
   </div>
   </div>
 
-  <!-- With room for it, the live view stands beside the thread: the
-       person reads the conversation and watches the browser at once. -->
+  <!-- Everything about the chat, beside the thread: what it cost, what
+       ran it, what it touched, its schedules and its setup. -->
   @if (panelOpen) {
-    <aside class="chat-panel" [class.is-sheet]="isNarrow">
-      <app-chat-panel [chatId]="chat_id" [settings]="settings" [work]="work" [waiting]="cards.length"
-                      [agents]="chatAgents" [names]="names" [model]="modelLabel" [stopping]="stoppingWork"
-                      (closed)="panelOpen = false" (stopWork)="stopWork($event)"
-                      (changeAgents)="onMessagesActionClicked('agents')"
-                      (changeSkills)="onMessagesActionClicked('skills')"></app-chat-panel>
+    <aside class="chat-panel" [class.is-sheet]="isNarrow" [class.is-expanded]="panelExpanded && !isNarrow">
+      <app-chat-inspector [chatId]="chat_id" [settings]="settings" [working]="working" [work]="work"
+                          [waiting]="cards.length" [agents]="chatAgents" [names]="names" [model]="modelLabel"
+                          [files]="files" [stopping]="stoppingWork" [stoppingAll]="killing" [sheet]="isNarrow"
+                          [(expanded)]="panelExpanded" (closed)="panelOpen = false" (stopWork)="stopWork($event)"
+                          (stopAll)="askKill()" (openOutput)="openOutput($event)"
+                          (changeAgents)="onMessagesActionClicked('agents')"
+                          (changeSkills)="onMessagesActionClicked('skills')"
+                          (changeSettings)="onSettingsChosen($event)"></app-chat-inspector>
     </aside>
   }
+
+  <!-- With room for it, the live view stands beside the thread: the
+       person reads the conversation and watches the browser at once. -->
 
   @if (showSideScreen) {
     <aside class="chat-side" [class.is-minimized]="screenMinimized" [class.has-tabs]="screen?.tabs?.length" role="region" aria-label="Live view">

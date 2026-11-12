@@ -34,7 +34,7 @@ export interface WebhookDialogData {
   selector: 'app-webhook-dialog',
   standalone: false,
   templateUrl: './webhook-dialog.component.html',
-  styleUrl: './webhook-dialog.component.css',
+  styleUrls: ['../schedules/opened-shared.css', './webhook-dialog.component.css'],
 })
 export class WebhookDialogComponent {
   readonly types = FIELD_TYPES;

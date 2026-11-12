@@ -1,16 +1,29 @@
-<div class="side-layout">
-  <!-- Wide screens: the pages, always in view. -->
+<div class="side-layout settings-layout">
+  <!-- Wide screens: the pages, always in view, each with its icon in a
+       tile that takes the section's hue when it is the open one. -->
   <nav class="settings-nav" aria-label="Settings">
+    <p class="settings-nav-head">
+      <span class="settings-nav-mark" aria-hidden="true">
+        <lucide-icon name="settings" [size]="16"></lucide-icon>
+      </span>
+      Settings
+    </p>
     <ng-container *ngFor="let group of groups">
-      <p class="side-label">{{ group.name }}</p>
+      <p class="side-label settings-group">
+        <lucide-icon [name]="group.name === 'You' ? 'user' : 'building-2'" [size]="12" aria-hidden="true"></lucide-icon>
+        {{ group.name }}
+      </p>
       <a
         *ngFor="let page of group.pages"
-        class="side-item"
+        class="side-item settings-item"
         [routerLink]="page.path"
         routerLinkActive="is-current"
         ariaCurrentWhenActive="page"
       >
-        {{ page.name }}
+        <span class="settings-item-icon" aria-hidden="true">
+          <lucide-icon [name]="iconOf(page)" [size]="15"></lucide-icon>
+        </span>
+        <span class="settings-item-name">{{ page.name }}</span>
         <ng-container *ngIf="page.path === 'providers' && (llm.count$ | async) as count">
           <span class="chip side-count" aria-hidden="true">{{ count }}</span>
           <span class="visually-hidden">, {{ count }} connected</span>
@@ -27,6 +40,7 @@
       aria-label="Settings pages"
       [matMenuTriggerFor]="pagesMenu"
     >
+      <lucide-icon [name]="current ? iconOf(current) : 'settings'" [size]="16" aria-hidden="true"></lucide-icon>
       <span>{{ current?.name || 'Settings' }}</span>
       <lucide-icon name="chevron-down" [size]="16" aria-hidden="true"></lucide-icon>
     </button>
@@ -39,6 +53,7 @@
           [routerLink]="page.path"
           [attr.aria-current]="page === current ? 'page' : null"
         >
+          <lucide-icon [name]="iconOf(page)" [size]="16" aria-hidden="true"></lucide-icon>
           {{ page.name }}
           <lucide-icon
             *ngIf="page === current"
@@ -52,8 +67,15 @@
     </mat-menu>
 
     <!-- Wide, as the Organization section's other pages are: the side
-         column already takes the room a narrow page would leave. -->
-    <app-page [title]="current?.name || 'Settings'" [sentence]="current?.sentence || ''" [wide]="true">
+         column already takes the room a narrow page would leave. The
+         open page's icon heads its band, in the section's violet. -->
+    <app-page
+      [title]="current?.name || 'Settings'"
+      [sentence]="current?.sentence || ''"
+      [wide]="true"
+      [icon]="current ? iconOf(current) : 'settings'"
+      [hue]="hue"
+    >
       <router-outlet></router-outlet>
     </app-page>
   </div>

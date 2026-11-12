@@ -119,6 +119,147 @@ export function agentFacts(manifest: Manifest | null | undefined): string[] {
   return facts;
 }
 
+/** One thing a card or a page counts, with the icon it is told by:
+ *  `8 functions`, `1 secret`, `graph.microsoft.com +2`. */
+export interface AgentStat {
+  icon: string;
+  text: string;
+  /** The whole of it, for a tooltip, where `text` is shortened. */
+  title?: string;
+}
+
+/** The same facts as `agentFacts`, each with its icon: what a card shows
+ *  as a row of small pills rather than one line of words. */
+export function agentStats(manifest: Manifest | null | undefined): AgentStat[] {
+  const functions = manifest?.functions?.length || 0;
+  const network = networkOf(manifest);
+  const kept = resourcesOf(manifest);
+  const secrets = kept.find((group) => group.kind === 'secrets')?.items.length || 0;
+  const records = kept.filter((group) => group.kind !== 'secrets').reduce((sum, group) => sum + group.items.length, 0);
+  const stats: AgentStat[] = [{ icon: 'list-checks', text: `${functions} ${functions === 1 ? 'function' : 'functions'}` }];
+  if (secrets) stats.push({ icon: 'key-round', text: `${secrets} ${secrets === 1 ? 'secret' : 'secrets'}` });
+  if (records) {
+    stats.push({ icon: 'database', text: `${records} kept`, title: `Keeps ${records} kind${records === 1 ? '' : 's'} of record or file` });
+  }
+  if (network.any) {
+    stats.push({ icon: 'globe', text: 'the open web' });
+  } else if (network.hosts.length) {
+    const more = network.hosts.length - 1;
+    stats.push({ icon: 'globe', text: network.hosts[0] + (more ? ` +${more}` : ''), title: network.hosts.join(', ') });
+  } else if (!network.from_secrets.length) {
+    stats.push({ icon: 'lock', text: 'no network', title: 'It connects to nothing outside the platform' });
+  }
+  return stats;
+}
+
+/** A level's place in the order, 0 to 3, by its word. */
+export function levelIndex(name: string): number {
+  return PERMISSION_LEVELS.indexOf(name);
+}
+
+/** The functions by level as the parts of one bar: each level's share of
+ *  the whole, in the order of the levels. */
+export function levelBar(manifest: Manifest | null | undefined):
+  Array<{ name: string; count: number; share: number; index: number }> {
+  const tally = levelTally(manifest);
+  const total = tally.reduce((sum, level) => sum + level.count, 0) || 1;
+  return tally.map((level) => ({ ...level, share: (level.count / total) * 100, index: levelIndex(level.name) }));
+}
+
+/** One of the numbers at the head of an agent's page or review. */
+export interface AgentTile {
+  icon: string;
+  value: string;
+  label: string;
+  /** Worth a second look: an outside action, the open web. */
+  warn?: boolean;
+}
+
+/** The numbers a careful reader counts first: its functions, how many
+ *  only read, how many act outside the platform, the hosts it reaches,
+ *  and what it keeps. */
+export function agentTiles(manifest: Manifest | null | undefined): AgentTile[] {
+  const functions = manifest?.functions || [];
+  const reads = functions.filter((fn) => (fn.level ?? 0) === 0).length;
+  const outside = functions.filter((fn) => fn.level === 3).length;
+  const network = networkOf(manifest);
+  const hosts = network.hosts.length + network.from_secrets.length;
+  const kept = resourcesOf(manifest).reduce((sum, group) => sum + group.items.length, 0);
+  return [
+    { icon: 'list-checks', value: String(functions.length), label: functions.length === 1 ? 'function' : 'functions' },
+    { icon: 'eye', value: String(reads), label: 'only read' },
+    { icon: 'zap', value: String(outside), label: 'act outside', warn: outside > 0 },
+    network.any
+      ? { icon: 'globe', value: 'Any', label: 'public address', warn: true }
+      : { icon: hosts ? 'globe' : 'lock', value: hosts ? String(hosts) : 'None', label: hosts === 1 ? 'host it reaches' : 'hosts it reaches' },
+    { icon: 'database', value: String(kept), label: kept === 1 ? 'thing it keeps' : 'things it keeps' },
+  ];
+}
+
+/** One thing an agent keeps, as its row says it. */
+export interface KeptItem {
+  kind: 'secrets' | 'data' | 'files';
+  icon: string;
+  word: string;
+  label: string;
+  about: string;
+  resource: AgentResource;
+}
+
+/** Every secret, record and file a manifest keeps, one row each. */
+export function keptItems(manifest: Manifest | null | undefined): KeptItem[] {
+  const icons = { secrets: 'key-round', data: 'database', files: 'folder' } as const;
+  const words = { secrets: 'secret', data: 'record', files: 'file' } as const;
+  return resourcesOf(manifest).flatMap((group) => group.items.map((item) => ({
+    kind: group.kind,
+    icon: icons[group.kind],
+    word: words[group.kind],
+    label: item.label || item.id,
+    about: item.description || '',
+    resource: item,
+  })));
+}
+
+/** What a level means, without the "Level n." it begins with: a legend
+ *  says the level by its word and colour already. */
+export function levelMeaning(name: string): string {
+  return (LEVEL_MEANINGS[name] || '').replace(/^Level \d\.\s*/, '');
+}
+
+/** The icon an agent is told by, when its name or id says what it is:
+ *  mail, a calendar, files. The manifest names none, and initials alone
+ *  make a grid of look-alike tiles. Every name here is one the app
+ *  registers (app.module.ts); none found is '' and the mark keeps its
+ *  initials. */
+const ICONS: Array<[RegExp, string]> = [
+  [/gmail|outlook|(^|_)mail/, 'mail'],
+  [/calendar/, 'calendar-days'],
+  [/teams/, 'message-square-text'],
+  [/slack|chat/, 'message-square'],
+  [/drive|onedrive|dropbox|(^|_)box($|_)/, 'folder-open'],
+  [/sheets|excel|spreadsheet/, 'file-spreadsheet'],
+  [/slides|powerpoint|deck/, 'presentation'],
+  [/docs|word|documents/, 'file-text'],
+  [/forms|applications/, 'square-pen'],
+  [/todo|tasks|todoist/, 'circle-check'],
+  [/timesheet/, 'clock'],
+  [/expense|receipt|invoice/, 'receipt-text'],
+  [/json/, 'file-braces'],
+  [/code_runner|code|terminal/, 'square-terminal'],
+  [/connection_check|network/, 'network'],
+  [/browser/, 'monitor'],
+  [/web_watch|watch/, 'eye'],
+  [/feeds|rss|news/, 'scroll-text'],
+  [/web_reader|web|places|maps/, 'globe'],
+  [/notion|notebook/, 'book-open'],
+  [/note/, 'pencil-line'],
+];
+
+export function iconOf(manifest: Manifest | null | undefined): string {
+  const id = `${manifest?.agent?.id || ''} ${manifest?.agent?.name || ''}`.toLowerCase().replace(/\s+/g, '_');
+  return ICONS.find(([pattern]) => pattern.test(id))?.[1] || '';
+}
+
 /** The resources a manifest declares, by kind, each with the word a
  *  person reads it by. */
 export function resourcesOf(manifest: Manifest | null | undefined):

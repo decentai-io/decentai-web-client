@@ -1,6 +1,33 @@
-<app-page guide="access" title="Groups" sentence="A group gives its people its policies. Everyone holds every person. People are placed in groups on the Users page." [wide]="true">
+<app-page guide="access" title="Groups" sentence="A group gives its people its policies. Everyone holds every person. People are placed in groups on the Users page." [wide]="true"
+          icon="users" [hue]="262">
   <p class="form-notice is-error" role="alert" *ngIf="error && !editorOpen">{{ error }}</p>
   <p class="form-notice" role="status" *ngIf="notice">{{ notice }}</p>
+
+  <!-- The numbers at a glance: the groups, those made here, and the
+       policies they can give. -->
+  <ul class="ui-tiles" aria-label="Groups in numbers" *ngIf="!loading && groups.length">
+    <li class="ui-tile">
+      <span class="ui-tile-icon"><lucide-icon name="users" [size]="20" aria-hidden="true"></lucide-icon></span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ groups.length }}</span>
+        <span class="ui-tile-label">{{ groups.length === 1 ? "Group" : "Groups" }}</span>
+      </span>
+    </li>
+    <li class="ui-tile">
+      <span class="ui-tile-icon"><lucide-icon name="pencil-line" [size]="20" aria-hidden="true"></lucide-icon></span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ ownCount }}</span>
+        <span class="ui-tile-label">Made here</span>
+      </span>
+    </li>
+    <li class="ui-tile">
+      <span class="ui-tile-icon"><lucide-icon name="scroll-text" [size]="20" aria-hidden="true"></lucide-icon></span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ policies.length }}</span>
+        <span class="ui-tile-label">{{ policies.length === 1 ? "Policy to give" : "Policies to give" }}</span>
+      </span>
+    </li>
+  </ul>
 
   <app-list label="Groups" [loading]="loading">
     <ng-container listToolbar *ngIf="groups.length">
@@ -12,10 +39,18 @@
     </ng-container>
 
     <app-row *ngFor="let group of shown">
-      <lucide-icon rowMark name="users" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
+      <lucide-icon rowMark [name]="group.administrators ? 'shield-check' : group.everyone ? 'globe' : 'users'" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
       <button rowName class="admin-name" type="button" *ngIf="canUpdate || canAssign; else plainName" (click)="startEdit(group)">{{ group.name }}</button>
       <ng-template #plainName><span rowName>{{ group.name }}</span></ng-template>
-      <ng-container rowMeta>{{ summarise(group) }}</ng-container>
+      <span rowChips class="chip" *ngIf="stays(group)"
+            matTooltip="Made with the organization: it is neither renamed nor deleted"><lucide-icon name="lock" [size]="12" aria-hidden="true"></lucide-icon>Built in</span>
+      <!-- Who is in it and what it gives, as pills. -->
+      <span rowMeta class="ui-pills admin-pills">
+        <span class="ui-pill is-accent"><lucide-icon name="user" [size]="12" aria-hidden="true"></lucide-icon>{{ peopleWord(group) }}</span>
+        <span class="ui-pill" *ngIf="!group.policies.length">No policies</span>
+        <span class="ui-pill" *ngFor="let name of policyNames(group)"><lucide-icon name="scroll-text" [size]="12" aria-hidden="true"></lucide-icon>{{ name }}</span>
+        <span class="ui-pill" *ngIf="group.policies.length > 3">+{{ group.policies.length - 3 }} more</span>
+      </span>
       <button rowState class="icon-btn sm" type="button" *ngIf="canUpdate || canAssign || (canDelete && !stays(group))"
               [attr.aria-label]="'More for ' + group.name" [disabled]="isBusy(group.group_id)"
               [matMenuTriggerFor]="groupMenu" [matMenuTriggerData]="{ group: group }">
@@ -27,7 +62,9 @@
                line="A group gives its people its policies.">
       <ng-container *ngTemplateOutlet="addButton"></ng-container>
     </app-empty>
-    <app-empty *ngIf="groups.length && !shown.length" icon="search-x" title="No group matches" line="Try another search."></app-empty>
+    <app-empty *ngIf="groups.length && !shown.length" icon="search-x" title="No group matches" line="Try another search.">
+      <button class="btn" type="button" (click)="query = ''">Clear the search</button>
+    </app-empty>
   </app-list>
 
   <ng-template #addButton>
@@ -39,8 +76,12 @@
 
   <mat-menu #groupMenu="matMenu" xPosition="before">
     <ng-template matMenuContent let-group="group">
-      <button mat-menu-item *ngIf="canUpdate || canAssign" (click)="startEdit(group)">Edit</button>
-      <button mat-menu-item *ngIf="canDelete && !stays(group)" (click)="remove(group)">Delete</button>
+      <button mat-menu-item *ngIf="canUpdate || canAssign" (click)="startEdit(group)">
+        <lucide-icon name="pencil" [size]="16" aria-hidden="true"></lucide-icon>Edit
+      </button>
+      <button mat-menu-item *ngIf="canDelete && !stays(group)" (click)="remove(group)">
+        <lucide-icon name="trash-2" [size]="16" aria-hidden="true"></lucide-icon>Delete
+      </button>
     </ng-template>
   </mat-menu>
 

@@ -1,5 +1,9 @@
-<app-page guide="organization#monitoring" title="Monitoring" sentence="What models and agents use, and what runtimes saw of them." [wide]="true">
-  <span pageActions class="mon-updated" *ngIf="view === 'agents' && updated">{{ updated }}</span>
+<app-page guide="organization#monitoring" title="Monitoring" icon="activity" [hue]="262"
+          sentence="What models and agents use, and what runtimes saw of them." [wide]="true">
+  <span pageActions class="mon-updated" *ngIf="view === 'agents' && updated">
+    <span class="mon-live" aria-hidden="true"></span>
+    {{ updated }}
+  </span>
   <app-segmented
     pageActions
     *ngIf="views.length > 1"
@@ -25,121 +29,152 @@
       <span class="sk sk-field"></span>
     </div>
 
-    <section class="form-section" *ngIf="!loadingUsage">
-      <h2 class="form-section-title">The agents</h2>
-      <p class="form-section-note">The organization's agents running now, as their runtimes report them: one process for each chat that uses one.</p>
+    <ng-container *ngIf="!loadingUsage">
+      <!-- What they hold now, added up: each a tile. -->
+      <ul class="ui-tiles mon-tiles" *ngIf="agents.length" aria-label="What the agents hold now">
+        <li class="ui-tile">
+          <span class="ui-tile-icon" aria-hidden="true"><lucide-icon name="server" [size]="20"></lucide-icon></span>
+          <span class="ui-tile-words">
+            <span class="ui-tile-value">{{ processes }}</span>
+            <span class="ui-tile-label">Processes</span>
+          </span>
+        </li>
+        <li class="ui-tile">
+          <span class="ui-tile-icon" aria-hidden="true"><lucide-icon name="database" [size]="20"></lucide-icon></span>
+          <span class="ui-tile-words">
+            <span class="ui-tile-value">{{ bytes(memory) }}</span>
+            <span class="ui-tile-label">Memory they hold now</span>
+          </span>
+        </li>
+        <li class="ui-tile">
+          <span class="ui-tile-icon" aria-hidden="true"><lucide-icon name="gauge" [size]="20"></lucide-icon></span>
+          <span class="ui-tile-words">
+            <span class="ui-tile-value">{{ cpu | number: '1.0-2' }}</span>
+            <span class="ui-tile-label">Processor cores in use</span>
+          </span>
+        </li>
+      </ul>
 
-      <dl class="mon-tiles" *ngIf="agents.length">
-        <div class="mon-tile">
-          <dt>Processes</dt>
-          <dd>{{ processes }}</dd>
+      <section class="ui-panel" aria-labelledby="mon-agents-title">
+        <div class="ui-panel-head">
+          <span class="ui-panel-icon is-hued"><lucide-icon name="bot" [size]="16" aria-hidden="true"></lucide-icon></span>
+          <h2 class="ui-panel-title" id="mon-agents-title">The agents</h2>
+          <span class="ui-pill" *ngIf="agents.length">{{ agents.length }} running</span>
         </div>
-        <div class="mon-tile">
-          <dt>Memory they hold now</dt>
-          <dd>{{ bytes(memory) }}</dd>
-        </div>
-        <div class="mon-tile">
-          <dt>Processor cores in use</dt>
-          <dd>{{ cpu | number: '1.0-2' }}</dd>
-        </div>
-      </dl>
+        <p class="mon-panel-note">The organization's agents running now, as their runtimes report them: one process for each chat that uses one.</p>
 
-      <app-empty
-        *ngIf="!agents.length"
-        icon="gauge"
-        title="No agent is running"
-        line="An agent starts when a chat first calls it, and is listed here while it runs."
-      ></app-empty>
+        <app-empty
+          *ngIf="!agents.length"
+          icon="gauge"
+          title="No agent is running"
+          line="An agent starts when a chat first calls it, and is listed here while it runs."
+        ></app-empty>
 
-      <app-list label="Running agents" rows="table" *ngIf="agents.length">
-        <table class="table">
-          <thead>
-            <tr>
-              <th scope="col">Agent</th>
-              <th scope="col">Memory</th>
-              <th scope="col" class="num cell-minor">Cores</th>
-              <th scope="col" class="num cell-minor">Processes</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let agent of agents; trackBy: byAgent">
-              <td class="cell-main">{{ agent.agent }}</td>
-              <td class="cell-fact">
-                <span class="mon-memory">
-                  <span class="mon-number">{{ bytes(agent.memory) }}</span>
-                  <span class="mon-meter" role="img" [attr.aria-label]="share(agent) + '% of the most any agent holds'">
-                    <span [style.width.%]="share(agent)"></span>
+        <app-list label="Running agents" rows="table" *ngIf="agents.length">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">Agent</th>
+                <th scope="col">Memory</th>
+                <th scope="col" class="num cell-minor">Cores</th>
+                <th scope="col" class="num cell-minor">Processes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let agent of agents; trackBy: byAgent">
+                <td class="cell-main">
+                  <span class="mon-agent">
+                    <app-agent-mark size="sm" [name]="agent.agent" aria-hidden="true"></app-agent-mark>
+                    {{ agent.agent }}
                   </span>
-                </span>
-              </td>
-              <td class="num cell-minor">{{ agent.cpu | number: '1.0-2' }}</td>
-              <td class="num cell-minor">{{ agent.processes }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </app-list>
-    </section>
+                </td>
+                <td class="cell-fact">
+                  <span class="mon-memory">
+                    <span class="mon-number">{{ bytes(agent.memory) }}</span>
+                    <span class="mon-meter" role="img" [attr.aria-label]="share(agent) + '% of the most any agent holds'">
+                      <span [style.width.%]="share(agent)"></span>
+                    </span>
+                  </span>
+                </td>
+                <td class="num cell-minor">{{ agent.cpu | number: '1.0-2' }}</td>
+                <td class="num cell-minor">{{ agent.processes }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </app-list>
+      </section>
+    </ng-container>
   </ng-container>
 
   <!-- ── What runtimes wrote down ────────────────────────────────── -->
-  <app-list *ngIf="view === 'events'" rows="groups" label="Events" [loading]="loading">
-    <app-empty
-      *ngIf="!days.length"
-      icon="scroll-text"
-      title="Nothing written down yet"
-      line="What runtimes do for the organization's chats appears here as it happens."
-    ></app-empty>
-
-    <section *ngFor="let day of days">
-      <h2 class="record-day">{{ day.day }}</h2>
-      <div role="list" [attr.aria-label]="day.day">
-        <app-record-row
-          *ngFor="let group of day.items"
-          [time]="time(group.first)"
-          [tone]="tone(group.first)"
-          [outcome]="outcome(group.first)"
-          [words]="group.first.what"
-          [more]="more(group.first)"
-          [chip]="group.first.who"
-          [count]="group.lines.length"
-          [canOpen]="group.lines.length > 1 || hasDetails(group.first)"
-          [open]="isOpen(groupKey(group))"
-          (toggle)="toggle(groupKey(group))"
-        >
-          <ng-container *ngIf="isOpen(groupKey(group))">
-            <ng-container *ngIf="group.lines.length === 1">
-              <ng-container *ngTemplateOutlet="written; context: { $implicit: group.first }"></ng-container>
-            </ng-container>
-
-            <!-- Several alike: each of them, with its own time and details. -->
-            <div role="list" *ngIf="group.lines.length > 1" [attr.aria-label]="group.first.what">
-              <app-record-row
-                *ngFor="let line of group.lines"
-                [time]="time(line)"
-                [tone]="tone(line)"
-                [outcome]="outcome(line)"
-                [words]="line.what"
-                [more]="more(line)"
-                [canOpen]="hasDetails(line)"
-                [open]="isOpen(line.line_id)"
-                (toggle)="toggle(line.line_id)"
-              >
-                <ng-container *ngIf="isOpen(line.line_id)">
-                  <ng-container *ngTemplateOutlet="written; context: { $implicit: line }"></ng-container>
-                </ng-container>
-              </app-record-row>
-            </div>
-          </ng-container>
-        </app-record-row>
-      </div>
-    </section>
-
-    <div class="record-older" *ngIf="before">
-      <button class="btn" type="button" [disabled]="loadingMore" (click)="older()">
-        {{ loadingMore ? "Loading…" : "Load older" }}
-      </button>
+  <section class="ui-panel" *ngIf="view === 'events'" aria-labelledby="mon-events-title">
+    <div class="ui-panel-head">
+      <span class="ui-panel-icon is-hued"><lucide-icon name="scroll-text" [size]="16" aria-hidden="true"></lucide-icon></span>
+      <h2 class="ui-panel-title" id="mon-events-title">What runtimes wrote down</h2>
+      <span class="ui-pill" *ngIf="lines.length">{{ lines.length }} {{ lines.length === 1 ? "line" : "lines" }} read</span>
     </div>
-  </app-list>
+    <app-list rows="groups" label="Events" [loading]="loading">
+      <app-empty
+        *ngIf="!days.length"
+        icon="scroll-text"
+        title="Nothing written down yet"
+        line="What runtimes do for the organization's chats appears here as it happens."
+      ></app-empty>
+  
+      <section *ngFor="let day of days">
+        <h2 class="record-day mon-day">
+          <lucide-icon name="calendar-days" [size]="14" aria-hidden="true"></lucide-icon>
+          {{ day.day }}
+        </h2>
+        <div role="list" [attr.aria-label]="day.day">
+          <app-record-row
+            *ngFor="let group of day.items"
+            [time]="time(group.first)"
+            [tone]="tone(group.first)"
+            [outcome]="outcome(group.first)"
+            [words]="group.first.what"
+            [more]="more(group.first)"
+            [chip]="group.first.who"
+            [count]="group.lines.length"
+            [canOpen]="group.lines.length > 1 || hasDetails(group.first)"
+            [open]="isOpen(groupKey(group))"
+            (toggle)="toggle(groupKey(group))"
+          >
+            <ng-container *ngIf="isOpen(groupKey(group))">
+              <ng-container *ngIf="group.lines.length === 1">
+                <ng-container *ngTemplateOutlet="written; context: { $implicit: group.first }"></ng-container>
+              </ng-container>
+  
+              <!-- Several alike: each of them, with its own time and details. -->
+              <div role="list" *ngIf="group.lines.length > 1" [attr.aria-label]="group.first.what">
+                <app-record-row
+                  *ngFor="let line of group.lines"
+                  [time]="time(line)"
+                  [tone]="tone(line)"
+                  [outcome]="outcome(line)"
+                  [words]="line.what"
+                  [more]="more(line)"
+                  [canOpen]="hasDetails(line)"
+                  [open]="isOpen(line.line_id)"
+                  (toggle)="toggle(line.line_id)"
+                >
+                  <ng-container *ngIf="isOpen(line.line_id)">
+                    <ng-container *ngTemplateOutlet="written; context: { $implicit: line }"></ng-container>
+                  </ng-container>
+                </app-record-row>
+              </div>
+            </ng-container>
+          </app-record-row>
+        </div>
+      </section>
+  
+      <div class="record-older" *ngIf="before">
+        <button class="btn" type="button" [disabled]="loadingMore" (click)="older()">
+          {{ loadingMore ? "Loading…" : "Load older" }}
+        </button>
+      </div>
+    </app-list>
+  </section>
 </app-page>
 
 <!-- One line as it was written down, field by field. -->

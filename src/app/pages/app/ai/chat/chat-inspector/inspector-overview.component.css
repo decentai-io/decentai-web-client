@@ -1,0 +1,124 @@
+/* The state of the chat: a dot, a word and who holds it; then its
+   numbers, two tiles a row in the column, more as it widens. */
+.ov-status-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ov-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.ov-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-full);
+  background: var(--ink-3);
+}
+
+.ov-status.is-working .ov-dot {
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+  animation: pulse 1.6s var(--ease) infinite;
+}
+
+.ov-state {
+  color: var(--ink);
+  font-size: var(--t-base);
+  font-weight: 600;
+  line-height: var(--lh-base);
+}
+
+.ov-waiting {
+  margin: 0;
+}
+
+.ov-tiles.ui-tiles {
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.ov-tiles li {
+  display: flex;
+  min-width: 0;
+}
+
+.ov-tiles .ui-tile {
+  flex: 1;
+  gap: 10px;
+  padding: 10px 12px;
+  box-shadow: none;
+}
+
+.ov-tiles .ui-tile-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+}
+
+.ov-tiles .ui-tile-value {
+  font-size: var(--t-md);
+  line-height: var(--lh-md);
+}
+
+.ov-tiles .ui-tile-label {
+  overflow: hidden;
+  font-size: var(--t-xs);
+  line-height: var(--lh-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Where the tokens went: small tables, each row's share of all the
+   tokens a thin bar under its name. Wider than the column, they scroll
+   sideways rather than squeeze. */
+.tok-scroll {
+  overflow-x: auto;
+}
+
+.tok-scroll + .tok-scroll {
+  margin-top: 8px;
+}
+
+.tok-table {
+  font-size: var(--t-xs);
+  line-height: var(--lh-xs);
+}
+
+.tok-table td:first-child {
+  min-width: 96px;
+}
+
+.tok-name {
+  display: block;
+  overflow: hidden;
+  color: var(--ink);
+  text-overflow: ellipsis;
+}
+
+.tok-bar {
+  display: block;
+  height: 3px;
+  margin-top: 4px;
+  overflow: hidden;
+  border-radius: var(--r-full);
+  background: var(--surface-2);
+}
+
+.tok-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  opacity: 0.7;
+}

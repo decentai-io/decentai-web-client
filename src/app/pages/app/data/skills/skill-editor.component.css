@@ -29,6 +29,13 @@ section > .form-section-title {
   margin-bottom: 8px;
 }
 
+/* A section's title with its icon tile, as a panel's head. */
+.editor-section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 /* The tabs, the marks, and the example at the right. */
 .editor-bar {
   display: flex;

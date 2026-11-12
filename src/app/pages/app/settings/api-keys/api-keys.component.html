@@ -2,42 +2,87 @@
   <button class="btn" type="button" (click)="load()">Try again</button>
 </app-empty>
 
-<app-list *ngIf="!loadError" label="API keys" [loading]="loading" [foot]="keys.length ? foot : ''">
-  <ng-container listToolbar *ngIf="!loading">
-    <!-- The plus alone, at the list's top right, whether or not there
-         are keys yet. -->
-    <span class="toolbar-end" *ngIf="canCreate"
-          [matTooltip]="atLimit ? 'Revoke a key to create another: ' + limit + ' is the most at once.' : 'Create a key'">
-      <button class="icon-btn primary" type="button" aria-label="Create a key" [disabled]="atLimit" (click)="create()">
-        <lucide-icon name="plus" [size]="18" aria-hidden="true"></lucide-icon>
-      </button>
-    </span>
-  </ng-container>
+<ng-container *ngIf="!loadError">
+  <!-- The numbers at a glance: how many are in use, how many more may be
+       made, and how many no script has called with yet. -->
+  <ul class="ui-tiles" aria-label="API keys in numbers" *ngIf="!loading && keys.length">
+    <li class="ui-tile">
+      <span class="ui-tile-icon"><lucide-icon name="key-round" [size]="20" aria-hidden="true"></lucide-icon></span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ keys.length }}</span>
+        <span class="ui-tile-label">{{ keys.length === 1 ? "Active key" : "Active keys" }}</span>
+      </span>
+    </li>
+    <li class="ui-tile">
+      <span class="ui-tile-icon" [class.is-warn]="atLimit"><lucide-icon name="plus" [size]="20" aria-hidden="true"></lucide-icon></span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ available }}</span>
+        <span class="ui-tile-label">Still available, of {{ limit }}</span>
+      </span>
+    </li>
+    <li class="ui-tile">
+      <span class="ui-tile-icon"><lucide-icon name="activity" [size]="20" aria-hidden="true"></lucide-icon></span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ usedCount }}</span>
+        <span class="ui-tile-label">Used by a script</span>
+      </span>
+    </li>
+  </ul>
 
-  <p class="keys-error" role="alert" *ngIf="revokeError">{{ revokeError }}</p>
-
-  <app-row *ngFor="let key of keys" [name]="key.name" [title]="datesInFull(key)">
-    <lucide-icon rowMark name="key-round" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
-    <ng-container rowMeta>
-      <code class="keys-prefix">{{ key.shown }}</code> · {{ created(key) }} · {{ used(key) }} · {{ expires(key) }}
+  <app-list label="API keys" [loading]="loading" [foot]="keys.length ? foot : ''">
+    <ng-container listToolbar *ngIf="!loading">
+      <!-- What a key is, beside the way to make one. -->
+      <p class="keys-lead">
+        <lucide-icon name="shield-check" [size]="16" aria-hidden="true"></lucide-icon>
+        Each key acts as you, with your permissions. It is shown once, when it is made.
+      </p>
+      <!-- The plus alone, at the list's top right, whether or not there
+           are keys yet. -->
+      <span class="toolbar-end" *ngIf="canCreate"
+            [matTooltip]="atLimit ? 'Revoke a key to create another: ' + limit + ' is the most at once.' : 'Create a key'">
+        <button class="icon-btn primary" type="button" aria-label="Create a key" [disabled]="atLimit" (click)="create()">
+          <lucide-icon name="plus" [size]="18" aria-hidden="true"></lucide-icon>
+        </button>
+      </span>
     </ng-container>
-    <button
-      rowActions
-      class="btn danger sm"
-      type="button"
-      *ngIf="canRevoke"
-      [attr.aria-label]="'Revoke ' + key.name"
-      [disabled]="busyId === key.key_id"
-      (click)="revoke(key)"
-    >
-      {{ busyId === key.key_id ? "Revoking…" : "Revoke" }}
-    </button>
-  </app-row>
 
-  <app-empty
-    *ngIf="!keys.length"
-    icon="key-round"
-    title="No API keys yet"
-    line="Create one when a script needs to act with your permissions. It is shown once, and lasts as long as you choose, up to a year."
-  ></app-empty>
-</app-list>
+    <p class="keys-error" role="alert" *ngIf="revokeError">{{ revokeError }}</p>
+
+    <app-row *ngFor="let key of keys" [name]="key.name" [title]="datesInFull(key)">
+      <lucide-icon rowMark name="key-round" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
+      <code rowChips class="keys-prefix">{{ key.shown }}</code>
+      <!-- Its dates, each a pill with its icon; one ending within two
+           weeks is in the warning colour. -->
+      <span rowMeta class="ui-pills keys-pills">
+        <span class="ui-pill"><lucide-icon name="calendar" [size]="12" aria-hidden="true"></lucide-icon>{{ created(key) }}</span>
+        <span class="ui-pill" [class.is-accent]="!!key.last_used_at">
+          <lucide-icon [name]="key.last_used_at ? 'activity' : 'circle-dashed'" [size]="12" aria-hidden="true"></lucide-icon>{{ used(key) }}
+        </span>
+        <span class="ui-pill" [class.is-warn]="endsSoon(key)"><lucide-icon name="hourglass" [size]="12" aria-hidden="true"></lucide-icon>{{ expires(key) }}</span>
+      </span>
+      <button
+        rowActions
+        class="btn danger sm"
+        type="button"
+        *ngIf="canRevoke"
+        [attr.aria-label]="'Revoke ' + key.name"
+        [disabled]="busyId === key.key_id"
+        (click)="revoke(key)"
+      >
+        {{ busyId === key.key_id ? "Revoking…" : "Revoke" }}
+      </button>
+    </app-row>
+
+    <app-empty
+      *ngIf="!keys.length"
+      icon="key-round"
+      title="No API keys yet"
+      line="Create one when a script needs to act with your permissions. It is shown once, and lasts as long as you choose, up to a year."
+    >
+      <button class="btn primary" type="button" *ngIf="canCreate" (click)="create()">
+        <lucide-icon name="plus" [size]="16" aria-hidden="true"></lucide-icon>
+        Create a key
+      </button>
+    </app-empty>
+  </app-list>
+</ng-container>

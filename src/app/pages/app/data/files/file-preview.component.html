@@ -1,5 +1,6 @@
+<!-- Its header band: the file's face, its name, and its facts as pills. -->
 <header class="preview-head">
-  <app-file-icon [name]="name" [mime]="file.file?.type"></app-file-icon>
+  <app-file-icon class="preview-face" [name]="name" [mime]="file.file?.type"></app-file-icon>
   <div class="preview-words">
     <h2 class="preview-name" *ngIf="draftName === null">
       {{ name }}
@@ -17,27 +18,43 @@
       <button class="btn sm" type="button" [disabled]="renaming" (click)="draftName = null">Cancel</button>
     </form>
     <p class="preview-rename-problem" role="alert" *ngIf="draftName !== null && renameProblem">{{ renameProblem }}</p>
-    <p class="preview-facts">
-      <span *ngIf="source">{{ source }}</span>
-      <span *ngIf="size">{{ size }}</span>
-      <span *ngIf="created">Stored {{ created }}</span>
-      <span *ngIf="changed">changed {{ changed }}</span>
-      <span *ngIf="madeBy">{{ madeBy }}'s</span>
+    <p class="ui-pills preview-facts">
+      <span class="ui-pill" *ngIf="source">
+        <lucide-icon [name]="file.of ? 'bot' : 'user'" [size]="12" aria-hidden="true"></lucide-icon>{{ source }}
+      </span>
+      <span class="ui-pill" *ngIf="size">
+        <lucide-icon name="database" [size]="12" aria-hidden="true"></lucide-icon>{{ size }}
+      </span>
+      <span class="ui-pill" *ngIf="created">
+        <lucide-icon name="calendar" [size]="12" aria-hidden="true"></lucide-icon>Stored {{ created }}
+      </span>
+      <span class="ui-pill" *ngIf="changed">
+        <lucide-icon name="history" [size]="12" aria-hidden="true"></lucide-icon>changed {{ changed }}
+      </span>
+      <span class="ui-pill" *ngIf="madeBy">
+        <lucide-icon name="circle-user" [size]="12" aria-hidden="true"></lucide-icon>{{ madeBy }}'s
+      </span>
+      <span class="ui-pill" [class.is-accent]="sharing !== 'Private'" *ngIf="sharing">
+        <lucide-icon [name]="sharing === 'Private' ? 'lock' : 'users'" [size]="12" aria-hidden="true"></lucide-icon>{{ sharing }}
+      </span>
     </p>
   </div>
-  <button class="icon-btn sm" type="button" aria-label="Close the preview" (click)="closed.emit()">
+  <button class="icon-btn sm preview-close" type="button" aria-label="Close the preview" (click)="closed.emit()">
     <lucide-icon name="x" [size]="16" aria-hidden="true"></lucide-icon>
   </button>
 </header>
 
 <div class="preview-actions">
-  <span class="chip" *ngIf="sharing">{{ sharing }}</span>
   <ng-content select="[previewActions]"></ng-content>
 </div>
 
 <p class="form-notice" role="status" *ngIf="handingTo">Handed to {{ handingTo }}: it is yours until they accept it.</p>
 
 <div class="preview-body" [attr.aria-busy]="loading">
+  <div class="ui-panel-head preview-body-head">
+    <span class="ui-panel-icon is-hued"><lucide-icon name="eye" [size]="16" aria-hidden="true"></lucide-icon></span>
+    <h3 class="ui-panel-title">What it holds</h3>
+  </div>
   <span class="sk sk-field" *ngIf="loading && kind !== 'pdf'"></span>
   <p class="form-notice" role="status" *ngIf="problem">{{ problem }}</p>
 

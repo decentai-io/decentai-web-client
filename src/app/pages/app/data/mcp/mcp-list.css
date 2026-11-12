@@ -1,6 +1,6 @@
-/* The MCP servers list is made of the shared pieces (the page frame,
-   the list, the row, the chips, the dialog shell). Here is how a row
-   says a server. */
+/* The MCP servers list is made of the shared pieces (the page's band,
+   the tiles, the list, the row, the pills, the dialog shell). Here is
+   how a row says a server, and the first visit's cards. */
 :host {
   display: block;
 }
@@ -14,18 +14,49 @@
   text-underline-offset: 3px;
 }
 
-/* Where it is, what it offers, what it is reached with, when it was
-   last read. */
+/* Where it is, what it offers, when it was last read: pills with
+   icons. */
 .mcp-row-facts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 6px;
+  margin-top: 6px;
 }
 
-.mcp-row-facts > span + span::before {
-  content: '·';
-  margin-right: 6px;
-  color: var(--ink-3);
+/* ── The numbers over the list ─────────────────────────────────────── */
+.data-tiles {
+  margin-bottom: 24px;
+}
+
+/* ── The first visit: how a server is used, as three small cards ───── */
+.data-hints {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  max-width: 760px;
+  margin: 0 auto 32px;
+  padding: 0 16px;
+  list-style: none;
+}
+
+.data-hint {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px dashed color-mix(in srgb, hsl(var(--hue, 214) 50% 50%) 35%, var(--line));
+  border-radius: var(--r-md);
+  background: linear-gradient(160deg, hsl(var(--hue, 214) 60% 97%), var(--surface) 75%);
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
+}
+
+:host-context(.dark) .data-hint {
+  border-color: color-mix(in srgb, hsl(var(--hue, 214) 40% 55%) 30%, var(--line));
+  background: linear-gradient(160deg, hsl(var(--hue, 214) 35% 16%), var(--surface) 75%);
+}
+
+.data-hint strong {
+  color: var(--ink);
+  font-weight: 600;
 }
 
 @media (pointer: coarse) {

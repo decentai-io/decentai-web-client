@@ -1,0 +1,98 @@
+<div class="insp-sections">
+  <section class="insp-section" aria-labelledby="data-files">
+    <h3 class="insp-label" id="data-files">Files <span class="insp-label-count">{{ inspection.files.length }}</span></h3>
+    <ul class="insp-list">
+      @for (file of inspection.files; track file.record_id) {
+        <li>
+          <a class="insp-row" [routerLink]="['/data/files', file.record_id]">
+            <app-file-icon [name]="file.name" [mime]="file.type"></app-file-icon>
+            <span class="insp-main">
+              <span class="insp-name">{{ file.name }}</span>
+              <span class="insp-meta">{{ fileMeta(file) }}</span>
+            </span>
+          </a>
+        </li>
+      } @empty {
+        <li class="insp-note">No files attached or made yet.</li>
+      }
+    </ul>
+  </section>
+
+  <section class="insp-section" aria-labelledby="data-records">
+    <h3 class="insp-label" id="data-records">
+      Records and secrets <span class="insp-label-count">{{ inspection.records.length }}</span>
+    </h3>
+    <ul class="insp-list">
+      @for (record of inspection.records; track record.kind + record.ref) {
+        <li>
+          <a class="insp-row" [routerLink]="link(record)">
+            <span class="insp-row-icon" [class.is-warn]="record.kind === 'secret'">
+              <lucide-icon [name]="recordIcon(record)" [size]="14" aria-hidden="true"></lucide-icon>
+            </span>
+            <span class="insp-main">
+              <span class="insp-name">{{ record.label || record.ref }}</span>
+              <span class="insp-meta">{{ recordMeta(record) }}</span>
+            </span>
+            <span class="insp-aside">{{ operations(record.operations) }}</span>
+          </a>
+        </li>
+      } @empty {
+        <li class="insp-note">Its agents have read or written none.</li>
+      }
+    </ul>
+    @if (inspection.records.length) {
+      <p class="insp-meta">Names and counts only: values never leave where they are kept.</p>
+    }
+  </section>
+
+  <section class="insp-section" aria-labelledby="data-skills">
+    <h3 class="insp-label" id="data-skills">Skills read <span class="insp-label-count">{{ inspection.skills.length }}</span></h3>
+    <ul class="insp-list">
+      @for (skill of inspection.skills; track skill.skill_id) {
+        <li>
+          <a class="insp-row" [routerLink]="['/data/skills', skill.skill_id]">
+            <span class="insp-row-icon"><lucide-icon name="sparkles" [size]="14" aria-hidden="true"></lucide-icon></span>
+            <span class="insp-main">
+              <span class="insp-name">{{ skill.name }}</span>
+              <span class="insp-meta">{{ relativeDate(skill.last_at) }}</span>
+            </span>
+            <span class="insp-aside">{{ skill.times === 1 ? 'Once' : skill.times + ' times' }}</span>
+          </a>
+        </li>
+      } @empty {
+        <li class="insp-note">None read yet.</li>
+      }
+    </ul>
+  </section>
+
+  <section class="insp-section" aria-labelledby="data-mcp">
+    <h3 class="insp-label" id="data-mcp">MCP tools <span class="insp-label-count">{{ inspection.mcp.length }}</span></h3>
+    <ul class="insp-list">
+      @for (tool of inspection.mcp; track tool.server + tool.tool) {
+        <li class="insp-row">
+          <span class="insp-row-icon"><lucide-icon name="server" [size]="14" aria-hidden="true"></lucide-icon></span>
+          <span class="insp-main">
+            <span class="insp-name">{{ tool.tool || 'A tool' }}</span>
+            <span class="insp-meta">{{ tool.server }} · {{ relativeDate(tool.last_at) }}</span>
+          </span>
+          <span class="insp-aside">{{ tool.calls === 1 ? '1 call' : tool.calls + ' calls' }}</span>
+        </li>
+      } @empty {
+        <li class="insp-note">None called yet.</li>
+      }
+    </ul>
+  </section>
+
+  <section class="insp-section" aria-labelledby="data-memories">
+    <h3 class="insp-label" id="data-memories">Memories</h3>
+    <div class="insp-row">
+      <span class="insp-row-icon"><lucide-icon name="lightbulb" [size]="14" aria-hidden="true"></lucide-icon></span>
+      <span class="insp-main">
+        <span class="insp-name">
+          {{ inspection.memories === 1 ? '1 of your memories goes' : inspection.memories + ' of your memories go' }} with its prompts
+        </span>
+      </span>
+      <a class="btn ghost sm" routerLink="/settings/memory">Manage</a>
+    </div>
+  </section>
+</div>

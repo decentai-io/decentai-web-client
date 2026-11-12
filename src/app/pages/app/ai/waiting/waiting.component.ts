@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 
+import { relativeDate } from 'src/app/components/ui/dates';
 import { Card } from 'src/app/models/chat-protocol';
 import { ActivityService } from 'src/app/services/activity.service';
 import { AiSessionService } from 'src/app/services/ai-session.service';
@@ -13,13 +14,34 @@ interface Waiting {
   cards: Card[];
 }
 
+/** One number at the head of the page. */
+interface Tile {
+  icon: string;
+  value: number;
+  label: string;
+  warn?: boolean;
+}
+
+/** What a card asks, in a word and an icon: the line over the card. */
+const KINDS: Record<Card['kind'], { word: string; icon: string }> = {
+  approval: { word: 'Approval', icon: 'shield-alert' },
+  network: { word: 'Network access', icon: 'globe' },
+  question: { word: 'Question', icon: 'circle-help' },
+  form: { word: 'Sign-in', icon: 'key-round' },
+  skill: { word: 'Offer: a skill', icon: 'sparkles' },
+  memory: { word: 'Offer: a memory', icon: 'brain-circuit' },
+};
+
 /**
- * Waiting for you: every card open across the person's chats, grouped by
- * chat, oldest first, answered here. A card waits however long its person
- * takes; work started by a schedule or a webhook waits on it too. An
- * approval holds the calls of one step, allowed all at once or each.
+ * Approvals: every card open across the person's chats, grouped by
+ * chat, oldest first, answered here — mostly approvals, also the
+ * questions and forms the assistant asked. A card waits however long its
+ * person takes; work started by a schedule or a webhook waits on it too.
+ * An approval holds the calls of one step, allowed all at once or each.
  * A form, or a question that wants a file, is answered in its chat, where
  * the upload and the sign-in flows live.
+ *
+ * Its address stays /ai/waiting: notifications and emails link there.
  */
 @Component({
   selector: 'app-waiting',
@@ -60,6 +82,42 @@ export class WaitingComponent implements OnInit {
   inChat(card: Card): boolean {
     return card.kind === 'form' || (card.kind === 'question' && card.request.expects === 'file');
   }
+
+  // ── The numbers at the head ─────────────────────────────────────────
+
+  /** What waits, by kind: everything, then each kind there is one of. */
+  get tiles(): Tile[] {
+    const cards = this.groups.flatMap((group) => group.cards);
+    const of = (...kinds: Card['kind'][]) => cards.filter((card) => kinds.includes(card.kind)).length;
+    const tiles: Tile[] = [
+      { icon: 'inbox', value: cards.length, label: 'Waiting for your answer', warn: cards.length > 0 },
+      { icon: 'shield-alert', value: of('approval', 'network'), label: 'Approvals' },
+      { icon: 'circle-help', value: of('question'), label: 'Questions' },
+      { icon: 'key-round', value: of('form'), label: 'Sign-ins' },
+      { icon: 'sparkles', value: of('skill', 'memory'), label: 'Offers' },
+    ];
+    // Approvals and questions always have their tile; the rarer kinds once
+    // there is one.
+    return tiles.filter((tile, index) => index < 3 || tile.value > 0);
+  }
+
+  // ── A card, in words ────────────────────────────────────────────────
+
+  kindWord(card: Card): string {
+    if (card.kind === 'question' && card.request.expects === 'file') return 'A file';
+    return KINDS[card.kind]?.word ?? 'A card';
+  }
+
+  kindIcon(card: Card): string {
+    if (card.kind === 'question' && card.request.expects === 'file') return 'paperclip';
+    return KINDS[card.kind]?.icon ?? 'inbox';
+  }
+
+  /** Who asks: an agent, or the assistant itself. */
+  who(card: Card): string { return card.agent || 'Your assistant'; }
+
+  /** How long it has waited: "2 h ago". */
+  since(card: Card): string { return card.at ? relativeDate(card.at) : ''; }
 
   async onDecision(decision: CardDecision): Promise<void> {
     if (!decision.answer || this.answering.has(decision.card_id)) return;

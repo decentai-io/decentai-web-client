@@ -5,6 +5,12 @@
   display: block;
 }
 
+/* A chip's icon sits on its line. */
+.chip lucide-icon,
+.btn lucide-icon {
+  display: flex;
+}
+
 /* Step one: the providers as rows in two columns, since their names
    are what a person scans. */
 .provider-search {
@@ -44,8 +50,8 @@
   justify-content: center;
   gap: 2px;
   width: 100%;
-  min-height: 44px;
-  padding: 8px 12px;
+  min-height: 48px;
+  padding: 10px 14px;
   border: 1px solid var(--line);
   border-radius: var(--r-md);
   background: var(--surface);
@@ -53,11 +59,27 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background var(--dur-1) var(--ease);
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease), transform var(--dur-2) var(--ease);
 }
 
 .provider-choice:hover {
-  background: var(--surface-2);
+  border-color: color-mix(in srgb, hsl(var(--hue, 262) 50% 45%) 40%, var(--line));
+  background: color-mix(in srgb, hsl(var(--hue, 262) 60% 55%) 7%, var(--surface));
+  transform: translateY(-1px);
+}
+
+/* A server of the person's own: washed in the hue, set apart. The
+   dialog sits outside the page, so its colours are mixed with the
+   theme's own surface rather than chosen per theme. */
+.provider-own {
+  border-style: dashed;
+  background: linear-gradient(160deg, color-mix(in srgb, hsl(var(--hue, 262) 60% 55%) 10%, var(--surface)), var(--surface) 70%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .provider-choice:hover {
+    transform: none;
+  }
 }
 
 .provider-choice:focus-visible {
@@ -91,7 +113,7 @@
   gap: 8px;
   padding: 8px 8px 8px 12px;
   border-radius: var(--r-md);
-  background: var(--surface-2);
+  background: color-mix(in srgb, hsl(var(--hue, 262) 60% 55%) 12%, var(--surface));
   color: var(--ink-2);
 }
 

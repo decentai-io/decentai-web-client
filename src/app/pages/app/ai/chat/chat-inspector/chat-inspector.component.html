@@ -1,0 +1,74 @@
+<section class="insp" aria-labelledby="insp-title">
+  <header class="insp-head">
+    <h2 class="insp-title" id="insp-title">Inspect this chat</h2>
+    @if (!sheet) {
+      <button class="icon-btn sm" type="button" (click)="toggleExpanded()" [attr.aria-pressed]="expanded"
+              [matTooltip]="expanded ? 'Narrow' : 'Widen'" [attr.aria-label]="expanded ? 'Narrow the inspector' : 'Widen the inspector'">
+        <lucide-icon [name]="expanded ? 'chevrons-right' : 'chevrons-left'" [size]="16" aria-hidden="true"></lucide-icon>
+      </button>
+    }
+    <button class="icon-btn sm" type="button" aria-label="Close" matTooltip="Close" (click)="closed.emit()">
+      <lucide-icon name="x" [size]="16" aria-hidden="true"></lucide-icon>
+    </button>
+  </header>
+
+  <div class="insp-tabs" role="tablist" aria-label="What to inspect">
+    @for (one of tabs; track one.value; let i = $index) {
+      <button class="insp-tab" type="button" role="tab" [id]="'insp-tab-' + one.value" aria-controls="insp-panel"
+              [attr.aria-selected]="one.value === tab" [tabindex]="one.value === tab ? 0 : -1"
+              (click)="tab = one.value" (keydown)="onTabKey($event, i)">{{ one.name }}</button>
+    }
+  </div>
+
+  <div class="insp-body" role="tabpanel" id="insp-panel" [attr.aria-labelledby]="'insp-tab-' + tab">
+    @if (error) {
+      <p class="insp-quiet is-error" role="status">
+        <lucide-icon name="cloud-off" [size]="14" aria-hidden="true"></lucide-icon>
+        <span>{{ error }}</span>
+        <button class="btn ghost sm" type="button" (click)="load()">Try again</button>
+      </p>
+    }
+    @if (partial) {
+      <p class="insp-quiet" role="status">
+        <lucide-icon name="info" [size]="14" aria-hidden="true"></lucide-icon>
+        <span>This server tells only the live work. Tokens, runs and network come with its update.</span>
+      </p>
+    }
+
+    @if (!inspection) {
+      <div class="insp-loading" aria-busy="true" aria-label="Reading this chat">
+        <span class="sk"></span><span class="sk"></span><span class="sk is-short"></span>
+      </div>
+    } @else {
+      @switch (tab) {
+        @case ('overview') {
+          <app-inspector-overview [inspection]="inspection" [working]="working" [waiting]="waiting" [tiles]="tiles"
+                                  [latest]="latest" [fileNames]="fileNames" [stopping]="stopping"
+                                  [stoppingAll]="stoppingAll" [zone]="settings.time_zone" [names]="names"
+                                  (go)="go($event)" (stopAll)="stopAll.emit()" (stopWork)="stopWork.emit($event)"
+                                  (openOutput)="openOutput.emit($event)"></app-inspector-overview>
+        }
+        @case ('activity') {
+          <app-inspector-activity [rows]="rows" [filterable]="true" [(filter)]="activityFilter" [fileNames]="fileNames"
+                                  [stopping]="stopping" [names]="names" [chatId]="chatId"
+                                  (stopWork)="stopWork.emit($event)" (openOutput)="openOutput.emit($event)"></app-inspector-activity>
+        }
+        @case ('data') {
+          <app-inspector-data [inspection]="inspection" [names]="names"></app-inspector-data>
+        }
+        @case ('runs') {
+          <app-inspector-runs [inspection]="inspection" [names]="names"></app-inspector-runs>
+        }
+        @case ('schedules') {
+          <app-inspector-schedules [schedules]="inspection.schedules.chat" [upcoming]="inspection.schedules.upcoming"
+                                   [zone]="settings.time_zone" (changed)="load()"></app-inspector-schedules>
+        }
+        @case ('setup') {
+          <app-inspector-setup [settings]="settings" [model]="model" [agents]="agents" [names]="names"
+                               [cards]="inspection.cards" (changeSettings)="changeSettings.emit($event)"
+                               (changeAgents)="changeAgents.emit()" (changeSkills)="changeSkills.emit()"></app-inspector-setup>
+        }
+      }
+    }
+  </div>
+</section>

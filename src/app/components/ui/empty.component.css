@@ -4,7 +4,7 @@
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding: 40px 16px;
+  padding: 48px 16px;
   text-align: center;
 }
 
@@ -12,12 +12,15 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
-  margin-bottom: 12px;
-  border-radius: var(--r-full);
-  background: var(--accent-soft);
+  width: 64px;
+  height: 64px;
+  margin-bottom: 14px;
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
+    var(--accent-soft);
   color: var(--accent-ink);
+  box-shadow: 0 0 0 8px var(--accent-wash), 0 0 0 16px color-mix(in srgb, var(--accent) 3%, transparent);
 }
 
 .empty-title {
@@ -46,4 +49,22 @@
 
 .empty-action:empty {
   display: none;
+}
+
+/* A page often hands its toolbar's icon button ("+") to its empty state.
+   There, where it is the one thing to do, it says what it does: its
+   label, beside the icon. */
+.empty-action ::ng-deep .icon-btn[aria-label] {
+  gap: 6px;
+  width: auto;
+  height: 38px;
+  padding: 0 16px 0 12px;
+}
+
+.empty-action ::ng-deep .icon-btn[aria-label]::after {
+  content: attr(aria-label);
+  font-size: var(--t-base);
+  font-weight: 500;
+  line-height: var(--lh-base);
+  white-space: nowrap;
 }

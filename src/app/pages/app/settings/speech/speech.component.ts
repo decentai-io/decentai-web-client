@@ -26,6 +26,7 @@ const STANDARD: Speech = {
   selector: 'app-speech',
   standalone: false,
   templateUrl: './speech.component.html',
+  styleUrl: './speech.component.css',
 })
 export class SpeechComponent implements OnInit, HasUnsavedChanges {
   loading = true;

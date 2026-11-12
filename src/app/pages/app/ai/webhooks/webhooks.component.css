@@ -1,6 +1,7 @@
-/* The Webhooks page is made of the shared pieces (the list frame, the
-   row, the chips, the switch, the side layout). Here are its two lists,
-   one above the other, and how a row says a webhook. */
+/* The Webhooks page is made of the shared pieces (the band, the tiles,
+   the pills, the list frame, the row, the chips, the switch, the side
+   layout). Here are its lists, one above the other, each with its icon
+   and title, and how a row says a webhook. */
 
 .webhook-lists {
   display: flex;
@@ -16,6 +17,13 @@
   line-height: var(--lh-md);
 }
 
+/* A list handed over waits on the person: its icon in the warning's
+   colours. */
+.ui-panel-icon.is-warn-icon {
+  background: var(--warn-soft);
+  color: var(--warn-ink);
+}
+
 /* The name is the way in to the webhook. */
 .webhook-row-name {
   color: inherit;
@@ -26,29 +34,30 @@
   text-underline-offset: 3px;
 }
 
-.webhook-row-facts {
+.chip lucide-icon {
   display: flex;
-  flex-wrap: wrap;
-  gap: 2px 6px;
 }
 
-/* What it tells the assistant, on one line. */
+/* What it tells the assistant, on one line, its facts as pills under
+   it. */
 .webhook-row-instruction {
+  display: block;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* The dot follows a fact, so a wrapped line never begins with one. */
-.webhook-row-facts > span:not(:last-child)::after {
-  content: '·';
-  margin-left: 6px;
-  color: var(--ink-3);
+.webhook-row-facts {
+  margin-top: 6px;
 }
 
 app-row.is-current {
-  background: var(--surface-2);
+  background: hsl(var(--hue, 186) 60% 96%);
+}
+
+:host-context(.dark) app-row.is-current {
+  background: hsl(var(--hue, 186) 30% 16%);
 }
 
 /* A webhook that is off reads quieter, and stays readable. */

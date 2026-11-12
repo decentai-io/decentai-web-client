@@ -1,9 +1,10 @@
-/* The Memory page: the field a memory is written in, with its counter
-   and button under it; the same foot under a row being edited; and the
-   line under the list. The field, the list, the rows and the buttons
-   are the shared ones. */
+/* The Memory page: tiles of how full it is, the panel a memory is
+   written in (styles/controls.scss `.ui-panel`) with its counter and
+   button under the field; the same foot under a row being edited; and
+   the line under the list. The field, the list, the rows and the
+   buttons are the shared ones. */
 .memory-add {
-  margin-bottom: 32px;
+  margin-bottom: 28px;
 }
 
 .memory-add-foot {
@@ -11,7 +12,7 @@
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 8px;
+  margin-top: 10px;
 }
 
 .memory-counter {
@@ -22,6 +23,7 @@
 }
 
 .memory-edit {
+  flex: 1;
   padding: 4px 0;
 }
 
@@ -30,8 +32,13 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 12px;
-  margin-top: 12px;
+  margin-top: 16px;
   padding: 0 8px;
+}
+
+.memory-foot lucide-icon,
+.chip lucide-icon {
+  display: flex;
 }
 
 .memory-error {
@@ -40,7 +47,9 @@
   line-height: var(--lh-sm);
 }
 
-/* A memory is a sentence, not a name: it reads at the regular weight. */
+/* A memory is a sentence, not a name: it reads at the regular weight,
+   at a reading size. */
 .memory-text {
   font-weight: 400;
+  line-height: var(--lh-read, var(--lh-base));
 }

@@ -142,6 +142,16 @@ export class PoliciesComponent extends DataPageBase implements OnInit {
   // ── Reading a policy ────────────────────────────────────────────────
 
   /** A short summary of what a policy allows, for the list. */
+  /** How many are the platform's own: a tile over the list. */
+  get builtInCount(): number {
+    return this.policies.filter((policy) => policy.built_in).length;
+  }
+
+  /** Whether a policy denies something, or asks first: a chip on its row. */
+  asksOrDenies(policy: Policy): boolean {
+    return policy.statements.some((s) => s.effect !== 'allow');
+  }
+
   summarise(policy: Policy): string {
     const allowed = policy.statements.filter((s) => s.effect === 'allow').flatMap((s) => s.actions);
     const more = policy.statements.some((s) => s.effect !== 'allow') ? ' · and asks or denies some' : '';

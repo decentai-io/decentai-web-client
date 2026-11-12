@@ -1,4 +1,12 @@
-<h2 mat-dialog-title>{{ editing ? "Change when it runs" : "New schedule" }}</h2>
+<h2 mat-dialog-title class="dialog-band">
+  <span class="opened-mark" aria-hidden="true">
+    <lucide-icon [name]="editing ? 'calendar-clock' : 'calendar-check'" [size]="20" [strokeWidth]="1.75"></lucide-icon>
+  </span>
+  <span class="dialog-band-words">
+    <span class="dialog-band-title">{{ editing ? "Change when it runs" : "New schedule" }}</span>
+    <span class="dialog-band-line">{{ editing ? "What it does stays as it is: only when it runs changes." : "A prompt that wakes the assistant, or an agent's function, on the clock." }}</span>
+  </span>
+</h2>
 <form (ngSubmit)="save()">
   <mat-dialog-content>
     <div class="form">
@@ -13,7 +21,10 @@
       </app-field>
 
       <!-- ── What ───────────────────────────────────────────────────── -->
-      <p class="dialog-note" *ngIf="editing">{{ editingWhat }}</p>
+      <p class="schedule-editing" *ngIf="editing">
+        <lucide-icon [name]="editingMark" [size]="16" aria-hidden="true"></lucide-icon>
+        {{ editingWhat }}
+      </p>
 
       <ng-container *ngIf="!editing">
         <app-choice-cards name="kind" label="What it does" [choices]="kinds" [(ngModel)]="kind"></app-choice-cards>
@@ -62,7 +73,10 @@
 
       <!-- ── When ───────────────────────────────────────────────────── -->
       <fieldset class="schedule-when">
-        <legend class="schedule-legend">When, in {{ zone }}</legend>
+        <legend class="schedule-legend">
+          <span class="schedule-legend-icon" aria-hidden="true"><lucide-icon name="calendar-clock" [size]="14"></lucide-icon></span>
+          When, in {{ zone }}
+        </legend>
         <app-segmented name="cadence-kind" label="How it comes round" [choices]="cadenceKinds" [(ngModel)]="cadence.kind"></app-segmented>
 
         <div class="schedule-line" *ngIf="cadence.kind === 'every'">
@@ -103,7 +117,10 @@
         </ng-container>
 
         <p class="form-notice is-error" role="alert" *ngIf="tried && whenProblem">{{ whenProblem }}</p>
-        <p class="schedule-preview" role="status" *ngIf="preview">{{ preview }}</p>
+        <p class="schedule-preview" role="status" *ngIf="preview">
+          <lucide-icon name="timer" [size]="16" aria-hidden="true"></lucide-icon>
+          <span>{{ preview }}</span>
+        </p>
       </fieldset>
       <p class="dialog-note">Its times are read in its chat's time zone, which is one of the chat's settings.</p>
 

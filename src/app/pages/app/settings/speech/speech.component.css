@@ -1,0 +1,18 @@
+/* Speech: who handles it, then, for a model connection, its two
+   panels side by side (styles/controls.scss `.ui-panel`). */
+.speech-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Who may change it, said with a lock. */
+.speech-locked {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.speech-locked lucide-icon {
+  display: flex;
+}

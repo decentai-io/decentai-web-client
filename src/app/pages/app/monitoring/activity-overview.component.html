@@ -1,7 +1,10 @@
 <!-- One filter row above everything it scopes. -->
 <div class="ov-bar">
   <app-segmented label="Time window" [choices]="windows" [ngModel]="days" (ngModelChange)="choose($event)"></app-segmented>
-  <span class="ov-window" *ngIf="read">Added up from the audit trail {{ inWindow }}.</span>
+  <span class="ov-window" *ngIf="read">
+    <lucide-icon name="calendar-days" [size]="14" aria-hidden="true"></lucide-icon>
+    Added up from the audit trail {{ inWindow }}.
+  </span>
 </div>
 
 <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
@@ -15,20 +18,31 @@
   <!-- ── The numbers ─────────────────────────────────────────────── -->
   <dl class="ov-tiles">
     <div class="ov-tile">
-      <dt>Recorded</dt>
+      <dt>
+        Recorded
+        <span class="ov-tile-icon" aria-hidden="true"><lucide-icon name="scroll-text" [size]="18"></lucide-icon></span>
+      </dt>
       <dd class="ov-value">{{ number(total) }}</dd>
       <dd class="ov-sub">{{ total ? okShare : 'Nothing ' + inWindow }}</dd>
     </div>
     <div class="ov-tile" [class.is-bad]="refused + failed > 0">
       <dt>
-        <lucide-icon *ngIf="refused + failed > 0" name="triangle-alert" [size]="14" aria-hidden="true"></lucide-icon>
         Did not succeed
+        <span class="ov-tile-icon" aria-hidden="true">
+          <lucide-icon [name]="refused + failed > 0 ? 'triangle-alert' : 'circle-check'" [size]="18"></lucide-icon>
+        </span>
       </dt>
       <dd class="ov-value">{{ number(refused + failed) }}</dd>
-      <dd class="ov-sub">{{ refused }} refused · {{ failed }} failed</dd>
+      <dd class="ov-sub">
+        <span class="ui-pill" [class.is-warn]="refused">{{ refused }} refused</span>
+        <span class="ui-pill" [class.is-danger]="failed">{{ failed }} failed</span>
+      </dd>
     </div>
     <div class="ov-tile">
-      <dt>Agents running now</dt>
+      <dt>
+        Agents running now
+        <span class="ov-tile-icon" aria-hidden="true"><lucide-icon name="bot" [size]="18"></lucide-icon></span>
+      </dt>
       <dd class="ov-value">{{ running == null ? "—" : running.length }}</dd>
       <dd class="ov-sub">{{ running == null ? "Not reported" : processes + (processes === 1 ? " process" : " processes") }}</dd>
     </div>
@@ -44,11 +58,15 @@
   <!-- ── What was done most ─────────────────────────────────────── -->
   <section class="ov-card" aria-labelledby="ov-what-title" *ngIf="total">
     <header class="ov-card-head">
-      <div>
+      <span class="ov-card-icon" aria-hidden="true"><lucide-icon name="chart-column" [size]="16"></lucide-icon></span>
+      <div class="ov-card-words">
         <h2 class="ov-card-title" id="ov-what-title">What was done most</h2>
         <p class="ov-card-note">How often, and how many did not succeed.</p>
       </div>
-      <a class="btn ghost sm" routerLink="/audit/org">Open the audit trail</a>
+      <a class="btn ghost sm" routerLink="/audit/org">
+        Open the audit trail
+        <lucide-icon name="arrow-right" [size]="14" aria-hidden="true"></lucide-icon>
+      </a>
     </header>
     <ul class="ov-bars">
       <li *ngFor="let row of done">

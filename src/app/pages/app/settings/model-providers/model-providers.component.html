@@ -1,6 +1,39 @@
 <p class="form-notice is-error" role="alert" *ngIf="error && editingId === null">{{ error }}</p>
 <p class="form-notice" role="status" *ngIf="notice">{{ notice }}</p>
 
+<!-- The numbers at a glance: the connections, the default a chat falls
+     back on, the models people may pick, and those naming none yet. -->
+<ul class="ui-tiles" aria-label="Model providers in numbers" *ngIf="connections.length">
+  <li class="ui-tile">
+    <span class="ui-tile-icon"><lucide-icon name="cloud" [size]="20" aria-hidden="true"></lucide-icon></span>
+    <span class="ui-tile-words">
+      <span class="ui-tile-value">{{ connections.length }}</span>
+      <span class="ui-tile-label">{{ connections.length === 1 ? "Connection" : "Connections" }}</span>
+    </span>
+  </li>
+  <li class="ui-tile">
+    <span class="ui-tile-icon" [class.is-warn]="defaultName === 'None'"><lucide-icon name="star" [size]="20" aria-hidden="true"></lucide-icon></span>
+    <span class="ui-tile-words">
+      <span class="ui-tile-value" [title]="defaultName">{{ defaultName }}</span>
+      <span class="ui-tile-label">Default</span>
+    </span>
+  </li>
+  <li class="ui-tile">
+    <span class="ui-tile-icon"><lucide-icon name="brain-circuit" [size]="20" aria-hidden="true"></lucide-icon></span>
+    <span class="ui-tile-words">
+      <span class="ui-tile-value">{{ modelCount }}</span>
+      <span class="ui-tile-label">{{ modelCount === 1 ? "Model to pick" : "Models to pick" }}</span>
+    </span>
+  </li>
+  <li class="ui-tile" *ngIf="withoutModel">
+    <span class="ui-tile-icon is-warn"><lucide-icon name="triangle-alert" [size]="20" aria-hidden="true"></lucide-icon></span>
+    <span class="ui-tile-words">
+      <span class="ui-tile-value">{{ withoutModel }}</span>
+      <span class="ui-tile-label">Naming no model</span>
+    </span>
+  </li>
+</ul>
+
 <app-list label="Model providers" [foot]="connections.length ? foot : ''">
   <ng-container listToolbar>
     <span class="search-field toolbar-search" *ngIf="connections.length">
@@ -22,14 +55,14 @@
       class="chip accent"
       *ngIf="connection.default"
       matTooltip="Used by a chat whose person has not picked one."
-    >Default</span>
+    ><lucide-icon name="star" [size]="12" aria-hidden="true"></lucide-icon>Default</span>
     <span
       rowChips
       class="chip warn"
       *ngIf="!connection.models.length"
       matTooltip="Chats can't use it until it names a model."
-    >No model</span>
-    <span rowChips class="chip">{{ shareLabel(connection) }}</span>
+    ><lucide-icon name="triangle-alert" [size]="12" aria-hidden="true"></lucide-icon>No model</span>
+    <span rowChips class="chip"><lucide-icon name="users" [size]="12" aria-hidden="true"></lucide-icon>{{ shareLabel(connection) }}</span>
     <ng-container rowMeta>{{ summary(connection) }}</ng-container>
 
     <button
@@ -87,7 +120,12 @@
     icon="brain-circuit"
     title="No provider yet"
     line="Chats cannot hold a conversation until there is one, made the default or shared with their people."
-  ></app-empty>
+  >
+    <button class="btn primary" type="button" *ngIf="canCreate" (click)="startCreate()">
+      <lucide-icon name="plus" [size]="16" aria-hidden="true"></lucide-icon>
+      Add a provider
+    </button>
+  </app-empty>
   <app-empty
     *ngIf="connections.length && !visible.length"
     icon="search-x"

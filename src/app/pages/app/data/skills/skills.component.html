@@ -1,6 +1,8 @@
 <app-page
   title="Skills"
   sentence="Instructions you write for the assistant, which it reads when they apply to a conversation."
+  icon="sparkles"
+  [hue]="214"
   [wide]="true"
 >
   <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
@@ -13,12 +15,38 @@
       <span rowName>{{ skill.name }}</span>
       <ng-container rowMeta>
         <span class="skill-row-summary">{{ skill.description }}</span>
-        <span class="skill-row-facts"><span>{{ handedBy(skill) }} is handing it to you</span></span>
+        <span class="ui-pills skill-row-facts">
+          <span class="ui-pill is-warn"><lucide-icon name="handshake" [size]="12" aria-hidden="true"></lucide-icon>{{ handedBy(skill) }} is handing it to you</span>
+        </span>
       </ng-container>
       <button rowState class="btn sm" type="button" [disabled]="busyId === skill.id" (click)="accept(skill, false)">Decline</button>
       <button rowState class="btn primary sm" type="button" [disabled]="busyId === skill.id" (click)="accept(skill, true)">Accept</button>
     </app-row>
   </app-list>
+
+  <!-- The skills in numbers, each a tile; whose they are narrows the list. -->
+  <ul class="ui-tiles data-tiles" *ngIf="skills.length" aria-label="Your skills in numbers">
+    <li *ngFor="let tile of tiles; trackBy: byIcon">
+      <button class="ui-tile" type="button" *ngIf="tile.show; else plainTile"
+              [class.is-on]="show === tile.show" [attr.aria-pressed]="show === tile.show"
+              (click)="go({ show: tile.show === 'all' ? '' : tile.show })">
+        <ng-container *ngTemplateOutlet="tileInside; context: { $implicit: tile }"></ng-container>
+      </button>
+      <ng-template #plainTile>
+        <span class="ui-tile"><ng-container *ngTemplateOutlet="tileInside; context: { $implicit: tile }"></ng-container></span>
+      </ng-template>
+    </li>
+  </ul>
+
+  <ng-template #tileInside let-tile>
+    <span class="ui-tile-icon" [class.is-warn]="tile.warn">
+      <lucide-icon [name]="tile.icon" [size]="20" aria-hidden="true"></lucide-icon>
+    </span>
+    <span class="ui-tile-words">
+      <span class="ui-tile-value">{{ tile.value }}</span>
+      <span class="ui-tile-label">{{ tile.label }}</span>
+    </span>
+  </ng-template>
 
   <div class="side-layout" [class.has-opened]="opened">
     <app-filter-column
@@ -63,11 +91,19 @@
            [attr.aria-current]="skill.id === openId ? 'true' : null">{{ skill.name }}</a>
         <ng-container rowMeta>
           <span class="skill-row-summary">{{ skill.description }}</span>
-          <span class="skill-row-facts">
-            <span *ngIf="author(skill)">{{ author(skill) }}</span>
-            <span *ngIf="written(skill)" [matTooltip]="writtenInFull(skill)">written {{ written(skill) }}</span>
-            <span class="chip" [matTooltip]="sharing(skill).names">{{ sharing(skill).word }}</span>
-            <span class="chip warn" *ngIf="skill.handing as handing">Offered to {{ share.personName(handing.to) || "a colleague" }}</span>
+          <span class="ui-pills skill-row-facts">
+            <span class="ui-pill" *ngIf="author(skill)">
+              <lucide-icon name="circle-user" [size]="12" aria-hidden="true"></lucide-icon>{{ author(skill) }}
+            </span>
+            <span class="ui-pill" *ngIf="written(skill)" [matTooltip]="writtenInFull(skill)">
+              <lucide-icon name="history" [size]="12" aria-hidden="true"></lucide-icon>written {{ written(skill) }}
+            </span>
+            <span class="ui-pill" [class.is-accent]="sharing(skill).word !== 'Private'" [matTooltip]="sharing(skill).names">
+              <lucide-icon [name]="sharing(skill).word === 'Private' ? 'lock' : 'users'" [size]="12" aria-hidden="true"></lucide-icon>{{ sharing(skill).word }}
+            </span>
+            <span class="ui-pill is-warn" *ngIf="skill.handing as handing">
+              <lucide-icon name="handshake" [size]="12" aria-hidden="true"></lucide-icon>Offered to {{ share.personName(handing.to) || "a colleague" }}
+            </span>
           </span>
         </ng-container>
 
@@ -97,6 +133,21 @@
           </button>
         </ng-container>
       </app-empty>
+      <!-- What a skill can be, as three small cards. -->
+      <ul class="data-hints" *ngIf="!loading && !skills.length" aria-label="What a skill can teach">
+        <li class="data-hint">
+          <span class="ui-panel-icon is-hued"><lucide-icon name="file-text" [size]="16" aria-hidden="true"></lucide-icon></span>
+          <span><strong>A format</strong> your reports follow</span>
+        </li>
+        <li class="data-hint">
+          <span class="ui-panel-icon is-hued"><lucide-icon name="gavel" [size]="16" aria-hidden="true"></lucide-icon></span>
+          <span><strong>A rule</strong> it should never break</span>
+        </li>
+        <li class="data-hint">
+          <span class="ui-panel-icon is-hued"><lucide-icon name="list-checks" [size]="16" aria-hidden="true"></lucide-icon></span>
+          <span><strong>A method</strong> it follows step by step</span>
+        </li>
+      </ul>
       <app-empty
         *ngIf="skills.length && !shownSkills.length"
         icon="search-x"

@@ -17,7 +17,7 @@ import { FIELD_TYPES, WebhookField, exampleBody, fieldsOf } from './webhooks-sha
   selector: 'app-webhook-test-dialog',
   standalone: false,
   templateUrl: './webhook-test-dialog.component.html',
-  styleUrl: './webhook-dialog.component.css',
+  styleUrls: ['../schedules/opened-shared.css', './webhook-dialog.component.css'],
 })
 export class WebhookTestDialogComponent {
   readonly fields: WebhookField[];

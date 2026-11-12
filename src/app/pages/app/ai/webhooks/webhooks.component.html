@@ -1,5 +1,7 @@
 <app-page guide="webhooks"
   title="Webhooks"
+  icon="webhook"
+  [hue]="186"
   sentence="Addresses other services post events to. Each event wakes a chat of its own, which acts on it with your permissions."
   [wide]="true"
 >
@@ -11,26 +13,75 @@
     <button class="btn" type="button" (click)="reload()">Try again</button>
   </app-empty>
 
+  <!-- The numbers that matter, each a tile. -->
+  <ul class="ui-tiles" *ngIf="!loading && !opened && (webhooks.length || shared.length || handed.length)" aria-label="Webhooks in numbers">
+    <li class="ui-tile">
+      <span class="ui-tile-icon"><lucide-icon name="webhook" [size]="20" aria-hidden="true"></lucide-icon></span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ webhooks.length }}<ng-container *ngIf="limit"> of {{ limit }}</ng-container></span>
+        <span class="ui-tile-label">Yours</span>
+      </span>
+    </li>
+    <li class="ui-tile">
+      <span class="ui-tile-icon"><lucide-icon name="circle-check" [size]="20" aria-hidden="true"></lucide-icon></span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ onCount }}</span>
+        <span class="ui-tile-label">On, taking calls</span>
+      </span>
+    </li>
+    <li class="ui-tile">
+      <span class="ui-tile-icon"><lucide-icon name="lock" [size]="20" aria-hidden="true"></lucide-icon></span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ signedCount }}</span>
+        <span class="ui-tile-label">Signed</span>
+      </span>
+    </li>
+    <li class="ui-tile" *ngIf="shared.length">
+      <span class="ui-tile-icon"><lucide-icon name="users" [size]="20" aria-hidden="true"></lucide-icon></span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ shared.length }}</span>
+        <span class="ui-tile-label">Shared with you</span>
+      </span>
+    </li>
+    <li class="ui-tile" *ngIf="handed.length">
+      <span class="ui-tile-icon is-warn"><lucide-icon name="handshake" [size]="20" aria-hidden="true"></lucide-icon></span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ handed.length }}</span>
+        <span class="ui-tile-label">Handed to you</span>
+      </span>
+    </li>
+  </ul>
+
   <div class="side-layout" [class.has-opened]="opened" *ngIf="!loadError || webhooks.length || shared.length">
     <div class="webhook-lists side-alone">
       <!-- Webhooks another member is handing over: theirs until accepted. -->
       <app-list label="Handed to you" *ngIf="!loading && handed.length">
         <ng-container listToolbar>
+          <span class="ui-panel-icon is-warn-icon"><lucide-icon name="handshake" [size]="16" aria-hidden="true"></lucide-icon></span>
           <h2 class="webhook-list-title">Handed to you</h2>
         </ng-container>
         <app-row *ngFor="let hook of handed" [class.is-current]="hook.webhook_id === openId">
           <lucide-icon rowMark name="webhook" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
           <a rowName class="webhook-row-name" [routerLink]="['/ai/webhooks', hook.webhook_id]">{{ hook.name }}</a>
           <ng-container rowMeta>
-            <span class="webhook-row-facts"><span>{{ hook.owner?.name || 'A colleague' }} is handing it to you</span></span>
+            <span class="ui-pills webhook-row-facts">
+              <span class="ui-pill is-warn">
+                <lucide-icon name="handshake" [size]="12" aria-hidden="true"></lucide-icon>
+                {{ hook.owner?.name || 'A colleague' }} is handing it to you
+              </span>
+            </span>
           </ng-container>
           <button rowState class="btn sm" type="button" [disabled]="busyId === hook.webhook_id" (click)="accept(hook, false)">Decline</button>
-          <button rowState class="btn primary sm" type="button" [disabled]="busyId === hook.webhook_id" (click)="accept(hook, true)">Accept</button>
+          <button rowState class="btn primary sm" type="button" [disabled]="busyId === hook.webhook_id" (click)="accept(hook, true)">
+            <lucide-icon name="check" [size]="14" aria-hidden="true"></lucide-icon>
+            Accept
+          </button>
         </app-row>
       </app-list>
 
       <app-list label="Your webhooks" [loading]="loading" [foot]="foot">
         <ng-container listToolbar>
+          <span class="ui-panel-icon is-hued"><lucide-icon name="webhook" [size]="16" aria-hidden="true"></lucide-icon></span>
           <h2 class="webhook-list-title">Your webhooks</h2>
           <ng-container *ngIf="!loading"><ng-container *ngTemplateOutlet="addButton"></ng-container></ng-container>
         </ng-container>
@@ -40,12 +91,21 @@
           <a rowName class="webhook-row-name" [routerLink]="['/ai/webhooks', hook.webhook_id]"
              [attr.aria-current]="hook.webhook_id === openId ? 'true' : null">{{ hook.name }}</a>
           <span rowChips class="chip" *ngIf="!hook.enabled">Off</span>
-          <span rowChips class="chip" *ngIf="hook.require_signature">Signed</span>
+          <span rowChips class="chip accent" *ngIf="hook.require_signature">
+            <lucide-icon name="lock" [size]="12" aria-hidden="true"></lucide-icon>
+            Signed
+          </span>
           <ng-container rowMeta>
-            <span class="webhook-row-facts">
-              <span class="webhook-row-instruction">{{ hook.instruction }}</span>
-              <span *ngIf="sharedWith(hook)">Shared</span>
-              <span *ngIf="hook.handing">Being handed over</span>
+            <span class="webhook-row-instruction">{{ hook.instruction }}</span>
+            <span class="ui-pills webhook-row-facts" *ngIf="sharedWith(hook) || hook.handing">
+              <span class="ui-pill" *ngIf="sharedWith(hook)">
+                <lucide-icon name="users" [size]="12" aria-hidden="true"></lucide-icon>
+                Shared
+              </span>
+              <span class="ui-pill is-warn" *ngIf="hook.handing">
+                <lucide-icon name="handshake" [size]="12" aria-hidden="true"></lucide-icon>
+                Being handed over
+              </span>
             </span>
           </ng-container>
           <app-switch
@@ -65,12 +125,16 @@
           title="No webhooks yet"
           line="Make one when another service should tell your assistant something: a new ticket, a failed build, a form sent in."
         >
-          <button class="btn" type="button" *ngIf="mayCreate" (click)="create()">Make a webhook</button>
+          <button class="btn primary" type="button" *ngIf="mayCreate" (click)="create()">
+            <lucide-icon name="plus" [size]="16" aria-hidden="true"></lucide-icon>
+            Make a webhook
+          </button>
         </app-empty>
       </app-list>
 
       <app-list label="Shared with you" *ngIf="!loading && shared.length">
         <ng-container listToolbar>
+          <span class="ui-panel-icon"><lucide-icon name="users" [size]="16" aria-hidden="true"></lucide-icon></span>
           <h2 class="webhook-list-title">Shared with you</h2>
         </ng-container>
         <app-row *ngFor="let hook of shared" [class.is-current]="hook.webhook_id === openId" [class.is-resting]="!hook.enabled">
@@ -79,9 +143,12 @@
              [attr.aria-current]="hook.webhook_id === openId ? 'true' : null">{{ hook.name }}</a>
           <span rowChips class="chip" *ngIf="!hook.enabled">Off</span>
           <ng-container rowMeta>
-            <span class="webhook-row-facts">
-              <span class="webhook-row-instruction">{{ hook.instruction }}</span>
-              <span>{{ hook.owner?.name || 'A colleague' }}’s</span>
+            <span class="webhook-row-instruction">{{ hook.instruction }}</span>
+            <span class="ui-pills webhook-row-facts">
+              <span class="ui-pill">
+                <lucide-icon name="circle-user" [size]="12" aria-hidden="true"></lucide-icon>
+                {{ hook.owner?.name || 'A colleague' }}’s
+              </span>
             </span>
           </ng-container>
         </app-row>

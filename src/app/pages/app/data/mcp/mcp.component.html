@@ -1,6 +1,8 @@
 <app-page guide="mcp"
   title="Tools"
   sentence="MCP servers you add for your chats: services whose tools the assistant can call. You decide which of a server's tools are on."
+  icon="square-terminal"
+  [hue]="214"
   [wide]="true"
 >
   <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
@@ -12,12 +14,28 @@
       <lucide-icon rowMark name="server" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
       <span rowName>{{ server.name }}</span>
       <ng-container rowMeta>
-        <span class="mcp-row-facts"><span>{{ host(server) }}</span><span>{{ handedBy(server) }} is handing it to you</span></span>
+        <span class="ui-pills mcp-row-facts">
+          <span class="ui-pill"><lucide-icon name="globe" [size]="12" aria-hidden="true"></lucide-icon>{{ host(server) }}</span>
+          <span class="ui-pill is-warn"><lucide-icon name="handshake" [size]="12" aria-hidden="true"></lucide-icon>{{ handedBy(server) }} is handing it to you</span>
+        </span>
       </ng-container>
       <button rowState class="btn sm" type="button" [disabled]="busy === server.id" (click)="accept(server, false)">Decline</button>
       <button rowState class="btn primary sm" type="button" [disabled]="busy === server.id" (click)="accept(server, true)">Accept</button>
     </app-row>
   </app-list>
+
+  <!-- The servers in numbers, each a tile. -->
+  <ul class="ui-tiles data-tiles" *ngIf="servers.length" aria-label="Your tools in numbers">
+    <li class="ui-tile" *ngFor="let tile of tiles; trackBy: byIcon">
+      <span class="ui-tile-icon" [class.is-warn]="tile.warn">
+        <lucide-icon [name]="tile.icon" [size]="20" aria-hidden="true"></lucide-icon>
+      </span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ tile.value }}</span>
+        <span class="ui-tile-label">{{ tile.label }}</span>
+      </span>
+    </li>
+  </ul>
 
   <app-list label="Tools" [loading]="loading" [foot]="foot">
     <ng-container listToolbar *ngIf="servers.length">
@@ -31,13 +49,21 @@
     <app-row *ngFor="let server of shownServers">
       <lucide-icon rowMark name="server" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
       <a rowName class="mcp-row-name" [routerLink]="['/data/mcp', server.id]">{{ server.name }}</a>
-      <span rowChips class="chip" [matTooltip]="sharing(server).names">{{ sharing(server).word }}</span>
+      <span rowChips class="ui-pill" [class.is-accent]="sharing(server).word !== 'Private'" [matTooltip]="sharing(server).names">
+        <lucide-icon [name]="sharing(server).word === 'Private' ? 'lock' : 'users'" [size]="12" aria-hidden="true"></lucide-icon>{{ sharing(server).word }}
+      </span>
       <ng-container rowMeta>
-        <span class="mcp-row-facts">
-          <span>{{ host(server) }}</span>
-          <span>{{ tools(server) }}</span>
-          <span *ngIf="lastRead(server)" [matTooltip]="lastReadInFull(server)">read {{ lastRead(server) }}</span>
-          <span class="chip warn" *ngIf="server.handing as handing">Offered to {{ share.personName(handing.to) || "a colleague" }}</span>
+        <span class="ui-pills mcp-row-facts">
+          <span class="ui-pill"><lucide-icon name="globe" [size]="12" aria-hidden="true"></lucide-icon>{{ host(server) }}</span>
+          <span class="ui-pill" [class.is-warn]="!server.read_at" [class.is-accent]="onOf(server) > 0">
+            <lucide-icon [name]="server.read_at ? 'zap' : 'circle-dashed'" [size]="12" aria-hidden="true"></lucide-icon>{{ tools(server) }}
+          </span>
+          <span class="ui-pill" *ngIf="lastRead(server)" [matTooltip]="lastReadInFull(server)">
+            <lucide-icon name="history" [size]="12" aria-hidden="true"></lucide-icon>read {{ lastRead(server) }}
+          </span>
+          <span class="ui-pill is-warn" *ngIf="server.handing as handing">
+            <lucide-icon name="handshake" [size]="12" aria-hidden="true"></lucide-icon>Offered to {{ share.personName(handing.to) || "a colleague" }}
+          </span>
         </span>
       </ng-container>
 
@@ -61,6 +87,21 @@
     >
       <ng-container *ngTemplateOutlet="addButton"></ng-container>
     </app-empty>
+    <!-- How a server comes to be used, as three small cards. -->
+    <ul class="data-hints" *ngIf="!loading && !loadProblem && !servers.length" aria-label="How a server is used">
+      <li class="data-hint">
+        <span class="ui-panel-icon is-hued"><lucide-icon name="plus" [size]="16" aria-hidden="true"></lucide-icon></span>
+        <span><strong>Add</strong> its address</span>
+      </li>
+      <li class="data-hint">
+        <span class="ui-panel-icon is-hued"><lucide-icon name="eye" [size]="16" aria-hidden="true"></lucide-icon></span>
+        <span><strong>Look over</strong> the tools it offers</span>
+      </li>
+      <li class="data-hint">
+        <span class="ui-panel-icon is-hued"><lucide-icon name="zap" [size]="16" aria-hidden="true"></lucide-icon></span>
+        <span><strong>Switch on</strong> the ones chats may call</span>
+      </li>
+    </ul>
     <app-empty *ngIf="servers.length && !shownServers.length" icon="search-x" title="No server matches" line="Try another search.">
       <button class="btn" type="button" (click)="query = ''">Clear the search</button>
     </app-empty>

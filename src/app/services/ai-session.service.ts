@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import {
   CardAnswer, Chat, ChatEvent, ChatMessage, ChatSettings, ChatSnapshot,
 } from 'src/app/models/chat-protocol';
+import { ChatInspection, wholeInspection } from 'src/app/models/chat-inspect';
 import { chatDefaults } from 'src/app/pages/app/ai/chat/chat-defaults';
 import { EngineService } from './engine.service';
 import { ProfileService } from './profile.service';
@@ -137,6 +138,14 @@ export class AiSessionService {
    *  last event, which the socket replays from. */
   async openChat(chatId: string): Promise<{ data?: ChatSnapshot; error?: string }> {
     return this.ai('AI:Chat:open', { chat_id: chatId });
+  }
+
+  /** Everything about a chat besides its live work: what it cost, what
+   *  ran it, where it reached, what it touched and asked, its schedules.
+   *  `code` says why not, `not_found` for a server that has no such call. */
+  async inspect(chatId: string): Promise<{ data?: ChatInspection; error?: string; code?: string }> {
+    const res = await this.ai('AI:Chat:inspect', { chat_id: chatId });
+    return res.error ? res : { data: wholeInspection(res.data) };
   }
 
   /** The events a chat kept after one, oldest first: up to the last 500. */

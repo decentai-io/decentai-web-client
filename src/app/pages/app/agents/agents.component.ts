@@ -10,7 +10,8 @@ import { ConfirmService } from 'src/app/services/confirm.service';
 import { ProfileService } from 'src/app/services/profile.service';
 import { DataPageBase } from '../data-page-base';
 import { DetailTab } from './agent-detail.component';
-import { Standing, agentFacts, standingOf } from './agent-shared';
+import { CardLevel } from './agent-card.component';
+import { AgentStat, Standing, agentFacts, agentStats, iconOf, levelBar, standingOf } from './agent-shared';
 
 /** The tabs an address may name. */
 const TABS: DetailTab[] = ['overview', 'functions'];
@@ -265,6 +266,30 @@ export class AgentsComponent extends DataPageBase implements OnInit, OnDestroy {
   facts(agent: InstalledAgent): string[] {
     return agentFacts(agent.manifest);
   }
+
+  /** What a card shows of it: its icon, its pills, and its level bar,
+   *  the same arrays until the agent changes, so a check redraws none. */
+  iconOf(agent: InstalledAgent): string {
+    return iconOf(agent.manifest);
+  }
+
+  stats(agent: InstalledAgent): AgentStat[] {
+    return this.read(agent).stats;
+  }
+
+  levels(agent: InstalledAgent): CardLevel[] {
+    return this.read(agent).levels;
+  }
+
+  private read(agent: InstalledAgent): { stats: AgentStat[]; levels: CardLevel[] } {
+    let held = this.cardKept.get(agent);
+    if (!held) {
+      held = { stats: agentStats(agent.manifest), levels: levelBar(agent.manifest) };
+      this.cardKept.set(agent, held);
+    }
+    return held;
+  }
+  private cardKept = new WeakMap<InstalledAgent, { stats: AgentStat[]; levels: CardLevel[] }>();
 
   /** The three views of the list, each saying how many it holds. The
    *  same array until a count changes: the control draws its choices

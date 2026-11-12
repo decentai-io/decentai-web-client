@@ -1,62 +1,107 @@
-<header class="schedule-head">
-  <div class="schedule-words">
-    <h2 class="schedule-title">{{ cadence }}</h2>
-    <p class="schedule-kind">
-      <span>{{ zone }}</span>
+<!-- Its band: the kind's mark, when it comes round, how it stands. -->
+<header class="opened-band">
+  <span class="opened-mark" aria-hidden="true">
+    <lucide-icon [name]="mark" [size]="22" [strokeWidth]="1.75"></lucide-icon>
+  </span>
+  <div class="opened-words">
+    <p class="opened-eyebrow">
+      {{ mark === "zap" ? "Runs a function" : "Wakes the assistant" }}
+    </p>
+    <h2 class="opened-title">{{ cadence }}</h2>
+    <p class="opened-chips">
       <span class="chip" [class.accent]="state === 'active'" [class.danger]="state === 'failing'">{{ stateWord }}</span>
+      <span class="ui-pill">
+        <lucide-icon name="globe" [size]="12" aria-hidden="true"></lucide-icon>
+        {{ zone }}
+      </span>
     </p>
   </div>
-  <button class="icon-btn sm" type="button" aria-label="Close the schedule" (click)="closed.emit()">
-    <lucide-icon name="x" [size]="16" aria-hidden="true"></lucide-icon>
-  </button>
+  <div class="opened-tools">
+    <button class="icon-btn sm" type="button" aria-label="Close the schedule" (click)="closed.emit()">
+      <lucide-icon name="x" [size]="16" aria-hidden="true"></lucide-icon>
+    </button>
+  </div>
 </header>
 
+<!-- What it does, at reading size, and where. -->
 <div class="schedule-what">
-  <lucide-icon [name]="mark" [size]="16" aria-hidden="true"></lucide-icon>
-  <p>
-    {{ what }}
-    <span class="schedule-also">
-      in <a [routerLink]="['/ai/chats', schedule.chat_id]">{{ chatTitle || "its chat" }}</a>,
+  <p class="schedule-what-words">{{ what }}</p>
+  <p class="ui-pills">
+    <a class="ui-pill schedule-chat" [routerLink]="['/ai/chats', schedule.chat_id]">
+      <lucide-icon name="message-square" [size]="12" aria-hidden="true"></lucide-icon>
+      in {{ chatTitle || "its chat" }}
+    </a>
+    <span class="ui-pill" [class.is-accent]="schedule.by === 'assistant'">
+      <lucide-icon [name]="schedule.by === 'assistant' ? 'sparkles' : 'circle-user'" [size]="12" aria-hidden="true"></lucide-icon>
       set by {{ schedule.by === "assistant" ? "the assistant" : "you" }}
     </span>
   </p>
 </div>
 <pre class="code-tile" *ngIf="inputs">{{ inputs }}</pre>
 
-<div class="schedule-actions" *ngIf="canUpdate || canDelete">
-  <button class="btn sm" type="button" *ngIf="canUpdate" [disabled]="busy" (click)="edit.emit()">Change when it runs</button>
+<div class="opened-actions" *ngIf="canUpdate || canDelete">
+  <button class="btn sm" type="button" *ngIf="canUpdate" [disabled]="busy" (click)="edit.emit()">
+    <lucide-icon name="pencil" [size]="14" aria-hidden="true"></lucide-icon>
+    Change when it runs
+  </button>
   <button class="btn sm" type="button" *ngIf="canUpdate && state !== 'done'" [disabled]="busy" (click)="setPaused.emit(!schedule.paused)">
+    <lucide-icon [name]="schedule.paused ? 'play' : 'pause'" [size]="14" aria-hidden="true"></lucide-icon>
     {{ schedule.paused ? "Resume" : "Pause" }}
   </button>
-  <button class="btn sm" type="button" *ngIf="canUpdate && !schedule.paused && !stopped" [disabled]="busy" (click)="runNow.emit()">Run now</button>
-  <a class="btn sm" [routerLink]="['/ai/chats', schedule.chat_id]">Open the chat</a>
-  <button class="btn ghost danger sm" type="button" *ngIf="canDelete" [disabled]="busy" (click)="remove.emit()">Delete</button>
+  <button class="btn sm" type="button" *ngIf="canUpdate && !schedule.paused && !stopped" [disabled]="busy" (click)="runNow.emit()">
+    <lucide-icon name="zap" [size]="14" aria-hidden="true"></lucide-icon>
+    Run now
+  </button>
+  <a class="btn sm" [routerLink]="['/ai/chats', schedule.chat_id]">
+    <lucide-icon name="message-square-text" [size]="14" aria-hidden="true"></lucide-icon>
+    Open the chat
+  </a>
+  <button class="btn ghost danger sm" type="button" *ngIf="canDelete" [disabled]="busy" (click)="remove.emit()">
+    <lucide-icon name="trash-2" [size]="14" aria-hidden="true"></lucide-icon>
+    Delete
+  </button>
 </div>
 
-<section aria-labelledby="schedule-trust-title">
-  <h3 class="schedule-section" id="schedule-trust-title">Trust</h3>
+<section class="opened-block" aria-labelledby="schedule-next-title" *ngIf="state !== 'done'">
+  <div class="opened-block-head">
+    <span class="opened-block-icon"><lucide-icon name="timer" [size]="14" aria-hidden="true"></lucide-icon></span>
+    <h3 class="opened-block-title" id="schedule-next-title">Next</h3>
+  </div>
+  <p class="schedule-upcoming" *ngIf="nextAt">
+    <span class="schedule-upcoming-when">{{ moment(nextAt) }}</span>
+    <span class="ui-pill is-accent" *ngIf="!stopped">
+      <lucide-icon name="clock" [size]="12" aria-hidden="true"></lucide-icon>
+      {{ away(nextAt) }}
+    </span>
+  </p>
+  <p class="opened-callout is-warn" *ngIf="stopped && nextAt">
+    <lucide-icon name="circle-stop" [size]="16" aria-hidden="true"></lucide-icon>
+    You stopped everything, so it does not run until you resume.
+  </p>
+  <p class="opened-callout" *ngIf="schedule.paused">
+    <lucide-icon name="pause" [size]="16" aria-hidden="true"></lucide-icon>
+    Paused. Resuming counts the next run from then: nothing it missed is run.
+  </p>
+</section>
+
+<section class="opened-block" aria-labelledby="schedule-trust-title">
+  <div class="opened-block-head">
+    <span class="opened-block-icon"><lucide-icon name="shield-check" [size]="14" aria-hidden="true"></lucide-icon></span>
+    <h3 class="opened-block-title" id="schedule-trust-title">Trust</h3>
+  </div>
   <p class="schedule-note">
     Its runs act at this trust with nobody watching: a call above it waits for your approval, however long you take.
     It may differ from its chat's.
   </p>
   <app-select *ngIf="canUpdate; else trustWords" name="schedule-trust" [choices]="trustChoices"
               [ngModel]="schedule.trust ?? 1" (ngModelChange)="setTrust.emit($event)"></app-select>
-  <ng-template #trustWords><p class="schedule-upcoming">{{ trustName }}</p></ng-template>
+  <ng-template #trustWords><p class="schedule-upcoming"><span class="schedule-upcoming-when">{{ trustName }}</span></p></ng-template>
 </section>
 
-<section aria-labelledby="schedule-next-title" *ngIf="state !== 'done'">
-  <h3 class="schedule-section" id="schedule-next-title">Next</h3>
-  <p class="schedule-upcoming" *ngIf="nextAt">
-    <span>{{ moment(nextAt) }}</span>
-    <span class="schedule-away" *ngIf="!stopped">{{ away(nextAt) }}</span>
-  </p>
-  <p class="schedule-note" *ngIf="stopped && nextAt">You stopped everything, so it does not run until you resume.</p>
-  <p class="schedule-note" *ngIf="schedule.paused">Paused. Resuming counts the next run from then: nothing it missed is run.</p>
-</section>
-
-<section aria-labelledby="schedule-runs-title">
-  <div class="schedule-runs-head">
-    <h3 class="schedule-section" id="schedule-runs-title">Runs</h3>
+<section class="opened-block" aria-labelledby="schedule-runs-title">
+  <div class="opened-block-head">
+    <span class="opened-block-icon"><lucide-icon name="history" [size]="14" aria-hidden="true"></lucide-icon></span>
+    <h3 class="opened-block-title" id="schedule-runs-title">Runs</h3>
     <app-segmented *ngIf="runs.length" label="Which runs" [choices]="runFilters" [(ngModel)]="runFilter"></app-segmented>
   </div>
   <p class="schedule-note" *ngIf="!runs.length">It has not run yet.</p>
@@ -76,10 +121,13 @@
       </ng-template>
     </li>
   </ul>
-  <p class="schedule-note" *ngIf="runs.length">The last {{ runs.length }} {{ runs.length === 1 ? "run is" : "runs are" }} kept.<ng-container *ngIf="failures"> {{ failures }}.</ng-container></p>
+  <p class="schedule-note schedule-kept" *ngIf="runs.length">The last {{ runs.length }} {{ runs.length === 1 ? "run is" : "runs are" }} kept.<ng-container *ngIf="failures"> {{ failures }}.</ng-container></p>
 </section>
 
 <ng-template #runLine let-run="run">
+  <span class="run-icon" [class.is-failed]="run.failed" aria-hidden="true">
+    <lucide-icon [name]="run.failed ? 'circle-x' : 'circle-check'" [size]="16"></lucide-icon>
+  </span>
   <span class="run-when">{{ moment(run.at) }}</span>
   <span class="run-what" [class.is-failed]="run.failed">{{ run.failed ? "Failed" : "Ran" }}</span>
 </ng-template>

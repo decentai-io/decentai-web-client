@@ -1,6 +1,7 @@
-/* An agent's functions: the levels it reaches and what each means,
-   then each tool as a section and each function as a row. The level
-   chips are the agents' own (agent-shared.css); the rest is shared. */
+/* An agent's functions: how far they may go, as a bar and its legend,
+   then each function a card with its edge in its level's colour. The
+   level chips, the bar and its colours are the agents' own
+   (agent-shared.css); the rest is shared. */
 :host {
   display: block;
 }
@@ -10,69 +11,142 @@
   margin-bottom: 16px;
 }
 
-/* A level's chip, then what the level means. */
-.fn-legend {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  align-items: baseline;
-  gap: 8px 16px;
+.fn-summary {
   margin-bottom: 24px;
-  color: var(--ink-2);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 
-.fn-rows {
+/* As many columns as the width holds: a function is read by its name
+   first, and twelve of them in one column is a long scroll. */
+.fn-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  align-items: start;
+  gap: 12px;
   list-style: none;
 }
 
-.fn-row {
+.fn-card {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 12px 0;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px 16px 14px 20px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  transition: border-color var(--dur-1) var(--ease), box-shadow var(--dur-2) var(--ease);
 }
 
-.fn-row + .fn-row {
-  border-top: 1px solid var(--line);
+.fn-card:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-1);
 }
 
-.fn-row-head {
+/* The edge: its level, in the level's colour. */
+.fn-card::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--lvl-0);
+  content: "";
+}
+
+.fn-card[data-index="1"]::before { background: var(--lvl-1); }
+.fn-card[data-index="2"]::before { background: var(--lvl-2); }
+.fn-card[data-index="3"]::before { background: var(--lvl-3); }
+
+.fn-card-head {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.fn-card-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fn-title {
+  color: var(--ink);
+  font-size: var(--t-base);
+  font-weight: 600;
+  line-height: var(--lh-base);
 }
 
 .fn-name {
-  margin-right: 4px;
-  color: var(--ink);
+  color: var(--ink-3);
   font-family: var(--font-mono);
-  font-size: var(--t-sm);
-  font-weight: 500;
+  font-size: var(--t-xs);
+  line-height: var(--lh-xs);
   overflow-wrap: anywhere;
 }
 
-.fn-timeout {
-  margin-left: auto;
-  color: var(--ink-3);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
-  white-space: nowrap;
+.fn-card-head .lvl {
+  flex: none;
 }
 
+/* Three lines of what it does, so the cards keep an even rhythm; all of
+   it once what it takes and returns is opened. */
 .fn-about {
-  max-width: 80ch;
+  display: -webkit-box;
+  overflow: hidden;
   color: var(--ink-2);
   font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  line-height: 20px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+.fn-card:has(.fn-more[open]) .fn-about {
+  display: block;
+  -webkit-line-clamp: unset;
+  line-clamp: none;
+}
+
+/* Its small facts as icons and words. */
+.fn-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  color: var(--ink-3);
+  font-size: var(--t-xs);
+  line-height: var(--lh-xs);
+}
+
+.fn-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.fn-meta-item lucide-icon {
+  display: flex;
+}
+
+.fn-meta-item.is-accent {
+  color: var(--accent-ink);
+}
+
+.fn-more {
+  margin-top: 2px;
 }
 
 .fn-facts {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
   gap: 6px 16px;
-  margin-top: 4px;
+  margin-top: 8px;
   padding: 12px;
   border-radius: var(--r-md);
   background: var(--surface-2);
@@ -110,18 +184,16 @@
 }
 
 @media (max-width: 700px) {
-  .fn-legend,
+  .fn-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .fn-facts {
     grid-template-columns: minmax(0, 1fr);
     gap: 2px;
   }
 
-  .fn-legend dd,
   .fn-facts dd {
     margin-bottom: 8px;
-  }
-
-  .fn-timeout {
-    margin-left: 0;
   }
 }

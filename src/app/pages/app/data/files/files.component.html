@@ -1,11 +1,37 @@
 <app-page guide="records"
   title="Files"
   sentence="Files you upload, attach to chats, or receive from your agents."
+  icon="folder-open"
+  [hue]="214"
   [wide]="true"
 >
   <p class="form-notice is-error" *ngIf="error" role="alert">{{ error }}</p>
   <p class="form-notice" *ngIf="notice" role="status">{{ notice }}</p>
   <app-handed [records]="handed" [say]="handedSay" [busy]="busyRef" (answer)="accept($event.record, $event.yes)"></app-handed>
+
+  <!-- The files in numbers, each a tile; whose they are narrows the list. -->
+  <ul class="ui-tiles data-tiles" *ngIf="records.length" aria-label="Your files in numbers">
+    <li *ngFor="let tile of tiles; trackBy: byIcon">
+      <button class="ui-tile" type="button" *ngIf="tile.show; else plainTile"
+              [class.is-on]="show === tile.show" [attr.aria-pressed]="show === tile.show"
+              (click)="filter('show', tile.show)">
+        <ng-container *ngTemplateOutlet="tileInside; context: { $implicit: tile }"></ng-container>
+      </button>
+      <ng-template #plainTile>
+        <span class="ui-tile"><ng-container *ngTemplateOutlet="tileInside; context: { $implicit: tile }"></ng-container></span>
+      </ng-template>
+    </li>
+  </ul>
+
+  <ng-template #tileInside let-tile>
+    <span class="ui-tile-icon">
+      <lucide-icon [name]="tile.icon" [size]="20" aria-hidden="true"></lucide-icon>
+    </span>
+    <span class="ui-tile-words">
+      <span class="ui-tile-value">{{ tile.value }}</span>
+      <span class="ui-tile-label">{{ tile.label }}</span>
+    </span>
+  </ng-template>
 
   <div class="side-layout" [class.has-opened]="opened">
     <app-filter-column
@@ -62,7 +88,7 @@
       <!-- Shown while files are dragged over the list: where they go,
            and how large one may be. -->
       <p class="files-drop" *ngIf="dropping" aria-hidden="true">
-        <lucide-icon name="upload" [size]="20" aria-hidden="true"></lucide-icon>
+        <span class="files-drop-icon"><lucide-icon name="cloud-upload" [size]="24" aria-hidden="true"></lucide-icon></span>
         Drop files to upload
         <span>Up to {{ uploadLimitMb }} MB each</span>
       </p>
@@ -133,12 +159,20 @@
                 <app-agent-mark size="sm" [name]="agentName(file.of.agent)"></app-agent-mark>
                 {{ sourceLabel(file) }}
               </span>
-              <ng-template #own>{{ sourceLabel(file) }}</ng-template>
+              <ng-template #own>
+                <span class="ui-pill file-own">
+                  <lucide-icon name="user" [size]="12" aria-hidden="true"></lucide-icon>
+                  {{ sourceLabel(file) }}
+                </span>
+              </ng-template>
             </td>
             <td class="cell-fact num">{{ sizeOf(file) }}</td>
             <td class="cell-when" [title]="changedInFull(file)">{{ changed(file) }}</td>
             <td class="cell-minor">
-              <span class="chip" [matTooltip]="sharing(file).names">{{ sharing(file).word }}</span>
+              <span class="ui-pill" [class.is-accent]="sharing(file).word !== 'Private'" [matTooltip]="sharing(file).names">
+                <lucide-icon [name]="sharing(file).word === 'Private' ? 'lock' : 'users'" [size]="12" aria-hidden="true"></lucide-icon>
+                {{ sharing(file).word }}
+              </span>
             </td>
             <td class="cell-actions">
               <button
@@ -195,12 +229,27 @@
         </app-empty>
         <ng-template #noFiles>
           <app-empty
-            icon="file-text"
+            icon="folder-open"
             title="No files yet"
             [line]="'Upload one here or drop it on this page, attach one to a chat, or let an agent produce one. Up to ' + uploadLimitMb + ' MB each.'"
           >
             <ng-container *ngTemplateOutlet="upload"></ng-container>
           </app-empty>
+          <!-- The three ways a file arrives, each a small card. -->
+          <ul class="data-hints" aria-label="Where files come from">
+            <li class="data-hint">
+              <span class="ui-panel-icon is-hued"><lucide-icon name="cloud-upload" [size]="16" aria-hidden="true"></lucide-icon></span>
+              <span><strong>Upload</strong> or drop one on this page</span>
+            </li>
+            <li class="data-hint">
+              <span class="ui-panel-icon is-hued"><lucide-icon name="paperclip" [size]="16" aria-hidden="true"></lucide-icon></span>
+              <span><strong>Attach</strong> one to a chat</span>
+            </li>
+            <li class="data-hint">
+              <span class="ui-panel-icon is-hued"><lucide-icon name="bot" [size]="16" aria-hidden="true"></lucide-icon></span>
+              <span><strong>An agent</strong> makes one for you</span>
+            </li>
+          </ul>
         </ng-template>
       </ng-container>
     </app-list>

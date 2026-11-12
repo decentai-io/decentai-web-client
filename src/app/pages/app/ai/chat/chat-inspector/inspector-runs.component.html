@@ -1,0 +1,89 @@
+<div class="insp-sections">
+  <section class="insp-section" aria-labelledby="runs-runtime">
+    <h3 class="insp-label" id="runs-runtime">Runtime</h3>
+    <div class="insp-row">
+      <span class="insp-row-icon" [class.is-live]="inspection.chat.runtime">
+        <lucide-icon name="server" [size]="14" aria-hidden="true"></lucide-icon>
+      </span>
+      <span class="insp-main">
+        <span class="insp-name">{{ runtime.name }}</span>
+        <span class="insp-meta">{{ runtime.line }}</span>
+      </span>
+    </div>
+  </section>
+
+  <section class="insp-section" aria-labelledby="runs-processes">
+    <h3 class="insp-label" id="runs-processes">
+      Processes <span class="insp-label-count">{{ inspection.processes.length }}</span>
+    </h3>
+    <ul class="insp-list">
+      @for (process of inspection.processes; track process.process) {
+        <li class="insp-row" [title]="process.detail || ''">
+          <span class="insp-row-icon" [class.is-live]="!process.ended_at" [class.is-danger]="process.reason === 'failed'">
+            <lucide-icon name="square-terminal" [size]="14" aria-hidden="true"></lucide-icon>
+          </span>
+          <span class="insp-main">
+            <span class="insp-name">{{ agent(process) }} <span class="insp-meta">v{{ process.version }}</span></span>
+            <span class="insp-meta">{{ process.sandbox }} · {{ process.machine }} · {{ process.runtime }}</span>
+            <span class="insp-meta">{{ facts(process) }}</span>
+            @if (process.reason === 'failed' && process.detail) {
+              <span class="insp-meta runs-detail">{{ process.detail }}</span>
+            }
+          </span>
+          <span class="chip" [class.live]="!process.ended_at" [class.danger]="process.reason === 'failed'">{{ ended(process) }}</span>
+        </li>
+      } @empty {
+        <li class="insp-note">No agent has run a process for it yet.</li>
+      }
+    </ul>
+  </section>
+
+  <section class="insp-section" aria-labelledby="runs-network">
+    <h3 class="insp-label" id="runs-network">
+      Network <span class="insp-label-count">{{ inspection.network.length }}</span>
+    </h3>
+    @if (inspection.network.length) {
+      <div class="runs-scroll">
+        <table class="insp-table">
+          <thead>
+            <tr>
+              <th scope="col">Host</th>
+              <th scope="col" class="is-num">Conns</th>
+              <th scope="col" class="is-num">Refused</th>
+              <th scope="col" class="is-num">Out</th>
+              <th scope="col" class="is-num">In</th>
+              <th scope="col" class="is-num">Last</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of inspection.network; track row.agent + row.host + row.port) {
+              <tr>
+                <td [title]="row.host + ':' + row.port">
+                  <span class="runs-host">{{ row.host }}<span class="insp-meta">:{{ row.port }}</span></span>
+                  <span class="insp-meta runs-agent">{{ agent(row) }}</span>
+                </td>
+                <td class="is-num">{{ row.connections }}</td>
+                <td class="is-num" [class.runs-refused]="row.refused">{{ row.refused }}</td>
+                <td class="is-num">{{ bytes(row.bytes_out) }}</td>
+                <td class="is-num">{{ bytes(row.bytes_in) }}</td>
+                <td class="is-num runs-last" [matTooltip]="reached(row)">{{ relativeDate(row.last_at) || '—' }}</td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr>
+              <td>All hosts</td>
+              <td class="is-num">{{ totals.connections }}</td>
+              <td class="is-num" [class.runs-refused]="totals.refused">{{ totals.refused }}</td>
+              <td class="is-num">{{ bytes(totals.bytes_out) }}</td>
+              <td class="is-num">{{ bytes(totals.bytes_in) }}</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    } @else {
+      <p class="insp-note">Its agents reached no host outside the platform.</p>
+    }
+  </section>
+</div>

@@ -1,8 +1,17 @@
-<h2 mat-dialog-title>Send a test to {{ webhook.name }}</h2>
+<h2 mat-dialog-title class="dialog-band">
+  <span class="opened-mark" aria-hidden="true">
+    <lucide-icon name="send" [size]="20" [strokeWidth]="1.75"></lucide-icon>
+  </span>
+  <span class="dialog-band-words">
+    <span class="dialog-band-title">Send a test to {{ webhook.name }}</span>
+    <span class="dialog-band-line">A body of your own, acted on as a call is.</span>
+  </span>
+</h2>
 <form (ngSubmit)="send()">
   <mat-dialog-content>
-    <p class="dialog-note">
-      It wakes its chat with the instruction, as a call does, and the chat acts on it for real. It is marked a test, among the webhook’s calls.
+    <p class="dialog-note test-note">
+      <lucide-icon name="info" [size]="16" aria-hidden="true"></lucide-icon>
+      <span>It wakes its chat with the instruction, as a call does, and the chat acts on it for real. It is marked a test, among the webhook’s calls.</span>
     </p>
     <div class="form">
       <app-field label="Body" help="One JSON object. Replace the values with ones its chat can act on.">
@@ -23,6 +32,9 @@
   </mat-dialog-content>
   <mat-dialog-actions>
     <button class="btn" type="button" [disabled]="sending" (click)="dialog.close()">Cancel</button>
-    <button class="btn primary" type="submit" [disabled]="sending">{{ sending ? "Sending…" : "Send" }}</button>
+    <button class="btn primary" type="submit" [disabled]="sending">
+      <lucide-icon [name]="sending ? 'loader-circle' : 'send'" [size]="16" aria-hidden="true"></lucide-icon>
+      {{ sending ? "Sending…" : "Send" }}
+    </button>
   </mat-dialog-actions>
 </form>

@@ -1,0 +1,120 @@
+/* The inspector: a head, a row of tabs that stays in view, and the tab
+   under them, scrolling in the column the page gives it. Its tabs'
+   tables show more columns as it widens (container queries). */
+:host {
+  height: 100%;
+}
+
+.insp {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  container-type: inline-size;
+}
+
+.insp-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 12px 4px 20px;
+}
+
+.insp-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: var(--t-base);
+  font-weight: 600;
+  line-height: var(--lh-base);
+}
+
+/* The tabs: words in a row, the chosen one underlined in the accent. It
+   stays at the top while the tab scrolls; with less room than words,
+   it scrolls sideways. */
+.insp-tabs {
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  display: flex;
+  gap: 2px;
+  padding: 0 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.insp-tab {
+  flex: none;
+  height: 40px;
+  padding: 0 8px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--ink-3);
+  font: 500 var(--t-sm) / var(--lh-sm) var(--font-sans);
+  cursor: pointer;
+  transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+
+.insp-tab:hover {
+  color: var(--ink);
+}
+
+.insp-tab[aria-selected='true'] {
+  border-bottom-color: var(--accent);
+  color: var(--ink);
+}
+
+.insp-tab:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+}
+
+.insp-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 20px 32px;
+}
+
+/* A quiet line over the tab: what could not be read, or what this
+   server does not tell. The rest stays usable under it. */
+.insp-quiet {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--ink-3);
+  font-size: var(--t-xs);
+  line-height: var(--lh-xs);
+}
+
+.insp-quiet lucide-icon {
+  display: flex;
+  flex: none;
+}
+
+.insp-quiet.is-error {
+  color: var(--danger-ink);
+}
+
+.insp-quiet .btn {
+  margin-left: auto;
+}
+
+.insp-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.insp-loading .sk {
+  height: 56px;
+}
+
+.insp-loading .sk.is-short {
+  width: 60%;
+  height: 20px;
+}

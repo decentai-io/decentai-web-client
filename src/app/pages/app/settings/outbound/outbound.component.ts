@@ -75,6 +75,9 @@ export class OutboundComponent extends DataPageBase implements OnInit {
 
   get atLimit(): boolean { return this.addresses.length >= this.limit; }
 
+  /** How many are paused: by hand, or after failing twenty times. */
+  get pausedCount(): number { return this.addresses.filter((one) => one.paused).length; }
+
   get foot(): string {
     return this.addresses.length ? `${this.addresses.length} of ${this.limit}` : '';
   }

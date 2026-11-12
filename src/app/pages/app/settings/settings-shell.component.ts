@@ -10,6 +10,20 @@ import { AuthService } from 'src/app/services/auth.service';
 import { SettingsLlmService } from 'src/app/services/settings-llm.service';
 import { SettingsPage, settingsPageOpen, settingsPages } from 'src/app/website/config/config';
 
+/** Each page's icon, by its path: in the nav, the menu and its band. */
+const pageIcons: Record<string, string> = {
+  chat: 'message-square-text',
+  notifications: 'bell',
+  memory: 'brain-circuit',
+  keys: 'key-round',
+  webhooks: 'send',
+  providers: 'cloud',
+  speech: 'mic',
+  apps: 'link',
+  safety: 'shield-check',
+  nodes: 'server',
+};
+
 /** A group of the nav with the pages this person may open. */
 interface NavGroup {
   name: SettingsPage['group'];
@@ -40,6 +54,8 @@ export class SettingsShellComponent implements OnDestroy {
   readonly groups: NavGroup[];
   /** The page that is open. */
   current: SettingsPage | undefined;
+  /** The section's hue: violet, for every page of Settings. */
+  readonly hue = 262;
 
   private readonly navigation: Subscription;
 
@@ -58,6 +74,11 @@ export class SettingsShellComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.navigation.unsubscribe();
+  }
+
+  /** A page's icon. */
+  iconOf(page: SettingsPage): string {
+    return pageIcons[page.path] ?? 'settings';
   }
 
   /** The open page, from the address: /settings/<path>. */

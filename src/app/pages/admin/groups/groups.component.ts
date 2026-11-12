@@ -103,6 +103,21 @@ export class GroupsComponent extends DataPageBase implements OnInit {
     return this.policies.find((p) => p.policy_id === policyId)?.name ?? policyId;
   }
 
+  /** The groups made here: neither Everyone nor Administrators. */
+  get ownCount(): number {
+    return this.groups.filter((group) => !this.stays(group)).length;
+  }
+
+  /** Who is in a group, in a word or two, for its pill. */
+  peopleWord(group: Group): string {
+    return group.everyone ? 'Every person' : `${group.members ?? 0} ${group.members === 1 ? 'person' : 'people'}`;
+  }
+
+  /** The first three policies a group gives, by name, each a pill. */
+  policyNames(group: Group): string[] {
+    return group.policies.slice(0, 3).map((id) => this.policyName(id));
+  }
+
   summarise(group: Group): string {
     const people = group.everyone ? 'Every person' : `${group.members ?? 0} ${group.members === 1 ? 'person' : 'people'}`;
     if (!group.policies.length) return `${people} · No policies`;

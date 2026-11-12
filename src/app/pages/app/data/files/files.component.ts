@@ -28,6 +28,15 @@ interface Upload {
   cancel?: () => void;
 }
 
+/** A number over the list: its icon, the number, its word, and the
+ *  "whose" it narrows the list to, when it is one. */
+interface Tile {
+  icon: string;
+  value: string | number;
+  label: string;
+  show?: Show;
+}
+
 /** How long a finished upload's row stays before it leaves. */
 const DONE_FOR_MS = 2500;
 
@@ -202,6 +211,26 @@ export class FilesComponent extends RecordPage implements OnInit, OnDestroy {
   /** Whose it is for: the agent and the resource, or the person's own. */
   sourceLabel(file: AppRecord): string {
     return file.of ? `${this.agentName(file.of.agent)} · ${this.resourceLabel(file.of)}` : 'Your own';
+  }
+
+  // ── The numbers over the list ───────────────────────────────────────
+
+  /** How many files, whose, how many are agents', and what they weigh. */
+  get tiles(): Tile[] {
+    const mine = this.records.filter((file) => this.isMine(file)).length;
+    const bytes = this.records.reduce((sum, file) => sum + Number(file.file?.size ?? 0), 0);
+    return [
+      { icon: 'folder-open', value: this.records.length, label: this.records.length === 1 ? 'File' : 'Files', show: 'all' },
+      { icon: 'user', value: mine, label: 'Yours', show: 'mine' },
+      { icon: 'users', value: this.records.length - mine, label: 'Shared with you', show: 'shared' },
+      { icon: 'bot', value: this.records.filter((file) => file.of).length, label: 'For your agents' },
+      { icon: 'database', value: sizeLabel(bytes) || '0 B', label: 'Stored in all' },
+    ];
+  }
+
+  /** A tile is known by its icon, so the row is not drawn again. */
+  byIcon(_: number, tile: Tile): string {
+    return tile.icon;
   }
 
   // ── The filters ─────────────────────────────────────────────────────

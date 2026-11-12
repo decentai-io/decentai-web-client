@@ -9,12 +9,14 @@ import { LlmConnection } from 'src/app/services/settings-llm.service';
 
 /** A chat's trust levels, as a choice: a function runs without asking
  *  when its level is at or below the chat's; each hint says what that
- *  leaves to ask about. Chat defaults and a webhook's chat offer these. */
+ *  leaves to ask about. Chat defaults and a webhook's chat offer these;
+ *  `short` is the name where four must fit side by side. */
 export const TRUST_CHOICES = [
-  { value: 0, name: 'Ask for every change', hint: 'Reads run; every change asks first.' },
-  { value: 1, name: 'Standard', hint: 'Reads and ordinary changes run; wider changes and outside actions ask first.' },
-  { value: 2, name: 'Trusted', hint: 'Everything inside the platform runs; outside actions ask first.' },
-  { value: 3, name: 'Autonomous', hint: 'Everything runs without asking.' },
+  { value: 0, name: 'Ask for every change', short: 'Ask first', hint: 'Reads run; every change asks first.' },
+  { value: 1, name: 'Standard', short: 'Standard',
+    hint: 'Reads and ordinary changes run; wider changes and outside actions ask first.' },
+  { value: 2, name: 'Trusted', short: 'Trusted', hint: 'Everything inside the platform runs; outside actions ask first.' },
+  { value: 3, name: 'Autonomous', short: 'Autonomous', hint: 'Everything runs without asking.' },
 ];
 
 /** How many turns the assistant may take on one message; 0 is no limit. */
