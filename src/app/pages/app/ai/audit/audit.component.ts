@@ -145,6 +145,19 @@ export class AuditComponent implements OnInit {
     void this.reload();
   }
 
+  // ── The numbers at the head ─────────────────────────────────────────
+
+  /** How many of the lines read ended this way. */
+  count(outcome: TrailFilters['outcome']): number {
+    return this.lines.filter((line) => line.outcome === outcome).length;
+  }
+
+  /** A tile narrows the record to how its lines ended; a second press
+   *  lifts it. */
+  toggleOutcome(outcome: TrailFilters['outcome']): void {
+    this.chooseOutcome(this.ended === outcome ? '' : outcome);
+  }
+
   get filtered(): boolean {
     return !!this.what.trim() || !!this.ended || !!this.person || !!this.chat;
   }

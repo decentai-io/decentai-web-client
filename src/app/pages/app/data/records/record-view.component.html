@@ -1,11 +1,24 @@
+<!-- Its header band: the kind's tile, the name, and its facts as pills. -->
 <header class="record-head">
+  <span class="record-face" aria-hidden="true">
+    <lucide-icon name="database" [size]="22" [strokeWidth]="1.75"></lucide-icon>
+  </span>
   <div class="record-words">
+    <p class="record-kind" *ngIf="kind">{{ kind }}</p>
     <h2 class="record-name">{{ name }}</h2>
-    <p class="record-line">
-      <span>{{ kind }}<ng-container *ngIf="agents.length"> kept for {{ agents.join(", ") }}</ng-container></span>
-      <span *ngIf="madeBy">{{ madeBy }}'s</span>
-      <span *ngIf="sharing">{{ sharing }}</span>
-      <span *ngIf="changed" [matTooltip]="changedInFull">changed {{ changed }}</span>
+    <p class="ui-pills record-line">
+      <span class="ui-pill" *ngIf="agents.length">
+        <lucide-icon name="bot" [size]="12" aria-hidden="true"></lucide-icon>Kept for {{ agents.join(", ") }}
+      </span>
+      <span class="ui-pill" *ngIf="madeBy">
+        <lucide-icon name="circle-user" [size]="12" aria-hidden="true"></lucide-icon>{{ madeBy }}'s
+      </span>
+      <span class="ui-pill" [class.is-accent]="sharing !== 'Private'" *ngIf="sharing">
+        <lucide-icon [name]="sharing === 'Private' ? 'lock' : 'users'" [size]="12" aria-hidden="true"></lucide-icon>{{ sharing }}
+      </span>
+      <span class="ui-pill" *ngIf="changed" [matTooltip]="changedInFull">
+        <lucide-icon name="history" [size]="12" aria-hidden="true"></lucide-icon>changed {{ changed }}
+      </span>
     </p>
   </div>
   <button class="icon-btn sm" type="button" aria-label="Close the record" (click)="closed.emit()">
@@ -58,17 +71,28 @@
   </ng-container>
 </ng-template>
 
-<dl class="record-fields" *ngIf="fields.length">
-  <ng-container *ngFor="let entry of fields">
-    <dt>{{ entry.label }}</dt>
-    <dd><ng-container *ngTemplateOutlet="shown; context: { $implicit: entry.value, name: entry.name }"></ng-container></dd>
-  </ng-container>
-</dl>
+<!-- The find-by fields, in a panel of their own. -->
+<section class="record-panel" *ngIf="fields.length" aria-labelledby="record-fields-title">
+  <div class="ui-panel-head record-panel-head">
+    <span class="ui-panel-icon is-hued"><lucide-icon name="list" [size]="16" aria-hidden="true"></lucide-icon></span>
+    <h3 class="ui-panel-title" id="record-fields-title">Fields</h3>
+    <span class="ui-panel-aside">{{ fields.length }}</span>
+  </div>
+  <dl class="record-fields">
+    <ng-container *ngFor="let entry of fields">
+      <dt>{{ entry.label }}</dt>
+      <dd><ng-container *ngTemplateOutlet="shown; context: { $implicit: entry.value, name: entry.name }"></ng-container></dd>
+    </ng-container>
+  </dl>
+</section>
 
 <!-- The content: what the record is for, under the label the agent
-     gave each part. -->
-<section class="record-part" *ngFor="let entry of content">
-  <h3 class="record-part-title">{{ entry.label }}</h3>
+     gave each part, each a panel. -->
+<section class="record-panel" *ngFor="let entry of content">
+  <div class="ui-panel-head record-panel-head">
+    <span class="ui-panel-icon"><lucide-icon name="file-text" [size]="16" aria-hidden="true"></lucide-icon></span>
+    <h3 class="ui-panel-title">{{ entry.label }}</h3>
+  </div>
   <ng-container *ngTemplateOutlet="shown; context: { $implicit: entry.value, name: entry.name }"></ng-container>
 </section>
 
@@ -80,7 +104,9 @@
 </details>
 
 <footer class="record-foot">
-  <span *ngIf="created">Created {{ created }}</span>
+  <span class="record-foot-when" *ngIf="created">
+    <lucide-icon name="calendar" [size]="14" aria-hidden="true"></lucide-icon>Created {{ created }}
+  </span>
   <span class="record-foot-ref">
     <code>{{ record.record_id }}</code>
     <button class="icon-btn sm" type="button" [attr.aria-label]="copied ? 'Copied' : 'Copy the reference'" (click)="copyRef()">

@@ -43,6 +43,15 @@ interface Column {
 /** Whose records are listed. */
 type Show = 'mine' | 'shared';
 
+/** A number over the list: its icon, the number, its word, and the
+ *  "whose" it narrows the list to, when it is one. */
+interface Tile {
+  icon: string;
+  value: number;
+  label: string;
+  show?: Show;
+}
+
 /** The column a kind with no declared shape is shown by: its name. */
 const NAME_COLUMN = '__name';
 
@@ -270,6 +279,26 @@ export class RecordsComponent extends RecordPage implements OnInit, OnDestroy {
       if (typeof value === 'string' && value.trim()) return value;
     }
     return record.record_id;
+  }
+
+  // ── The numbers over the list ───────────────────────────────────────
+
+  /** How many records, whose, how many kinds, and how many agents keep them. */
+  get tiles(): Tile[] {
+    const kept = this.records.filter((record) => record.of);
+    const mine = kept.filter((record) => this.isMine(record)).length;
+    return [
+      { icon: 'database', value: kept.length, label: kept.length === 1 ? 'Record' : 'Records' },
+      { icon: 'user', value: mine, label: 'Yours', show: 'mine' },
+      { icon: 'users', value: kept.length - mine, label: 'Shared with you', show: 'shared' },
+      { icon: 'table', value: new Set(kept.map((record) => kindKey(record.of!))).size, label: 'Kinds' },
+      { icon: 'bot', value: new Set(kept.map((record) => record.of!.agent)).size, label: 'Agents keeping them' },
+    ];
+  }
+
+  /** A tile is known by its icon, so the row is not drawn again. */
+  byIcon(_: number, tile: Tile): string {
+    return tile.icon;
   }
 
   // ── The filter column ───────────────────────────────────────────────

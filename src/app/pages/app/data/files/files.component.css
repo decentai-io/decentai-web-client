@@ -2,11 +2,23 @@
    list frame, the table and its toolbar, the file icon). Here is how a
    row lays out its name and its source, and the uploads on their way in. */
 
+/* ── The numbers over the list ───────────────────────────────────────
+   The shared tiles (styles/controls.scss `.ui-tile`), each filling its
+   cell, so a button and a plain tile stand the same height. */
+.data-tiles > li > .ui-tile {
+  width: 100%;
+  height: 100%;
+}
+
 .file-name {
   display: flex;
   align-items: center;
   gap: 12px;
   min-width: 0;
+}
+
+.file-name-words {
+  font-weight: 550;
 }
 
 /* A long name may break anywhere, so the table can always fit its
@@ -26,12 +38,46 @@
 .file-source {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+}
+
+/* ── The first visit: where files come from, as three small cards ──── */
+.data-hints {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  max-width: 760px;
+  margin: 0 auto 32px;
+  padding: 0 16px;
+  list-style: none;
+}
+
+.data-hint {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px dashed color-mix(in srgb, hsl(var(--hue, 214) 50% 50%) 35%, var(--line));
+  border-radius: var(--r-md);
+  background: linear-gradient(160deg, hsl(var(--hue, 214) 60% 97%), var(--surface) 75%);
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
+}
+
+:host-context(.dark) .data-hint {
+  border-color: color-mix(in srgb, hsl(var(--hue, 214) 40% 55%) 30%, var(--line));
+  background: linear-gradient(160deg, hsl(var(--hue, 214) 35% 16%), var(--surface) 75%);
+}
+
+.data-hint strong {
+  color: var(--ink);
+  font-weight: 600;
 }
 
 /* ── Upload ──────────────────────────────────────────────────────────
    Files dragged over the list put a dashed frame on it and say where
-   they go; each file on its way in is a row above the list with a 2px
+   they go; each file on its way in is a row above the list with a 4px
    bar. */
 .files-list {
   position: relative;
@@ -39,7 +85,7 @@
 
 .files-list.is-dropping {
   border-radius: var(--r-md);
-  outline: 2px dashed var(--accent);
+  outline: 2px dashed hsl(var(--hue, 214) 60% 52%);
   outline-offset: 4px;
 }
 
@@ -47,37 +93,76 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 24px 16px;
-  border-radius: var(--r-md);
-  background: var(--accent-soft);
-  color: var(--accent-ink);
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 32px 16px;
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(70% 120% at 50% 0%, hsl(var(--hue, 214) 70% 90% / 0.9), transparent 70%),
+    hsl(var(--hue, 214) 60% 96%);
+  color: hsl(var(--hue, 214) 58% 28%);
   font-size: var(--t-base);
   font-weight: 500;
   line-height: var(--lh-base);
   pointer-events: none;
 }
 
-.files-drop span {
+:host-context(.dark) .files-drop {
+  background:
+    radial-gradient(70% 120% at 50% 0%, hsl(var(--hue, 214) 45% 24% / 0.9), transparent 70%),
+    hsl(var(--hue, 214) 30% 14%);
+  color: hsl(var(--hue, 214) 62% 80%);
+}
+
+.files-drop > span:not(.files-drop-icon) {
+  color: var(--ink-2);
   font-size: var(--t-sm);
   font-weight: 400;
+}
+
+/* The cloud in a tile of its own, lifted off the wash. */
+.files-drop-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 4px;
+  border-radius: 15px;
+  background: var(--surface);
+  box-shadow: var(--shadow-2);
+}
+
+.files-drop-icon lucide-icon {
+  display: flex;
 }
 
 .upload-rows {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-bottom: 8px;
+  gap: 8px;
+  margin-bottom: 12px;
   list-style: none;
 }
 
 .upload-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
-  border: 1px solid var(--line);
+  gap: 14px;
+  padding: 12px 16px;
+  border: 1px solid color-mix(in srgb, hsl(var(--hue, 214) 50% 50%) 20%, var(--line));
   border-radius: var(--r-md);
+  background: linear-gradient(100deg, hsl(var(--hue, 214) 60% 97%), var(--surface) 60%);
+  box-shadow: var(--shadow-1);
+}
+
+:host-context(.dark) .upload-row {
+  border-color: color-mix(in srgb, hsl(var(--hue, 214) 40% 55%) 22%, var(--line));
+  background: linear-gradient(100deg, hsl(var(--hue, 214) 35% 15%), var(--surface) 60%);
+}
+
+.upload-row.is-failed {
+  border-color: color-mix(in srgb, var(--danger-ink) 30%, var(--line));
   background: var(--surface);
 }
 
@@ -113,7 +198,7 @@
 
 .upload-bar {
   grid-column: 1 / -1;
-  height: 2px;
+  height: 4px;
   overflow: hidden;
   border-radius: var(--r-full);
   background: var(--surface-3);
@@ -122,6 +207,13 @@
 .upload-bar span {
   display: block;
   height: 100%;
-  background: var(--accent);
+  border-radius: inherit;
+  background: linear-gradient(90deg, hsl(var(--hue, 214) 64% 52%), var(--accent));
   transition: width var(--dur-1) linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .upload-bar span {
+    transition: none;
+  }
 }

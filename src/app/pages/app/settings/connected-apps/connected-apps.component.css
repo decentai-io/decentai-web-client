@@ -1,14 +1,27 @@
 /* Connected apps. The list, the rows, the fields and the dialog are the
-   shared ones; here are the address to copy, the rows still waiting,
-   and the sentences inside the form. */
+   shared ones; here are the tiles' and the redirect panel's room, the
+   rows still waiting, a row's facts as pills, and the sentences inside
+   the form. */
 .apps-redirect {
-  display: block;
   margin-bottom: 24px;
 }
 
 /* A provider not connected yet: its mark quieter than a connected one's. */
 .apps-waiting-mark {
-  color: var(--ink-3);
+  color: var(--warn-ink);
+}
+
+.apps-facts {
+  margin-top: 6px;
+}
+
+.apps-facts .apps-code {
+  color: inherit;
+}
+
+.chip lucide-icon,
+.btn lucide-icon {
+  display: flex;
 }
 
 .apps-address,
@@ -27,4 +40,10 @@
   color: var(--ink-2);
   font-size: var(--t-sm);
   line-height: var(--lh-sm);
+}
+
+/* A long list of agents wraps inside its pill rather than being cut. */
+.apps-facts .ui-pill {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }

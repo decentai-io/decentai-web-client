@@ -6,21 +6,44 @@
   <p class="form-notice is-error" role="alert" *ngIf="error && editingId === null">{{ error }}</p>
   <p class="form-notice" role="status" *ngIf="notice">{{ notice }}</p>
 
+  <!-- The numbers at a glance: apps connected, and providers installed
+       agents are still waiting on. -->
+  <ul class="ui-tiles" aria-label="Connected apps in numbers" *ngIf="!loading && (apps.length || missing.length)">
+    <li class="ui-tile">
+      <span class="ui-tile-icon"><lucide-icon name="link" [size]="20" aria-hidden="true"></lucide-icon></span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ apps.length }}</span>
+        <span class="ui-tile-label">Connected</span>
+      </span>
+    </li>
+    <li class="ui-tile">
+      <span class="ui-tile-icon" [class.is-warn]="missing.length > 0"><lucide-icon name="circle-dashed" [size]="20" aria-hidden="true"></lucide-icon></span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ missing.length }}</span>
+        <span class="ui-tile-label">Waiting to connect</span>
+      </span>
+    </li>
+  </ul>
+
   <!-- Before the list, not after it: this address is what a person needs
        in the provider's console before they can connect anything here. -->
-  <app-field
-    class="apps-redirect"
-    *ngIf="redirectUri"
-    label="Redirect URL"
-    help="Add it to each provider's authorized redirect URLs."
-  >
-    <span class="secret-field">
-      <input class="input apps-address" readonly [value]="redirectUri" />
-      <button class="icon-btn sm" type="button" [attr.aria-label]="copied ? 'Copied' : 'Copy the redirect URL'" (click)="copyRedirect()">
-        <lucide-icon [name]="copied ? 'check' : 'copy'" [size]="16" aria-hidden="true"></lucide-icon>
-      </button>
-    </span>
-  </app-field>
+  <section class="ui-panel apps-redirect" *ngIf="redirectUri" aria-labelledby="apps-redirect-title">
+    <div class="ui-panel-head">
+      <span class="ui-panel-icon is-hued"><lucide-icon name="external-link" [size]="16" aria-hidden="true"></lucide-icon></span>
+      <h2 class="ui-panel-title" id="apps-redirect-title">First, in each provider's console</h2>
+    </div>
+    <app-field
+      label="Redirect URL"
+      help="Add it to each provider's authorized redirect URLs."
+    >
+      <span class="secret-field">
+        <input class="input apps-address" readonly [value]="redirectUri" />
+        <button class="icon-btn sm" type="button" [attr.aria-label]="copied ? 'Copied' : 'Copy the redirect URL'" (click)="copyRedirect()">
+          <lucide-icon [name]="copied ? 'check' : 'copy'" [size]="16" aria-hidden="true"></lucide-icon>
+        </button>
+      </span>
+    </app-field>
+  </section>
 
   <!-- One list: the providers connected, then the ones installed agents
        are still waiting on, each with its own way to connect it. -->
@@ -33,13 +56,16 @@
     </ng-container>
 
     <app-row *ngFor="let app of apps" [name]="labelFor(app.provider)">
-      <lucide-icon rowMark name="globe" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
+      <lucide-icon rowMark name="link" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
+      <span rowChips class="chip accent"><lucide-icon name="circle-check" [size]="12" aria-hidden="true"></lucide-icon>Connected</span>
       <span rowChips class="chip" *ngIf="!app.secret">No secret</span>
-      <ng-container rowMeta>
-        Client id <code class="apps-code">{{ app.client_id }}</code>
-        <ng-container *ngIf="app.endpoints.token_url"> · tokens at <code class="apps-code">{{ hostOf(app.endpoints.token_url) }}</code></ng-container>
-        <ng-container *ngIf="neededBy(app.provider)"> · used by {{ neededBy(app.provider) }}</ng-container>
-      </ng-container>
+      <!-- What it is, as pills: its client id, where its tokens come
+           from, and the agents that use it. -->
+      <span rowMeta class="ui-pills apps-facts">
+        <span class="ui-pill"><lucide-icon name="key-round" [size]="12" aria-hidden="true"></lucide-icon>Client id <code class="apps-code">{{ app.client_id }}</code></span>
+        <span class="ui-pill" *ngIf="app.endpoints.token_url"><lucide-icon name="globe" [size]="12" aria-hidden="true"></lucide-icon>tokens at <code class="apps-code">{{ hostOf(app.endpoints.token_url) }}</code></span>
+        <span class="ui-pill is-accent" *ngIf="neededBy(app.provider)"><lucide-icon name="bot" [size]="12" aria-hidden="true"></lucide-icon>used by {{ neededBy(app.provider) }}</span>
+      </span>
       <button
         rowActions
         class="icon-btn sm"
@@ -67,11 +93,14 @@
     </app-row>
 
     <app-row *ngFor="let need of missing" [name]="labelFor(need.provider)" class="apps-waiting">
-      <lucide-icon rowMark class="apps-waiting-mark" name="globe" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
+      <lucide-icon rowMark class="apps-waiting-mark" name="circle-dashed" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
       <span rowChips class="chip warn">Not connected</span>
-      <ng-container rowMeta>Needed by {{ need.needed_by.join(", ") }}</ng-container>
-      <button rowActions class="btn sm" type="button" *ngIf="canCreate" (click)="startCreate(need.provider)"
+      <span rowMeta class="ui-pills apps-facts">
+        <span class="ui-pill is-warn"><lucide-icon name="bot" [size]="12" aria-hidden="true"></lucide-icon>Needed by {{ need.needed_by.join(", ") }}</span>
+      </span>
+      <button rowActions class="btn sm primary" type="button" *ngIf="canCreate" (click)="startCreate(need.provider)"
               [attr.aria-label]="'Connect ' + labelFor(need.provider)">
+        <lucide-icon name="link" [size]="14" aria-hidden="true"></lucide-icon>
         Connect
       </button>
     </app-row>
@@ -81,7 +110,12 @@
       icon="globe"
       title="No connected apps yet"
       line="Agents that connect to Gmail, Outlook or Slack need an app for their provider."
-    ></app-empty>
+    >
+      <button class="btn primary" type="button" *ngIf="canCreate" (click)="startCreate()">
+        <lucide-icon name="plus" [size]="16" aria-hidden="true"></lucide-icon>
+        Connect an app
+      </button>
+    </app-empty>
   </app-list>
 </ng-container>
 

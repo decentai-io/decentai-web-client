@@ -62,6 +62,18 @@ export class ApiKeysComponent implements OnInit {
 
   get atLimit(): boolean { return this.keys.length >= this.limit; }
 
+  /** How many more keys may be made. */
+  get available(): number { return Math.max(0, this.limit - this.keys.length); }
+
+  /** How many keys a script has called with. */
+  get usedCount(): number { return this.keys.filter((key) => !!key.last_used_at).length; }
+
+  /** Whether a key ends within two weeks: its pill is in the warning colour. */
+  endsSoon(key: ApiKey): boolean {
+    const ends = new Date(key.expires_at).getTime();
+    return Number.isFinite(ends) && ends - Date.now() < 14 * 24 * 60 * 60 * 1000;
+  }
+
   /** The counts under the list. */
   get foot(): string {
     return `${this.keys.length} active · ${Math.max(0, this.limit - this.keys.length)} available`;

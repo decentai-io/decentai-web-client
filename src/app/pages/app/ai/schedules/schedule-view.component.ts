@@ -19,7 +19,7 @@ type RunFilter = 'all' | 'failed';
   selector: 'app-schedule-view',
   standalone: false,
   templateUrl: './schedule-view.component.html',
-  styleUrl: './schedule-view.component.css',
+  styleUrls: ['./opened-shared.css', './schedule-view.component.css'],
 })
 export class ScheduleViewComponent implements OnChanges {
   @Input({ required: true }) schedule!: Schedule;

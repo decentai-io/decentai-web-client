@@ -15,6 +15,16 @@ import { ShareEditor, SharingChip } from '../../share-editor';
 
 /** Which skills are listed, and in what order. */
 type Show = 'all' | 'mine' | 'shared';
+
+/** A number over the list: its icon, the number, its word, and the
+ *  "whose" it narrows the list to, when it is one. */
+interface Tile {
+  icon: string;
+  value: number;
+  label: string;
+  show?: Show;
+  warn?: boolean;
+}
 type SkillSort = 'written' | 'name' | 'author';
 
 /**
@@ -170,6 +180,22 @@ export class SkillsComponent extends DataPageBase implements OnInit, OnDestroy {
     if (show === 'mine') return skill.created_by === this.myUserId;
     if (show === 'shared') return skill.created_by !== this.myUserId;
     return true;
+  }
+
+  /** How many skills, whose, and how many of the person's are shared. */
+  get tiles(): Tile[] {
+    const mine = this.skills.filter((skill) => this.matchesShow(skill, 'mine'));
+    return [
+      { icon: 'sparkles', value: this.skills.length, label: this.skills.length === 1 ? 'Skill' : 'Skills', show: 'all' },
+      { icon: 'user', value: mine.length, label: 'Yours', show: 'mine' },
+      { icon: 'users', value: this.skills.length - mine.length, label: 'Shared with you', show: 'shared' },
+      { icon: 'share', value: mine.filter((skill) => this.sharing(skill).word !== 'Private').length, label: 'You share' },
+    ];
+  }
+
+  /** A tile is known by its icon, so the row is not drawn again. */
+  byIcon(_: number, tile: Tile): string {
+    return tile.icon;
   }
 
   get filters(): FilterGroup[] {

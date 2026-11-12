@@ -6,28 +6,40 @@
   <!-- ── The counts, the views, and how fresh it all is ─────────────── -->
   <dl class="nodes-tiles" *ngIf="canListNodes" aria-label="At a glance">
     <div class="nodes-tile">
-      <dt>Nodes connected</dt>
+      <dt>
+        <span class="nodes-tile-icon" aria-hidden="true"><lucide-icon name="server" [size]="20"></lucide-icon></span>
+        <span class="nodes-tile-label">Nodes connected</span>
+      </dt>
       <dd>
         <span class="nodes-tile-number" *ngIf="!loading; else tileLoading">{{ counts.connected }}<span class="nodes-tile-of"> of {{ counts.total }}</span></span>
-        <span class="nodes-tile-note" *ngIf="!loading">{{ counts.refused ? plural(counts.refused, "refused", "refused") : "none refused" }}</span>
+        <span class="nodes-tile-note" [class.is-warn]="counts.refused" *ngIf="!loading">{{ counts.refused ? plural(counts.refused, "refused", "refused") : "none refused" }}</span>
       </dd>
     </div>
     <div class="nodes-tile">
-      <dt>Sandboxes</dt>
+      <dt>
+        <span class="nodes-tile-icon" [class.is-warn]="counts.draining" aria-hidden="true"><lucide-icon name="package" [size]="20"></lucide-icon></span>
+        <span class="nodes-tile-label">Sandboxes</span>
+      </dt>
       <dd>
         <span class="nodes-tile-number" *ngIf="!loading; else tileLoading">{{ counts.sandboxes }}</span>
         <span class="nodes-tile-note" [class.is-warn]="counts.draining" *ngIf="!loading">{{ counts.draining ? counts.draining + " draining" : "none draining" }}</span>
       </dd>
     </div>
     <div class="nodes-tile">
-      <dt>Chats running</dt>
+      <dt>
+        <span class="nodes-tile-icon" aria-hidden="true"><lucide-icon name="message-square-text" [size]="20"></lucide-icon></span>
+        <span class="nodes-tile-label">Chats running</span>
+      </dt>
       <dd>
         <span class="nodes-tile-number" *ngIf="!loading; else tileLoading">{{ counts.chats }}</span>
         <span class="nodes-tile-note" *ngIf="!loading">on connected nodes</span>
       </dd>
     </div>
     <div class="nodes-tile" *ngIf="canListTokens">
-      <dt>Enrollment tokens</dt>
+      <dt>
+        <span class="nodes-tile-icon" aria-hidden="true"><lucide-icon name="key-round" [size]="20"></lucide-icon></span>
+        <span class="nodes-tile-label">Enrollment tokens</span>
+      </dt>
       <dd>
         <span class="nodes-tile-number" *ngIf="!loading; else tileLoading">{{ counts.tokens }}</span>
         <span class="nodes-tile-note" *ngIf="!loading">can enroll a node</span>
@@ -118,8 +130,9 @@
 
       <section class="nodes-group" *ngFor="let group of groups; trackBy: byGroup" [attr.aria-label]="group.name">
         <h3 class="nodes-group-head">
+          <span class="nodes-group-icon" aria-hidden="true"><lucide-icon name="network" [size]="14"></lucide-icon></span>
           <span class="nodes-group-name">{{ group.name }}</span>
-          <span class="nodes-group-count">{{ group.connected }} of {{ plural(group.nodes.length, "node") }} connected</span>
+          <span class="ui-pill nodes-group-count" [class.is-accent]="group.connected > 0">{{ group.connected }} of {{ plural(group.nodes.length, "node") }} connected</span>
         </h3>
         <div class="nodes-group-rows" role="list" [attr.aria-label]="'Nodes of ' + group.name">
           <app-row
@@ -133,8 +146,8 @@
             <span rowChips class="chip" [class.live]="stateOf(node).tone === 'live'" [class.danger]="stateOf(node).tone === 'danger'">{{ stateOf(node).word }}</span>
             <span rowChips class="chip warn" *ngIf="node.live && draining(node)">Draining</span>
             <ng-container rowMeta>
-              <span class="node-facts">
-                <span *ngFor="let fact of nodeFacts(node)">{{ fact }}</span>
+              <span class="ui-pills node-facts">
+                <span class="ui-pill" *ngFor="let fact of nodeFacts(node)">{{ fact }}</span>
               </span>
               <span class="node-note" *ngIf="node.note">{{ node.note }}</span>
             </ng-container>
@@ -149,7 +162,10 @@
         title="No nodes yet"
         line="A node joins by itself: make an enrollment token, put it in the node's identity folder, and start it pointed at this deployment."
       >
-        <a class="btn" [href]="docs" target="_blank" rel="noopener">How a node joins</a>
+        <a class="btn primary" [href]="docs" target="_blank" rel="noopener">
+          How a node joins
+          <lucide-icon name="external-link" [size]="14" aria-hidden="true"></lucide-icon>
+        </a>
       </app-empty>
       <app-empty
         *ngIf="nodes.length && !shownNodes.length"
@@ -164,7 +180,10 @@
 
   <!-- ── What lets a node join ──────────────────────────────────────── -->
   <section class="nodes-view" *ngIf="view === 'tokens' && canListTokens" aria-label="Enrollment tokens">
-    <p class="nodes-view-note">A node joins by enrolling with one of these: it is given the token, and the issuer certifies it. A token says what its nodes will be, never which node.</p>
+    <p class="nodes-view-note">
+      <span class="nodes-view-icon" aria-hidden="true"><lucide-icon name="key-round" [size]="16"></lucide-icon></span>
+      <span>A node joins by enrolling with one of these: it is given the token, and the issuer certifies it. A token says what its nodes will be, never which node.</span>
+    </p>
     <app-list label="Enrollment tokens" [loading]="loading" [foot]="tokensFoot">
       <ng-container listToolbar *ngIf="!loading">
         <app-switch *ngIf="spentCount" label="Show spent" [(ngModel)]="showSpent"></app-switch>
@@ -187,11 +206,11 @@
       >
         <lucide-icon rowMark name="key-round" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
         <span rowChips class="chip" [class.live]="tokenLive(token)" [class.danger]="token.withdrawn">{{ tokenWord(token) }}</span>
-        <span rowChips class="chip">{{ token.metadata.scope ? "This organization" : "Shared" }}</span>
+        <span rowChips class="chip"><lucide-icon [name]="token.metadata.scope ? 'building-2' : 'network'" [size]="12" aria-hidden="true"></lucide-icon>{{ token.metadata.scope ? "This organization" : "Shared" }}</span>
         <span rowChips class="chip" *ngFor="let label of token.metadata.labels || []">{{ label }}</span>
         <ng-container rowMeta>
-          <span class="node-facts authority-facts">
-            <span *ngFor="let fact of tokenFacts(token)">{{ fact }}</span>
+          <span class="ui-pills node-facts authority-facts">
+            <span class="ui-pill" *ngFor="let fact of tokenFacts(token)">{{ fact }}</span>
           </span>
         </ng-container>
         <button
@@ -221,19 +240,26 @@
   <!-- ── Where chats run ────────────────────────────────────────────── -->
   <section class="nodes-view" *ngIf="view === 'placement' && canSeePlacement" aria-label="Where chats run">
     <ng-container *ngIf="!loading; else placementLoading">
-      <p class="nodes-view-note">Where this organization's chats run: on its own nodes first, or on them only.</p>
-      <p class="form-notice" *ngIf="!canSetPlacement">Only an administrator changes this.</p>
-      <app-choice-cards
-        label="Where chats run"
-        [choices]="placements"
-        [disabled]="!canSetPlacement || savingPlacement"
-        [ngModel]="placement"
-        (ngModelChange)="choosePlacement($event)"
-      ></app-choice-cards>
-      <p class="form-notice nodes-own" [class.is-warn]="placement === 'own_only' && !ownConnected">
-        <lucide-icon name="server" [size]="16" aria-hidden="true"></lucide-icon>
-        {{ ownConnectedLine }}
-      </p>
+      <div class="ui-panel">
+        <div class="ui-panel-head">
+          <span class="ui-panel-icon is-hued"><lucide-icon name="network" [size]="16" aria-hidden="true"></lucide-icon></span>
+          <h2 class="ui-panel-title">Where chats run</h2>
+          <span class="ui-pill" *ngIf="!canSetPlacement"><lucide-icon name="lock" [size]="12" aria-hidden="true"></lucide-icon>Administrators</span>
+        </div>
+        <p class="nodes-panel-lead">Where this organization's chats run: on its own nodes first, or on them only.</p>
+        <p class="form-notice nodes-locked" *ngIf="!canSetPlacement">Only an administrator changes this.</p>
+        <app-choice-cards
+          label="Where chats run"
+          [choices]="placements"
+          [disabled]="!canSetPlacement || savingPlacement"
+          [ngModel]="placement"
+          (ngModelChange)="choosePlacement($event)"
+        ></app-choice-cards>
+        <p class="form-notice nodes-own" [class.is-warn]="placement === 'own_only' && !ownConnected">
+          <lucide-icon name="server" [size]="16" aria-hidden="true"></lucide-icon>
+          {{ ownConnectedLine }}
+        </p>
+      </div>
     </ng-container>
     <ng-template #placementLoading>
       <div class="form" aria-busy="true" aria-label="Loading where chats run">

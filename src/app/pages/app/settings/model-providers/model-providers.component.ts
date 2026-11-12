@@ -85,6 +85,20 @@ export class ModelProvidersComponent extends DataPageBase {
     return `${count} provider${count === 1 ? '' : 's'}`;
   }
 
+  /** The tiles over the list: the default's name, the models people may
+   *  pick in all, and how many connections name none yet. */
+  get defaultName(): string {
+    return this.connections.find((connection) => connection.default)?.name ?? 'None';
+  }
+
+  get modelCount(): number {
+    return this.connections.reduce((sum, connection) => sum + connection.models.length, 0);
+  }
+
+  get withoutModel(): number {
+    return this.connections.filter((connection) => !connection.models.length).length;
+  }
+
   get canCreate(): boolean { return this.auth.can('settings:llm:create'); }
   get canUpdate(): boolean { return this.auth.can('settings:llm:update'); }
   get canDelete(): boolean { return this.auth.can('settings:llm:delete'); }

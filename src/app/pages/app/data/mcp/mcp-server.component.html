@@ -13,9 +13,16 @@
 </app-empty>
 
 <ng-container *ngIf="server as server">
-  <!-- Who it is, and where it is. -->
+  <!-- Who it is, and where it is: its header band, in the section's hue. -->
   <header class="server-head">
+    <span class="server-face" aria-hidden="true">
+      <lucide-icon name="server" [size]="28" [strokeWidth]="1.75"></lucide-icon>
+    </span>
     <div class="server-words">
+      <p class="server-eyebrow">
+        <lucide-icon name="square-terminal" [size]="14" aria-hidden="true"></lucide-icon>
+        MCP server<ng-container *ngIf="!mine"> shared with you</ng-container>
+      </p>
       <h1 class="server-name">
         {{ server.name }}
         <button class="icon-btn sm" type="button" *ngIf="mine" aria-label="Rename this server" matTooltip="Rename" (click)="startChange('name')">
@@ -23,6 +30,7 @@
         </button>
       </h1>
       <p class="server-address">
+        <lucide-icon name="globe" [size]="14" aria-hidden="true"></lucide-icon>
         <code>{{ server.address }}</code>
         <button class="icon-btn sm" type="button" *ngIf="mine" aria-label="Change the address" matTooltip="Change the address" (click)="startChange('url')">
           <lucide-icon name="pencil" [size]="14" aria-hidden="true"></lucide-icon>
@@ -46,10 +54,26 @@
   <!-- What a read or a change of the server itself was refused for. -->
   <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
 
-  <!-- When it was read, and what it is reached with. -->
+  <!-- Its tools in numbers, each a tile. -->
+  <ul class="ui-tiles server-tiles" [attr.aria-label]="server.name + ' in numbers'">
+    <li class="ui-tile" *ngFor="let tile of tiles; trackBy: byIcon">
+      <span class="ui-tile-icon" [class.is-warn]="tile.warn">
+        <lucide-icon [name]="tile.icon" [size]="20" aria-hidden="true"></lucide-icon>
+      </span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ tile.value }}</span>
+        <span class="ui-tile-label">{{ tile.label }}</span>
+      </span>
+    </li>
+  </ul>
+
+  <!-- When it was read, and what it is reached with: each a panel. -->
   <dl class="server-facts">
-    <div>
-      <dt>Read</dt>
+    <div class="ui-panel">
+      <dt>
+        <span class="ui-panel-icon is-hued"><lucide-icon name="refresh-cw" [size]="16" aria-hidden="true"></lucide-icon></span>
+        Read
+      </dt>
       <dd>
         <span [matTooltip]="lastReadInFull">{{ lastRead || "not yet" }}</span>
         <button class="btn sm" type="button" *ngIf="mine" [disabled]="!!busy" (click)="readAgain()">
@@ -58,10 +82,16 @@
         </button>
       </dd>
     </div>
-    <div *ngIf="mine">
-      <dt>Credential</dt>
+    <div class="ui-panel" *ngIf="mine">
+      <dt>
+        <span class="ui-panel-icon is-hued"><lucide-icon name="key-round" [size]="16" aria-hidden="true"></lucide-icon></span>
+        Credential
+      </dt>
       <dd>
-        <span>Kept encrypted, never shown again</span>
+        <span class="server-fact-line">
+          <lucide-icon name="lock" [size]="14" aria-hidden="true"></lucide-icon>
+          Kept encrypted, never shown again
+        </span>
         <button class="btn sm" type="button" (click)="startChange('credential')">Replace</button>
       </dd>
     </div>
@@ -69,7 +99,10 @@
 
   <!-- ── The tools: each with its switch and its level ───────────────── -->
   <section aria-labelledby="server-tools-title">
-    <h2 class="form-section-title" id="server-tools-title">Tools</h2>
+    <div class="ui-panel-head server-tools-head">
+      <span class="ui-panel-icon is-hued"><lucide-icon name="square-terminal" [size]="16" aria-hidden="true"></lucide-icon></span>
+      <h2 class="ui-panel-title" id="server-tools-title">Tools</h2>
+    </div>
 
     <app-list label="The tools this server offers" [foot]="tools.length ? 'A chat that uses this server can call the tools that are on. A tool whose level is above the chat’s trust asks first.' : ''">
       <ng-container listToolbar *ngIf="tools.length">
@@ -97,7 +130,7 @@
           ></app-switch>
 
           <div class="tool-words">
-            <p class="tool-about">{{ tool.description || "The server gives no description." }}</p>
+            <p class="tool-about" [class.is-none]="!tool.description">{{ tool.description || "The server gives no description." }}</p>
             <p class="tool-flags" *ngIf="saveOf(tool)">
               <span class="tool-save" role="status" [class.is-failed]="saveFailed(tool)">{{ saveOf(tool) }}</span>
             </p>

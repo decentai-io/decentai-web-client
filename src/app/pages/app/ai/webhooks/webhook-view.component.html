@@ -1,44 +1,83 @@
-<header class="webhook-head">
-  <div class="webhook-words">
-    <h2 class="webhook-title">{{ webhook.name }}</h2>
-    <p class="webhook-kind">
+<!-- Its band: the mark, whose it is, its name, how it stands. -->
+<header class="opened-band">
+  <span class="opened-mark" aria-hidden="true">
+    <lucide-icon name="webhook" [size]="22" [strokeWidth]="1.75"></lucide-icon>
+  </span>
+  <div class="opened-words">
+    <p class="opened-eyebrow">
+      {{ webhook.role === "viewer" ? "Shared with you" : webhook.role === "handed" ? "Handed to you" : "Your webhook" }}
+    </p>
+    <h2 class="opened-title">{{ webhook.name }}</h2>
+    <p class="opened-chips">
       <span class="chip" [class.accent]="webhook.enabled">{{ webhook.enabled ? "On" : "Off" }}</span>
-      <span class="chip" *ngIf="webhook.require_signature">Signed</span>
+      <span class="chip" *ngIf="webhook.require_signature">
+        <lucide-icon name="lock" [size]="12" aria-hidden="true"></lucide-icon>
+        Signed
+      </span>
     </p>
   </div>
-  <app-switch *ngIf="mayUpdate" label="On" [labelHidden]="true"
-              [matTooltip]="webhook.enabled ? 'On: calls are taken' : 'Off: calls are refused'"
-              [disabled]="busy" [ngModel]="webhook.enabled" (ngModelChange)="setEnabled.emit($event)"></app-switch>
-  <button class="icon-btn sm" type="button" aria-label="Close the webhook" (click)="closed.emit()">
-    <lucide-icon name="x" [size]="16" aria-hidden="true"></lucide-icon>
-  </button>
+  <div class="opened-tools">
+    <app-switch *ngIf="mayUpdate" label="On" [labelHidden]="true"
+                [matTooltip]="webhook.enabled ? 'On: calls are taken' : 'Off: calls are refused'"
+                [disabled]="busy" [ngModel]="webhook.enabled" (ngModelChange)="setEnabled.emit($event)"></app-switch>
+    <button class="icon-btn sm" type="button" aria-label="Close the webhook" (click)="closed.emit()">
+      <lucide-icon name="x" [size]="16" aria-hidden="true"></lucide-icon>
+    </button>
+  </div>
 </header>
 
-<p class="webhook-note" *ngIf="webhook.role === 'viewer'">
-  {{ webhook.owner?.name || 'A colleague' }} shared it with you. You see the calls it receives; its settings, its secret and its chat stay with them.
+<p class="opened-callout" *ngIf="webhook.role === 'viewer'">
+  <lucide-icon name="users" [size]="16" aria-hidden="true"></lucide-icon>
+  <span>{{ webhook.owner?.name || 'A colleague' }} shared it with you. You see the calls it receives; its settings, its secret and its chat stay with them.</span>
 </p>
-<p class="webhook-note" *ngIf="webhook.role === 'handed'">
-  {{ webhook.owner?.name || 'A colleague' }} is handing it to you. Accept it, and it is yours, with its chat.
+<p class="opened-callout is-warn" *ngIf="webhook.role === 'handed'">
+  <lucide-icon name="handshake" [size]="16" aria-hidden="true"></lucide-icon>
+  <span>{{ webhook.owner?.name || 'A colleague' }} is handing it to you. Accept it, and it is yours, with its chat.</span>
 </p>
 
-<div class="webhook-actions" *ngIf="isOwner">
-  <button class="btn sm" type="button" *ngIf="mayUpdate" [disabled]="busy" (click)="edit.emit()">Edit</button>
-  <button class="btn sm" type="button" *ngIf="mayTest" [disabled]="busy" (click)="test.emit()">Send a test</button>
-  <button class="btn sm" type="button" *ngIf="mayShare" [disabled]="busy" (click)="share.emit()">Share</button>
-  <button class="btn sm" type="button" *ngIf="mayRotate" [disabled]="busy" (click)="rotate.emit()">Replace the secret</button>
-  <button class="btn sm" type="button" *ngIf="mayHandOver" [disabled]="busy" (click)="handOver.emit()">Hand over</button>
-  <button class="btn sm" type="button" *ngIf="mayWithdraw" [disabled]="busy" (click)="withdraw.emit()">Withdraw the hand-over</button>
-  <button class="btn ghost danger sm" type="button" *ngIf="mayDelete" [disabled]="busy" (click)="remove.emit()">Delete</button>
+<div class="opened-actions" *ngIf="isOwner">
+  <button class="btn sm" type="button" *ngIf="mayUpdate" [disabled]="busy" (click)="edit.emit()">
+    <lucide-icon name="pencil" [size]="14" aria-hidden="true"></lucide-icon>
+    Edit
+  </button>
+  <button class="btn sm" type="button" *ngIf="mayTest" [disabled]="busy" (click)="test.emit()">
+    <lucide-icon name="send" [size]="14" aria-hidden="true"></lucide-icon>
+    Send a test
+  </button>
+  <button class="btn sm" type="button" *ngIf="mayShare" [disabled]="busy" (click)="share.emit()">
+    <lucide-icon name="share" [size]="14" aria-hidden="true"></lucide-icon>
+    Share
+  </button>
+  <button class="btn sm" type="button" *ngIf="mayRotate" [disabled]="busy" (click)="rotate.emit()">
+    <lucide-icon name="key-round" [size]="14" aria-hidden="true"></lucide-icon>
+    Replace the secret
+  </button>
+  <button class="btn sm" type="button" *ngIf="mayHandOver" [disabled]="busy" (click)="handOver.emit()">
+    <lucide-icon name="handshake" [size]="14" aria-hidden="true"></lucide-icon>
+    Hand over
+  </button>
+  <button class="btn sm" type="button" *ngIf="mayWithdraw" [disabled]="busy" (click)="withdraw.emit()">
+    <lucide-icon name="arrow-left" [size]="14" aria-hidden="true"></lucide-icon>
+    Withdraw the hand-over
+  </button>
+  <button class="btn ghost danger sm" type="button" *ngIf="mayDelete" [disabled]="busy" (click)="remove.emit()">
+    <lucide-icon name="trash-2" [size]="14" aria-hidden="true"></lucide-icon>
+    Delete
+  </button>
 </div>
 
 <app-segmented *ngIf="isOwner" label="What to show" [choices]="tabs" [(ngModel)]="tab"></app-segmented>
 
 <!-- ── Calls ───────────────────────────────────────────────────── -->
-<section aria-labelledby="webhook-runs-title" *ngIf="tab === 'executions'">
-  <div class="webhook-runs-head">
-    <h3 class="webhook-section" id="webhook-runs-title">Calls</h3>
-    <span class="webhook-runs-tools">
-      <a class="webhook-link" *ngIf="isOwner && webhook.chat_id" [routerLink]="['/ai/chats', webhook.chat_id]">Open the chat</a>
+<section class="opened-block" aria-labelledby="webhook-runs-title" *ngIf="tab === 'executions'">
+  <div class="opened-block-head">
+    <span class="opened-block-icon"><lucide-icon name="history" [size]="14" aria-hidden="true"></lucide-icon></span>
+    <h3 class="opened-block-title" id="webhook-runs-title">Calls</h3>
+    <span class="opened-block-aside">
+      <a class="btn ghost sm" *ngIf="isOwner && webhook.chat_id" [routerLink]="['/ai/chats', webhook.chat_id]">
+        <lucide-icon name="message-square-text" [size]="14" aria-hidden="true"></lucide-icon>
+        Open the chat
+      </a>
       <button class="icon-btn sm" type="button" aria-label="Read the calls again" matTooltip="Refresh"
               [disabled]="loading" (click)="load()">
         <lucide-icon name="refresh-cw" [size]="16" aria-hidden="true"></lucide-icon>
@@ -46,83 +85,130 @@
     </span>
   </div>
 
+  <!-- The calls read, added up by how each was answered. -->
+  <ul class="webhook-counts" *ngIf="executions.length" aria-label="The calls shown, by how they were answered">
+    <li class="webhook-count">
+      <span class="webhook-count-value">{{ count("accepted") }}</span>
+      <span class="webhook-count-label"><lucide-icon name="circle-check" [size]="12" aria-hidden="true"></lucide-icon>Accepted</span>
+    </li>
+    <li class="webhook-count" [class.is-bad]="count('refused')">
+      <span class="webhook-count-value">{{ count("refused") }}</span>
+      <span class="webhook-count-label"><lucide-icon name="circle-x" [size]="12" aria-hidden="true"></lucide-icon>Refused</span>
+    </li>
+    <li class="webhook-count">
+      <span class="webhook-count-value">{{ count("test") }}</span>
+      <span class="webhook-count-label"><lucide-icon name="circle-dot" [size]="12" aria-hidden="true"></lucide-icon>Tests</span>
+    </li>
+  </ul>
+
   <div *ngIf="loading && !executions.length" aria-busy="true" aria-label="Loading calls">
     <span class="sk sk-field"></span>
   </div>
   <p class="form-notice is-error" role="alert" *ngIf="problem">{{ problem }}</p>
-  <p class="webhook-note" *ngIf="!loading && !problem && !executions.length">
-    Nothing has arrived yet. Calls show here as they arrive, refused ones too.
+  <p class="webhook-empty" *ngIf="!loading && !problem && !executions.length">
+    <lucide-icon name="inbox" [size]="20" aria-hidden="true"></lucide-icon>
+    <span>Nothing has arrived yet. Calls show here as they arrive, refused ones too.</span>
   </p>
 
   <ul class="webhook-runs" *ngIf="executions.length">
     <li *ngFor="let run of executions">
       <p class="webhook-run">
+        <span class="run-icon" [attr.data-outcome]="run.outcome" aria-hidden="true">
+          <lucide-icon [name]="outcomeIcon(run)" [size]="16"></lucide-icon>
+        </span>
         <span class="run-when" [matTooltip]="whenInFull(run)">{{ when(run) }}</span>
+        <span class="run-took" *ngIf="run.outcome === 'refused' && run.status">HTTP {{ run.status }}</span>
         <span class="chip" [class.accent]="run.outcome === 'accepted'" [class.danger]="run.outcome === 'refused'">
           {{ run.outcome === "accepted" ? "Accepted" : run.outcome === "test" ? "Test" : "Refused" }}
         </span>
-        <span class="run-took" *ngIf="run.outcome === 'refused' && run.status">HTTP {{ run.status }}</span>
       </p>
       <p class="run-why" *ngIf="run.reason">{{ run.reason }}</p>
     </li>
   </ul>
-  <button class="btn sm" type="button" *ngIf="more" [disabled]="loading" (click)="load(true)">Older calls</button>
+  <button class="btn sm webhook-older" type="button" *ngIf="more" [disabled]="loading" (click)="load(true)">Older calls</button>
   <p class="webhook-note" *ngIf="executions.length">
     Newest first, kept for 30 days. What its chat did with each is in the chat.
   </p>
 </section>
 
 <!-- ── Settings: the owner's ───────────────────────────────────── -->
-<section aria-labelledby="webhook-settings-title" *ngIf="tab === 'settings' && isOwner">
-  <div class="webhook-runs-head">
-    <h3 class="webhook-section" id="webhook-settings-title">Settings</h3>
-    <button class="btn sm" type="button" *ngIf="mayUpdate" [disabled]="busy" (click)="edit.emit()">Edit</button>
+<section class="opened-block" aria-labelledby="webhook-settings-title" *ngIf="tab === 'settings' && isOwner">
+  <div class="opened-block-head">
+    <span class="opened-block-icon"><lucide-icon name="settings" [size]="14" aria-hidden="true"></lucide-icon></span>
+    <h3 class="opened-block-title" id="webhook-settings-title">Settings</h3>
+    <button class="btn sm" type="button" *ngIf="mayUpdate" [disabled]="busy" (click)="edit.emit()">
+      <lucide-icon name="pencil" [size]="14" aria-hidden="true"></lucide-icon>
+      Edit
+    </button>
   </div>
 
   <dl class="webhook-facts">
-    <dt>Address</dt>
-    <dd class="webhook-copy">
-      <code class="webhook-code">{{ url }}</code>
-      <button class="btn sm" type="button" (click)="copy('url')">{{ copied === "url" ? "Copied" : "Copy" }}</button>
-    </dd>
+    <div class="webhook-fact">
+      <dt><lucide-icon name="link" [size]="14" aria-hidden="true"></lucide-icon>Address</dt>
+      <dd class="webhook-copy">
+        <code class="webhook-code webhook-well">{{ url }}</code>
+        <button class="btn sm" type="button" (click)="copy('url')">
+          <lucide-icon [name]="copied === 'url' ? 'check' : 'copy'" [size]="14" aria-hidden="true"></lucide-icon>
+          {{ copied === "url" ? "Copied" : "Copy" }}
+        </button>
+      </dd>
+    </div>
 
-    <dt>Example call</dt>
-    <dd>
-      <div class="webhook-copy">
-        <pre class="webhook-code webhook-curl">{{ curl }}</pre>
-        <button class="btn sm" type="button" (click)="copy('curl')">{{ copied === "curl" ? "Copied" : "Copy" }}</button>
-      </div>
-      <span class="webhook-aside">
-        Set <code class="webhook-code">WEBHOOK_SECRET</code> to the secret first, or put the secret in its place.
-        Lost it? Replace the secret to get a new one. A body is JSON of at most 64 KiB, at most 60 calls a minute.
-      </span>
-    </dd>
+    <div class="webhook-fact">
+      <dt><lucide-icon name="terminal" [size]="14" aria-hidden="true"></lucide-icon>Example call</dt>
+      <dd>
+        <div class="webhook-copy">
+          <pre class="webhook-code webhook-curl">{{ curl }}</pre>
+          <button class="btn sm" type="button" (click)="copy('curl')">
+            <lucide-icon [name]="copied === 'curl' ? 'check' : 'copy'" [size]="14" aria-hidden="true"></lucide-icon>
+            {{ copied === "curl" ? "Copied" : "Copy" }}
+          </button>
+        </div>
+        <span class="webhook-aside">
+          Set <code class="webhook-code">WEBHOOK_SECRET</code> to the secret first, or put the secret in its place.
+          Lost it? Replace the secret to get a new one. A body is JSON of at most 64 KiB, at most 60 calls a minute.
+        </span>
+      </dd>
+    </div>
 
-    <dt>Signature</dt>
-    <dd>{{ webhook.require_signature ? "Required: each call is signed with the secret (HMAC-SHA256)." : "Not required." }}</dd>
+    <div class="webhook-fact">
+      <dt><lucide-icon name="lock" [size]="14" aria-hidden="true"></lucide-icon>Signature</dt>
+      <dd>{{ webhook.require_signature ? "Required: each call is signed with the secret (HMAC-SHA256)." : "Not required." }}</dd>
+    </div>
 
-    <dt>Instruction</dt>
-    <dd class="webhook-prompt">{{ webhook.instruction }}</dd>
+    <div class="webhook-fact">
+      <dt><lucide-icon name="message-square-text" [size]="14" aria-hidden="true"></lucide-icon>Instruction</dt>
+      <dd class="webhook-prompt">{{ webhook.instruction }}</dd>
+    </div>
 
-    <dt>Fields</dt>
-    <dd>
-      <span *ngIf="!fields.length">None: a caller posts an empty object.</span>
-      <ul class="webhook-fields" *ngIf="fields.length">
-        <li *ngFor="let field of fields">
-          <code class="webhook-code">{{ field.name }}</code>
-          <span class="webhook-aside">{{ typeWord(field.type) }}{{ field.required ? ", required" : "" }}</span>
-          <span class="webhook-field-what" *ngIf="field.description">{{ field.description }}</span>
-        </li>
-      </ul>
-    </dd>
+    <div class="webhook-fact">
+      <dt><lucide-icon name="file-braces" [size]="14" aria-hidden="true"></lucide-icon>Fields</dt>
+      <dd>
+        <span *ngIf="!fields.length">None: a caller posts an empty object.</span>
+        <ul class="webhook-fields" *ngIf="fields.length">
+          <li *ngFor="let field of fields">
+            <span class="webhook-field-head">
+              <code class="webhook-code webhook-field-name">{{ field.name }}</code>
+              <span class="ui-pill">{{ typeWord(field.type) }}</span>
+              <span class="ui-pill is-accent" *ngIf="field.required">required</span>
+            </span>
+            <span class="webhook-field-what" *ngIf="field.description">{{ field.description }}</span>
+          </li>
+        </ul>
+      </dd>
+    </div>
 
-    <dt>Trust level</dt>
-    <dd>{{ trustWord }}</dd>
+    <div class="webhook-fact">
+      <dt><lucide-icon name="shield-check" [size]="14" aria-hidden="true"></lucide-icon>Trust level</dt>
+      <dd>{{ trustWord }}</dd>
+    </div>
 
-    <dt>Chat</dt>
-    <dd>
-      <a class="webhook-link" [routerLink]="['/ai/chats', webhook.chat_id]">Open the chat</a>
-      <span class="webhook-aside">Its model and agents are the chat's own settings.</span>
-    </dd>
+    <div class="webhook-fact">
+      <dt><lucide-icon name="message-square" [size]="14" aria-hidden="true"></lucide-icon>Chat</dt>
+      <dd>
+        <a class="webhook-link" [routerLink]="['/ai/chats', webhook.chat_id]">Open the chat</a>
+        <span class="webhook-aside">Its model and agents are the chat's own settings.</span>
+      </dd>
+    </div>
   </dl>
 </section>

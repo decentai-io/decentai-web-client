@@ -23,7 +23,7 @@ type Tab = 'executions' | 'settings';
   selector: 'app-webhook-view',
   standalone: false,
   templateUrl: './webhook-view.component.html',
-  styleUrl: './webhook-view.component.css',
+  styleUrls: ['../schedules/opened-shared.css', './webhook-view.component.css'],
 })
 export class WebhookViewComponent implements OnChanges {
   @Input({ required: true }) webhook!: Webhook;
@@ -105,6 +105,16 @@ export class WebhookViewComponent implements OnChanges {
   get mayWithdraw(): boolean { return this.may('withdraw') && !!this.webhook.handing; }
 
   // ── Words ───────────────────────────────────────────────────────────
+
+  /** How many of the calls read ended this way, for the tiles. */
+  count(outcome: WebhookExecution['outcome']): number {
+    return this.executions.filter((run) => run.outcome === outcome).length;
+  }
+
+  /** A call's outcome as its icon. */
+  outcomeIcon(run: WebhookExecution): string {
+    return run.outcome === 'accepted' ? 'circle-check' : run.outcome === 'test' ? 'circle-dot' : 'circle-x';
+  }
 
   when(run: WebhookExecution): string { return relativeDate(run.at); }
   whenInFull(run: WebhookExecution): string { return fullDate(run.at); }

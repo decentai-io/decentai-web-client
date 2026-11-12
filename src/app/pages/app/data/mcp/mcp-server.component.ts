@@ -9,6 +9,14 @@ import { McpServer, McpService, McpTool } from 'src/app/services/mcp.service';
 import { LEVEL_MEANINGS, PERMISSION_LEVELS } from 'src/app/pages/app/agents/agent-shared';
 import { CredentialDraft, lastRead } from './mcp-shared';
 
+/** A number over the page: its icon, the number and its word. */
+interface Tile {
+  icon: string;
+  value: string | number;
+  label: string;
+  warn?: boolean;
+}
+
 /** How long "Saved" stays beside a tool. */
 const SAVED_FOR_MS = 2000;
 
@@ -122,6 +130,20 @@ export class McpServerComponent implements OnInit, OnDestroy {
   }
 
   byName(_: number, tool: McpTool): string { return tool.name; }
+
+  /** What it offers, what is on and off, and when it was read. */
+  get tiles(): Tile[] {
+    const count = this.tools.length;
+    return [
+      { icon: 'square-terminal', value: count, label: count === 1 ? 'Tool offered' : 'Tools offered' },
+      { icon: 'zap', value: this.onCount, label: 'On' },
+      { icon: 'circle-dashed', value: count - this.onCount, label: 'Off' },
+      { icon: 'history', value: this.lastRead || 'Not yet', label: 'Last read', warn: !this.server?.read_at },
+    ];
+  }
+
+  /** A tile is known by its icon, so the row is not drawn again. */
+  byIcon(_: number, tile: Tile): string { return tile.icon; }
 
   /** How a tool's last save went: 'Saving…', 'Saved', or the refusal. */
   saveOf(tool: McpTool): string {

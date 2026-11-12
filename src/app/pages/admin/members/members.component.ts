@@ -208,6 +208,32 @@ export class MembersComponent extends DataPageBase implements OnInit {
     return member?.name || member?.email || '';
   }
 
+  /** The tiles over the list: those in Administrators, and those held
+   *  back (disabled, or everything of theirs stopped). */
+  get adminCount(): number {
+    return this.members.filter((member) => this.isAdmin(member)).length;
+  }
+
+  get heldCount(): number {
+    return this.members.filter((member) => member.status === 'disabled' || member.stopped).length;
+  }
+
+  /** Whether a person is in the Administrators group. */
+  isAdmin(member: Member): boolean {
+    return member.groups.some((id) => this.groups.find((g) => g.group_id === id)?.administrators);
+  }
+
+  /** A person's initials, for their row's mark: of the name, else the email. */
+  initials(member: Member): string {
+    const words = (member.name || member.email.split('@')[0]).split(/[\s._-]+/).filter(Boolean);
+    return words.slice(0, 2).map((word) => word[0]).join('').toUpperCase() || '?';
+  }
+
+  /** A person's groups, by name, each a pill. */
+  groupList(groupIds: string[]): string[] {
+    return groupIds.map((id) => this.groups.find((g) => g.group_id === id)?.name ?? id);
+  }
+
   groupNames(groupIds: string[]): string {
     if (!groupIds.length) return 'No groups';
     return groupIds.map((id) => this.groups.find((g) => g.group_id === id)?.name ?? id).join(', ');

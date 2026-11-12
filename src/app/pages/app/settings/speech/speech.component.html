@@ -7,47 +7,74 @@
   <button class="btn" type="button" (click)="load()">Try again</button>
 </app-empty>
 
-<ng-container *ngIf="!loading && !loadError">
-  <p class="form-notice" *ngIf="!canEdit">Only an administrator changes this.</p>
+<div class="speech-panels" *ngIf="!loading && !loadError">
+  <p class="form-notice speech-locked" *ngIf="!canEdit">
+    <lucide-icon name="lock" [size]="14" aria-hidden="true"></lucide-icon>
+    Only an administrator changes this.
+  </p>
 
-  <div class="form-section">
+  <!-- Who writes recordings down and says replies aloud. -->
+  <section class="ui-panel" aria-labelledby="speech-source-title">
+    <div class="ui-panel-head">
+      <span class="ui-panel-icon is-hued"><lucide-icon name="mic" [size]="16" aria-hidden="true"></lucide-icon></span>
+      <h2 class="ui-panel-title" id="speech-source-title">Who handles speech</h2>
+      <span class="ui-pill" [class.is-accent]="draft.value.speech !== 'none'">
+        <lucide-icon [name]="draft.value.speech === 'none' ? 'circle-x' : 'volume-2'" [size]="12" aria-hidden="true"></lucide-icon>
+        {{ draft.value.speech === 'none' ? "Off" : "On for everyone" }}
+      </span>
+    </div>
     <app-field label="Speech" [help]="sourceHelp">
       <app-segmented [choices]="sourceChoices" [disabled]="!canEdit" [(ngModel)]="draft.value.speech"></app-segmented>
     </app-field>
-  </div>
+  </section>
 
-  <div class="form-section" *ngIf="draft.value.speech === 'model'">
-    <p class="form-notice" *ngIf="!connections.length">
-      There is no model connection yet. <a routerLink="/settings/providers">Add one on Model providers</a>.
-    </p>
-    <app-field
-      label="Connection"
-      help="One that serves OpenAI's speech protocol: everyone's recordings and replies go through it."
-      [error]="draft.dirty ? connectionError : ''"
-    >
-      <app-select
-        placeholder="Choose a connection"
-        [choices]="connections"
-        [disabled]="!canEdit"
-        [(ngModel)]="draft.value.speech_connection"
-      ></app-select>
-    </app-field>
+  <!-- A model connection's speech: which one, and its models. -->
+  <div class="ui-panels" *ngIf="draft.value.speech === 'model'">
+    <section class="ui-panel" aria-labelledby="speech-connection-title">
+      <div class="ui-panel-head">
+        <span class="ui-panel-icon is-hued"><lucide-icon name="cloud" [size]="16" aria-hidden="true"></lucide-icon></span>
+        <h2 class="ui-panel-title" id="speech-connection-title">Connection</h2>
+      </div>
+      <div class="form">
+        <p class="form-notice" *ngIf="!connections.length">
+          There is no model connection yet. <a routerLink="/settings/providers">Add one on Model providers</a>.
+        </p>
+        <app-field
+          label="Connection"
+          help="One that serves OpenAI's speech protocol: everyone's recordings and replies go through it."
+          [error]="draft.dirty ? connectionError : ''"
+        >
+          <app-select
+            placeholder="Choose a connection"
+            [choices]="connections"
+            [disabled]="!canEdit"
+            [(ngModel)]="draft.value.speech_connection"
+          ></app-select>
+        </app-field>
 
-    <app-field label="Transcription model" help="As the provider names it; left empty, whisper-1.">
-      <input class="input" type="text" placeholder="whisper-1" maxlength="100" [disabled]="!canEdit"
-             [(ngModel)]="draft.value.transcription_model" />
-    </app-field>
+        <app-field label="Transcription model" help="As the provider names it; left empty, whisper-1.">
+          <input class="input" type="text" placeholder="whisper-1" maxlength="100" [disabled]="!canEdit"
+                 [(ngModel)]="draft.value.transcription_model" />
+        </app-field>
+      </div>
+    </section>
 
-    <div class="form-pair">
-      <app-field label="Speech model" help="As the provider names it; left empty, its own.">
-        <input class="input" type="text" placeholder="gpt-4o-mini-tts" maxlength="100" [disabled]="!canEdit"
-               [(ngModel)]="draft.value.speech_model" />
-      </app-field>
-      <app-field label="Voice" help="One of the provider's voices; left empty, the reply's language.">
-        <input class="input" type="text" placeholder="alloy" maxlength="100" [disabled]="!canEdit"
-               [(ngModel)]="draft.value.speech_voice" />
-      </app-field>
-    </div>
+    <section class="ui-panel" aria-labelledby="speech-voice-title">
+      <div class="ui-panel-head">
+        <span class="ui-panel-icon is-hued"><lucide-icon name="volume-2" [size]="16" aria-hidden="true"></lucide-icon></span>
+        <h2 class="ui-panel-title" id="speech-voice-title">Replies said aloud</h2>
+      </div>
+      <div class="form">
+        <app-field label="Speech model" help="As the provider names it; left empty, its own.">
+          <input class="input" type="text" placeholder="gpt-4o-mini-tts" maxlength="100" [disabled]="!canEdit"
+                 [(ngModel)]="draft.value.speech_model" />
+        </app-field>
+        <app-field label="Voice" help="One of the provider's voices; left empty, the reply's language.">
+          <input class="input" type="text" placeholder="alloy" maxlength="100" [disabled]="!canEdit"
+                 [(ngModel)]="draft.value.speech_voice" />
+        </app-field>
+      </div>
+    </section>
   </div>
 
   <app-save-bar
@@ -58,4 +85,4 @@
     (save)="save()"
     (discard)="discard()"
   ></app-save-bar>
-</ng-container>
+</div>

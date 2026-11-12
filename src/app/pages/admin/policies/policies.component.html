@@ -1,6 +1,33 @@
-<app-page guide="access" title="Policies" sentence="A policy says what is allowed, denied, or asked of the chat's person first. Groups give their people policies." [wide]="true">
+<app-page guide="access" title="Policies" sentence="A policy says what is allowed, denied, or asked of the chat's person first. Groups give their people policies." [wide]="true"
+          icon="scroll-text" [hue]="262">
   <p class="form-notice is-error" role="alert" *ngIf="error && !editing">{{ error }}</p>
   <p class="form-notice" role="status" *ngIf="notice">{{ notice }}</p>
+
+  <!-- The numbers at a glance: the policies, the platform's own, and
+       those written here. -->
+  <ul class="ui-tiles" aria-label="Policies in numbers" *ngIf="!loading && policies.length">
+    <li class="ui-tile">
+      <span class="ui-tile-icon"><lucide-icon name="scroll-text" [size]="20" aria-hidden="true"></lucide-icon></span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ policies.length }}</span>
+        <span class="ui-tile-label">{{ policies.length === 1 ? "Policy" : "Policies" }}</span>
+      </span>
+    </li>
+    <li class="ui-tile">
+      <span class="ui-tile-icon"><lucide-icon name="lock" [size]="20" aria-hidden="true"></lucide-icon></span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ builtInCount }}</span>
+        <span class="ui-tile-label">Built in</span>
+      </span>
+    </li>
+    <li class="ui-tile">
+      <span class="ui-tile-icon"><lucide-icon name="pencil-line" [size]="20" aria-hidden="true"></lucide-icon></span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ policies.length - builtInCount }}</span>
+        <span class="ui-tile-label">Written here</span>
+      </span>
+    </li>
+  </ul>
 
   <app-list label="Policies" [loading]="loading">
     <ng-container listToolbar *ngIf="policies.length">
@@ -12,11 +39,12 @@
     </ng-container>
 
     <app-row *ngFor="let policy of shown">
-      <lucide-icon rowMark name="scroll-text" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
+      <lucide-icon rowMark [name]="policy.built_in ? 'shield-check' : 'scroll-text'" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
       <button rowName class="admin-name" type="button" *ngIf="canUpdate && !policy.built_in; else plainName" (click)="startEdit(policy)">{{ policy.name }}</button>
       <ng-template #plainName><span rowName>{{ policy.name }}</span></ng-template>
       <span rowChips class="chip" *ngIf="policy.built_in"
-            matTooltip="The platform's own: it changes with every upgrade, and can be copied but not edited">Built in</span>
+            matTooltip="The platform's own: it changes with every upgrade, and can be copied but not edited"><lucide-icon name="lock" [size]="12" aria-hidden="true"></lucide-icon>Built in</span>
+      <span rowChips class="chip warn" *ngIf="asksOrDenies(policy)"><lucide-icon name="shield-question" [size]="12" aria-hidden="true"></lucide-icon>Asks or denies</span>
       <ng-container rowMeta>{{ summarise(policy) }}</ng-container>
       <button rowState class="icon-btn sm" type="button" *ngIf="canCreate || (!policy.built_in && (canUpdate || canDelete))"
               [attr.aria-label]="'More for ' + policy.name" [disabled]="isBusy(policy.policy_id)"
@@ -29,7 +57,9 @@
                line="A policy says what is allowed. Groups give them.">
       <ng-container *ngTemplateOutlet="addButton"></ng-container>
     </app-empty>
-    <app-empty *ngIf="policies.length && !shown.length" icon="search-x" title="No policy matches" line="Try another search."></app-empty>
+    <app-empty *ngIf="policies.length && !shown.length" icon="search-x" title="No policy matches" line="Try another search.">
+      <button class="btn" type="button" (click)="query = ''">Clear the search</button>
+    </app-empty>
   </app-list>
 
   <ng-template #addButton>
@@ -41,9 +71,15 @@
 
   <mat-menu #policyMenu="matMenu" xPosition="before">
     <ng-template matMenuContent let-policy="policy">
-      <button mat-menu-item *ngIf="canUpdate && !policy.built_in" (click)="startEdit(policy)">Edit</button>
-      <button mat-menu-item *ngIf="canCreate" (click)="duplicate(policy)">Duplicate</button>
-      <button mat-menu-item *ngIf="canDelete && !policy.built_in" (click)="remove(policy)">Delete</button>
+      <button mat-menu-item *ngIf="canUpdate && !policy.built_in" (click)="startEdit(policy)">
+        <lucide-icon name="pencil" [size]="16" aria-hidden="true"></lucide-icon>Edit
+      </button>
+      <button mat-menu-item *ngIf="canCreate" (click)="duplicate(policy)">
+        <lucide-icon name="copy" [size]="16" aria-hidden="true"></lucide-icon>Duplicate
+      </button>
+      <button mat-menu-item *ngIf="canDelete && !policy.built_in" (click)="remove(policy)">
+        <lucide-icon name="trash-2" [size]="16" aria-hidden="true"></lucide-icon>Delete
+      </button>
     </ng-template>
   </mat-menu>
 

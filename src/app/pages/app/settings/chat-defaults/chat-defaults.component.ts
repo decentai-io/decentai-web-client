@@ -51,7 +51,7 @@ const NOTE_FOR_MS = 2000;
   selector: 'app-chat-defaults',
   standalone: false,
   templateUrl: './chat-defaults.component.html',
-  styles: ['.choose-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }'],
+  styleUrl: './chat-defaults.component.css',
 })
 export class ChatDefaultsComponent implements OnInit, HasUnsavedChanges {
   loading = true;
@@ -143,6 +143,11 @@ export class ChatDefaultsComponent implements OnInit, HasUnsavedChanges {
   }
 
   readonly listWords = listWords;
+
+  /** A choice's name, for the pills of what a new chat starts with. */
+  nameOf<T>(choices: Choice<T>[], value: T): string {
+    return choices.find((choice) => choice.value === value)?.name ?? String(value);
+  }
 
   /** The model chosen, as one of the choices: a connection and its model. */
   get model(): string {

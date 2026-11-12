@@ -7,46 +7,75 @@
   <button class="btn" type="button" (click)="load()">Try again</button>
 </app-empty>
 
-<div class="form" *ngIf="!loading && settings as known">
+<div class="notify-panels" *ngIf="!loading && settings as known">
   <!-- This device: where it stands, and the one thing to do about it. -->
-  <div class="notify-device">
+  <section class="ui-panel notify-device" [class.is-on]="!!thisDevice" aria-labelledby="notify-device-title">
+    <span class="notify-device-mark" aria-hidden="true">
+      <lucide-icon [name]="thisDevice ? 'bell' : 'monitor'" [size]="22" [strokeWidth]="1.75"></lucide-icon>
+    </span>
     <div class="notify-words">
-      <p class="notify-label">This device</p>
+      <p class="notify-label" id="notify-device-title">
+        This device
+        <span class="chip" [class.accent]="!!thisDevice">{{ thisDevice ? "On" : "Off" }}</span>
+      </p>
       <p class="notify-status" [class.is-on]="!!thisDevice">{{ deviceStatus }}</p>
       <p class="notify-help" [class.is-error]="deviceError" role="status">
         {{ deviceError || deviceHelp }}
         <a *ngIf="!pushConfigured" routerLink="/guide/admin">Learn more</a>
       </p>
     </div>
-    <ng-container *ngIf="pushConfigured && pushSupported">
-      <button class="btn" type="button" *ngIf="!thisDevice" [disabled]="busy || pushDenied" (click)="turnOnHere()">
+    <div class="notify-device-actions" *ngIf="pushConfigured && pushSupported">
+      <button class="btn primary" type="button" *ngIf="!thisDevice" [disabled]="busy || pushDenied" (click)="turnOnHere()">
+        <lucide-icon name="bell" [size]="16" aria-hidden="true"></lucide-icon>
         Turn on here
       </button>
       <button class="btn" type="button" *ngIf="thisDevice" [disabled]="busy" (click)="turnOffHere()">
         Turn off here
       </button>
-    </ng-container>
-  </div>
+    </div>
+  </section>
 
-  <app-switch
-    label="Email me when no device can be reached"
-    [help]="emailHelp"
-    [note]="emailNote"
-    [disabled]="!known.email"
-    [ngModel]="emailOn"
-    (ngModelChange)="setEmail($event)"
-  ></app-switch>
+  <div class="ui-panels">
+    <!-- Where else word goes, and what it says. -->
+    <section class="ui-panel" aria-labelledby="notify-ways-title">
+      <div class="ui-panel-head">
+        <span class="ui-panel-icon is-hued"><lucide-icon name="mail" [size]="16" aria-hidden="true"></lucide-icon></span>
+        <h2 class="ui-panel-title" id="notify-ways-title">How you hear</h2>
+      </div>
+      <div class="form">
+        <app-switch
+          label="Email me when no device can be reached"
+          [help]="emailHelp"
+          [note]="emailNote"
+          [disabled]="!known.email"
+          [ngModel]="emailOn"
+          (ngModelChange)="setEmail($event)"
+        ></app-switch>
 
-  <app-switch
-    label="Say what happened"
-    [help]="textHelp"
-    [note]="textNote"
-    [ngModel]="textOn"
-    (ngModelChange)="setText($event)"
-  ></app-switch>
+        <app-switch
+          label="Say what happened"
+          [help]="textHelp"
+          [note]="textNote"
+          [ngModel]="textOn"
+          (ngModelChange)="setText($event)"
+        ></app-switch>
+      </div>
+    </section>
 
-  <div class="notify-test">
-    <button class="btn sm" type="button" [disabled]="busy" (click)="sendTest()">Send me a test</button>
-    <span class="notify-result" role="status">{{ testResult }}</span>
+    <!-- A test, and what it reached. -->
+    <section class="ui-panel" aria-labelledby="notify-test-title">
+      <div class="ui-panel-head">
+        <span class="ui-panel-icon is-hued"><lucide-icon name="send" [size]="16" aria-hidden="true"></lucide-icon></span>
+        <h2 class="ui-panel-title" id="notify-test-title">Try it</h2>
+        <span class="ui-pill"><lucide-icon name="monitor" [size]="12" aria-hidden="true"></lucide-icon>{{ known.devices }} {{ known.devices === 1 ? "device" : "devices" }}</span>
+      </div>
+      <div class="notify-test">
+        <button class="btn sm" type="button" [disabled]="busy" (click)="sendTest()">
+          <lucide-icon name="send" [size]="14" aria-hidden="true"></lucide-icon>
+          Send me a test
+        </button>
+        <span class="notify-result" role="status">{{ testResult }}</span>
+      </div>
+    </section>
   </div>
 </div>

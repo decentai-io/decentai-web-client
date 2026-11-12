@@ -1,0 +1,263 @@
+/* What a thing opened beside its list says the same way (a schedule, a
+   webhook), and the head of their dialogs: a header band in the page's
+   hue (--hue, from <app-page>), the thing's mark in a tile, its name and
+   chips; then blocks, each with an icon tile and a title. Loaded by
+   schedule-view, schedule-form, webhook-view and the webhook dialogs. */
+
+/* ── The header band ───────────────────────────────────────────────────
+   It reaches the edges of the opened panel (.side-opened, padded 20px):
+   the wash is the panel's own top. */
+.opened-band {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin: -20px -20px 0;
+  padding: 20px;
+  border-bottom: 1px solid color-mix(in srgb, hsl(var(--hue, 186) 50% 50%) 16%, var(--line));
+  border-radius: calc(var(--r-lg) - 1px) calc(var(--r-lg) - 1px) 0 0;
+  background:
+    radial-gradient(90% 160% at 0% 0%, hsl(var(--hue, 186) 70% 91% / 0.85), transparent 62%),
+    radial-gradient(60% 140% at 100% 100%, hsl(calc(var(--hue, 186) + 40) 70% 94% / 0.7), transparent 60%),
+    var(--surface);
+}
+
+:host-context(.dark) .opened-band {
+  border-bottom-color: color-mix(in srgb, hsl(var(--hue, 186) 40% 50%) 20%, var(--line));
+  background:
+    radial-gradient(90% 160% at 0% 0%, hsl(var(--hue, 186) 45% 21% / 0.9), transparent 62%),
+    radial-gradient(60% 140% at 100% 100%, hsl(calc(var(--hue, 186) + 40) 40% 17% / 0.7), transparent 60%),
+    var(--surface);
+}
+
+/* The thing's mark, lifted off the wash. */
+.opened-mark {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  background: hsl(var(--hue, 186) 62% 93%);
+  color: hsl(var(--hue, 186) 58% 26%);
+  box-shadow: 0 6px 16px -8px hsl(var(--hue, 186) 50% 30% / 0.45), inset 0 0 0 1px rgb(255 255 255 / 0.5);
+}
+
+:host-context(.dark) .opened-mark {
+  background: hsl(var(--hue, 186) 34% 20%);
+  color: hsl(var(--hue, 186) 62% 80%);
+  box-shadow: 0 8px 18px -8px rgb(0 0 0 / 0.6), inset 0 0 0 1px rgb(255 255 255 / 0.06);
+}
+
+.opened-mark lucide-icon,
+.opened-eyebrow lucide-icon,
+.opened-block-icon lucide-icon,
+.opened-callout lucide-icon,
+.opened-actions lucide-icon {
+  display: flex;
+}
+
+.opened-words {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.opened-eyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  color: hsl(var(--hue, 186) 45% 28%);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: var(--lh-xs);
+  text-transform: uppercase;
+}
+
+:host-context(.dark) .opened-eyebrow {
+  color: hsl(var(--hue, 186) 55% 76%);
+}
+
+.opened-title {
+  color: var(--ink);
+  font-size: var(--t-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: var(--lh-lg);
+  overflow-wrap: anywhere;
+}
+
+.opened-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+/* What sits at the band's right: a switch, the way to close. */
+.opened-tools {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── What can be done ──────────────────────────────────────────────── */
+.opened-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ── A block of the opened thing ───────────────────────────────────── */
+.opened-block {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.opened-block-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.opened-block-icon {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: hsl(var(--hue, 186) 62% 93%);
+  color: hsl(var(--hue, 186) 58% 28%);
+}
+
+:host-context(.dark) .opened-block-icon {
+  background: hsl(var(--hue, 186) 34% 20%);
+  color: hsl(var(--hue, 186) 62% 78%);
+}
+
+.opened-block-title {
+  flex: 1;
+  min-width: 0;
+  color: var(--ink);
+  font-size: var(--t-base);
+  font-weight: 600;
+  line-height: var(--lh-base);
+}
+
+.opened-block-aside {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-3);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
+}
+
+/* A word to the reader, with its icon: who it belongs to, what it means. */
+.opened-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: hsl(var(--hue, 186) 60% 96%);
+  color: var(--ink);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
+}
+
+:host-context(.dark) .opened-callout {
+  background: hsl(var(--hue, 186) 30% 16%);
+}
+
+.opened-callout lucide-icon {
+  flex: none;
+  height: var(--lh-sm);
+  align-items: center;
+  color: hsl(var(--hue, 186) 50% 32%);
+}
+
+:host-context(.dark) .opened-callout lucide-icon {
+  color: hsl(var(--hue, 186) 60% 74%);
+}
+
+.opened-callout.is-warn {
+  background: var(--warn-soft);
+  color: var(--warn-ink);
+}
+
+.opened-callout.is-warn lucide-icon {
+  color: var(--warn-ink);
+}
+
+/* ── A dialog's head ───────────────────────────────────────────────────
+   On <h2 mat-dialog-title>: the same band, the icon in its tile, the
+   title and a line under it. */
+.dialog-band {
+  display: flex !important;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px !important;
+  padding: 18px 20px !important;
+  border-bottom: 1px solid color-mix(in srgb, hsl(var(--hue, 186) 50% 50%) 16%, var(--line));
+  background:
+    radial-gradient(90% 180% at 0% 0%, hsl(var(--hue, 186) 70% 91% / 0.85), transparent 62%),
+    radial-gradient(60% 160% at 100% 100%, hsl(calc(var(--hue, 186) + 40) 70% 94% / 0.7), transparent 60%),
+    var(--surface);
+}
+
+:host-context(.dark) .dialog-band {
+  border-bottom-color: color-mix(in srgb, hsl(var(--hue, 186) 40% 50%) 20%, var(--line));
+  background:
+    radial-gradient(90% 180% at 0% 0%, hsl(var(--hue, 186) 45% 21% / 0.9), transparent 62%),
+    radial-gradient(60% 160% at 100% 100%, hsl(calc(var(--hue, 186) + 40) 40% 17% / 0.7), transparent 60%),
+    var(--surface);
+}
+
+.dialog-band .opened-mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+}
+
+.dialog-band-words {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dialog-band-title {
+  overflow-wrap: anywhere;
+}
+
+.dialog-band-line {
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  font-weight: 400;
+  line-height: var(--lh-sm);
+}
+
+@media (max-width: 560px) {
+  .opened-band {
+    gap: 12px;
+  }
+
+  .opened-mark {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+  }
+}

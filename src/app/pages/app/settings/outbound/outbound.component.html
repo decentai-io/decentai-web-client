@@ -1,13 +1,41 @@
 <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
 <p class="form-notice" role="status" *ngIf="notice">{{ notice }}</p>
 
+<!-- The other direction, pointed to: what other services send in. -->
 <p class="hook-pointer" *ngIf="mayListWebhooks">
-  For events other services send to you, see <a class="hook-link" routerLink="/ai/webhooks">AI › Webhooks</a>.
+  <span class="hook-pointer-icon" aria-hidden="true"><lucide-icon name="webhook" [size]="16"></lucide-icon></span>
+  <span>For events other services send to you, see <a class="hook-link" routerLink="/ai/webhooks">AI › Webhooks</a>.</span>
 </p>
 
 <app-empty *ngIf="loadError" icon="cloud-off" title="Notifications could not be loaded" [line]="loadError">
   <button class="btn" type="button" (click)="load()">Try again</button>
 </app-empty>
+
+<!-- The numbers at a glance: how many, how many sending, how many
+     paused. -->
+<ul class="ui-tiles" aria-label="Notifications out in numbers" *ngIf="!loadError && !loading && addresses.length">
+  <li class="ui-tile">
+    <span class="ui-tile-icon"><lucide-icon name="send" [size]="20" aria-hidden="true"></lucide-icon></span>
+    <span class="ui-tile-words">
+      <span class="ui-tile-value">{{ addresses.length }} <small class="hook-of">of {{ limit }}</small></span>
+      <span class="ui-tile-label">Addresses</span>
+    </span>
+  </li>
+  <li class="ui-tile">
+    <span class="ui-tile-icon"><lucide-icon name="circle-check" [size]="20" aria-hidden="true"></lucide-icon></span>
+    <span class="ui-tile-words">
+      <span class="ui-tile-value">{{ addresses.length - pausedCount }}</span>
+      <span class="ui-tile-label">Sending</span>
+    </span>
+  </li>
+  <li class="ui-tile">
+    <span class="ui-tile-icon" [class.is-danger]="pausedCount > 0"><lucide-icon name="pause" [size]="20" aria-hidden="true"></lucide-icon></span>
+    <span class="ui-tile-words">
+      <span class="ui-tile-value">{{ pausedCount }}</span>
+      <span class="ui-tile-label">Paused</span>
+    </span>
+  </li>
+</ul>
 
 <app-list *ngIf="!loadError" label="Notifications out" [loading]="loading" [foot]="foot">
   <ng-container listToolbar *ngIf="!loading && mayCreate">
@@ -24,11 +52,12 @@
     <span rowChips class="chip danger" *ngIf="address.paused"
           matTooltip="Nothing is sent to it: you paused it, or it failed twenty times in a row. Turn it on to resume.">Paused</span>
     <ng-container rowMeta>
-      <span class="hook-facts">
-        <span class="hook-url" [matTooltip]="address.url">{{ address.url }}</span>
-        <span>{{ formatName(address.format) }}</span>
-        <span [matTooltip]="eventsInFull(address)">{{ eventsWord(address) }}</span>
-        <span *ngIf="address.include_reply">with the reply</span>
+      <span class="hook-url" [matTooltip]="address.url">{{ address.url }}</span>
+      <!-- What it sends, as pills: the format, the events, the reply. -->
+      <span class="ui-pills hook-facts">
+        <span class="ui-pill is-accent"><lucide-icon name="file-code" [size]="12" aria-hidden="true"></lucide-icon>{{ formatName(address.format) }}</span>
+        <span class="ui-pill" [matTooltip]="eventsInFull(address)"><lucide-icon name="zap" [size]="12" aria-hidden="true"></lucide-icon>{{ eventsWord(address) }}</span>
+        <span class="ui-pill" *ngIf="address.include_reply"><lucide-icon name="message-square-text" [size]="12" aria-hidden="true"></lucide-icon>with the reply</span>
       </span>
     </ng-container>
     <app-switch
@@ -53,15 +82,26 @@
     title="No notifications yet"
     line="Have a channel or a service of yours told when a chat waits for you, answers while you are away, or a schedule’s run ends."
   >
-    <button class="btn" type="button" *ngIf="mayCreate" (click)="create()">Send notifications</button>
+    <button class="btn primary" type="button" *ngIf="mayCreate" (click)="create()">
+      <lucide-icon name="plus" [size]="16" aria-hidden="true"></lucide-icon>
+      Send notifications
+    </button>
   </app-empty>
 </app-list>
 
 <mat-menu #outMenu="matMenu" xPosition="before">
   <ng-template matMenuContent let-address="address">
-    <button mat-menu-item *ngIf="mayTest" (click)="test(address)">Send a test</button>
-    <button mat-menu-item *ngIf="mayReadSends" (click)="deliveries(address)">Deliveries</button>
-    <button mat-menu-item *ngIf="mayUpdate" (click)="edit(address)">Edit</button>
-    <button mat-menu-item *ngIf="mayDelete" (click)="remove(address)">Delete</button>
+    <button mat-menu-item *ngIf="mayTest" (click)="test(address)">
+      <lucide-icon name="send" [size]="16" aria-hidden="true"></lucide-icon>Send a test
+    </button>
+    <button mat-menu-item *ngIf="mayReadSends" (click)="deliveries(address)">
+      <lucide-icon name="history" [size]="16" aria-hidden="true"></lucide-icon>Deliveries
+    </button>
+    <button mat-menu-item *ngIf="mayUpdate" (click)="edit(address)">
+      <lucide-icon name="pencil" [size]="16" aria-hidden="true"></lucide-icon>Edit
+    </button>
+    <button mat-menu-item *ngIf="mayDelete" (click)="remove(address)">
+      <lucide-icon name="trash-2" [size]="16" aria-hidden="true"></lucide-icon>Delete
+    </button>
   </ng-template>
 </mat-menu>

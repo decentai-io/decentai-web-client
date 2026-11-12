@@ -1,0 +1,18 @@
+/* Chat defaults: what a new chat starts with as pills, then a panel a
+   concern (styles/controls.scss `.ui-panel`), side by side when there
+   is room. */
+.defaults-summary {
+  margin-bottom: 20px;
+}
+
+/* A count of what is chosen, and the way to choose. */
+.choose-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.ui-panels {
+  margin-bottom: 8px;
+}

@@ -71,7 +71,7 @@ const PROMPT_LIMIT = 4000;
   selector: 'app-schedule-form',
   standalone: false,
   templateUrl: './schedule-form.component.html',
-  styleUrl: './schedule-form.component.css',
+  styleUrls: ['./opened-shared.css', './schedule-form.component.css'],
 })
 export class ScheduleFormComponent {
   readonly editing: Schedule | null;
@@ -297,6 +297,12 @@ export class ScheduleFormComponent {
     if (this.editing) return '';
     if (this.kind === 'prompt') return this.prompt.trim() ? '' : 'Write the prompt the assistant wakes with.';
     return this.fn ? '' : 'Choose the function to run.';
+  }
+
+  /** The kind of the schedule being changed, as its mark. */
+  get editingMark(): string {
+    const what = this.editing?.what;
+    return what && 'function' in what ? 'zap' : 'bell';
   }
 
   /** What an edited schedule does, said as it is. */

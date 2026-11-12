@@ -1,12 +1,59 @@
-/* Notifications: a device's standing with its button at the right, and
-   the test with its result beside it. The switch, the buttons and the
-   form's spacing are the shared ones. */
+/* Notifications: this device as a band of its own, its bell in the
+   section's hue once it is on, its button at the right; under it, the
+   switches and the test as panels (styles/controls.scss `.ui-panel`). */
+.notify-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
 .notify-device {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px 16px;
+  align-items: center;
+  gap: 16px 20px;
+}
+
+.notify-device.is-on {
+  border-color: color-mix(in srgb, hsl(var(--hue, 262) 50% 50%) 25%, var(--line));
+  background:
+    radial-gradient(70% 140% at 0% 0%, hsl(var(--hue, 262) 70% 95%), transparent 65%),
+    var(--surface);
+}
+
+:host-context(.dark) .notify-device.is-on {
+  border-color: color-mix(in srgb, hsl(var(--hue, 262) 40% 50%) 28%, var(--line));
+  background:
+    radial-gradient(70% 140% at 0% 0%, hsl(var(--hue, 262) 40% 18%), transparent 65%),
+    var(--surface);
+}
+
+.notify-device-mark {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+
+.notify-device.is-on .notify-device-mark {
+  background: hsl(var(--hue, 262) 62% 92%);
+  color: hsl(var(--hue, 262) 58% 30%);
+}
+
+:host-context(.dark) .notify-device.is-on .notify-device-mark {
+  background: hsl(var(--hue, 262) 34% 22%);
+  color: hsl(var(--hue, 262) 62% 80%);
+}
+
+.notify-device-mark lucide-icon,
+.notify-device-actions lucide-icon,
+.notify-test lucide-icon {
+  display: flex;
 }
 
 .notify-words {
@@ -15,10 +62,13 @@
 }
 
 .notify-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   color: var(--ink);
-  font-size: var(--t-sm);
-  font-weight: 500;
-  line-height: var(--lh-sm);
+  font-size: var(--t-md);
+  font-weight: 600;
+  line-height: var(--lh-md);
 }
 
 .notify-status {
@@ -43,6 +93,12 @@
   color: var(--danger-ink);
 }
 
+.notify-device-actions {
+  display: flex;
+  flex: none;
+  gap: 8px;
+}
+
 .notify-test {
   display: flex;
   flex-wrap: wrap;
@@ -54,4 +110,10 @@
   color: var(--ink-2);
   font-size: var(--t-sm);
   line-height: var(--lh-sm);
+}
+
+@media (max-width: 560px) {
+  .notify-device-actions {
+    flex: 1 1 100%;
+  }
 }

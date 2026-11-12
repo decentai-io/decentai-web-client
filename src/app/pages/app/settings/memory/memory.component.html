@@ -3,12 +3,35 @@
 </app-empty>
 
 <ng-container *ngIf="!loadError">
+  <!-- How full it is, at a glance: what is kept, and the room left
+       before the oldest starts being dropped. -->
+  <ul class="ui-tiles" aria-label="Memory in numbers" *ngIf="!loading && memories.length">
+    <li class="ui-tile">
+      <span class="ui-tile-icon"><lucide-icon name="lightbulb" [size]="20" aria-hidden="true"></lucide-icon></span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ memories.length }}</span>
+        <span class="ui-tile-label">{{ memories.length === 1 ? "Memory kept" : "Memories kept" }}</span>
+      </span>
+    </li>
+    <li class="ui-tile">
+      <span class="ui-tile-icon" [class.is-warn]="nearLimit"><lucide-icon name="database" [size]="20" aria-hidden="true"></lucide-icon></span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ remaining }}</span>
+        <span class="ui-tile-label">{{ remaining === 1 ? "Space" : "Spaces" }} left, of {{ limit }}</span>
+      </span>
+    </li>
+  </ul>
+
   <!-- Writing one yourself: always here, so the page says what a memory is
        by showing where one goes. -->
-  <form class="memory-add" *ngIf="canAdd && !loading" (ngSubmit)="addMemory()">
+  <form class="ui-panel memory-add" *ngIf="canAdd && !loading" (ngSubmit)="addMemory()">
+    <div class="ui-panel-head">
+      <span class="ui-panel-icon is-hued"><lucide-icon name="pencil-line" [size]="16" aria-hidden="true"></lucide-icon></span>
+      <h2 class="ui-panel-title">Add a memory</h2>
+    </div>
     <app-field
       class="is-full"
-      label="Add a memory"
+      label="What to remember"
       help="One lasting fact that stands on its own: a preference, your role, how you like things done."
       [error]="addError"
     >
@@ -40,11 +63,15 @@
       <!-- The cap is not decoration: at the limit the oldest is dropped
            to make room, and a page that promises control owes that in
            advance. -->
-      <span class="chip warn" *ngIf="nearLimit" role="status">{{ capWarning }}</span>
+      <span class="chip warn" *ngIf="nearLimit" role="status">
+        <lucide-icon name="triangle-alert" [size]="12" aria-hidden="true"></lucide-icon>
+        {{ capWarning }}
+      </span>
     </ng-container>
 
     <ng-container *ngFor="let memory of filteredMemories">
       <app-row *ngIf="editingId !== memory.memory_id">
+        <lucide-icon rowMark name="lightbulb" [size]="18" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
         <span rowName class="memory-text">{{ memory.text }}</span>
         <button
           rowActions
@@ -109,6 +136,7 @@
 
   <div class="memory-foot" *ngIf="memories.length && canForget && !loading">
     <button class="btn danger sm" type="button" [disabled]="forgettingAll || !!busyId" (click)="forgetAll()">
+      <lucide-icon name="trash-2" [size]="14" aria-hidden="true"></lucide-icon>
       {{ forgettingAll ? "Forgetting…" : "Forget all" }}
     </button>
     <span class="memory-error" role="alert" *ngIf="forgetError">{{ forgetError }}</span>

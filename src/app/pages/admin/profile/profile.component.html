@@ -1,12 +1,19 @@
-<app-page title="Profile" sentence="Your account: who you are, the groups your access comes from, and your password.">
+<app-page title="Profile" sentence="Your account: who you are, the groups your access comes from, and your password."
+          icon="circle-user" [hue]="262">
   <div class="form" *ngIf="loading" aria-busy="true" aria-label="Reading your profile">
     <span class="sk sk-field"></span>
     <span class="sk sk-field"></span>
   </div>
 
-  <ng-container *ngIf="!loading && profile as me">
-    <form class="form" (ngSubmit)="save()">
-      <section class="form-section">
+  <div class="admin-stack" *ngIf="!loading && profile as me">
+    <!-- Who you are. -->
+    <form class="ui-panel admin-panel" (ngSubmit)="save()" aria-labelledby="profile-you-title">
+      <div class="ui-panel-head">
+        <span class="admin-initials is-large" aria-hidden="true">{{ initials(me.name || me.email) }}</span>
+        <h2 class="ui-panel-title" id="profile-you-title">{{ me.name || me.email }}</h2>
+        <span class="ui-pill" *ngIf="lastSignIn"><lucide-icon name="log-in" [size]="12" aria-hidden="true"></lucide-icon>Last signed in {{ lastSignIn }}</span>
+      </div>
+      <div class="form">
         <app-field label="Name" help="How you appear to everyone else."
                    [error]="tried && !name.trim() ? 'Enter your name.' : ''">
           <input class="input" name="user-name" autocomplete="name" [(ngModel)]="name" [readOnly]="!canRename" />
@@ -14,29 +21,36 @@
         <app-field label="Email" help="What you sign in with.">
           <input class="input" name="email" [value]="me.email" readonly />
         </app-field>
-        <p class="form-section-note admin-fact" *ngIf="lastSignIn">Last signed in {{ lastSignIn }}.</p>
-      </section>
-
-      <section class="form-section" aria-labelledby="profile-groups-title">
-        <h2 class="form-section-title" id="profile-groups-title">Your groups</h2>
-        <p class="form-section-note">What you may do comes from Everyone, and from the groups you are in.</p>
-        <app-list label="Your groups" *ngIf="groups.length">
-          <app-row *ngFor="let group of groups" [name]="group">
-            <lucide-icon rowMark name="users" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
-          </app-row>
-        </app-list>
-        <app-empty *ngIf="!groups.length" icon="users" title="You are in no group but Everyone"
-                   line="Your access is what everyone gets. Ask an administrator if you need more."></app-empty>
-      </section>
+      </div>
 
       <app-save-bar *ngIf="canRename" [dirty]="dirty" [saving]="saving" [error]="saveError"
                     (save)="save()" (discard)="name = me.name"></app-save-bar>
     </form>
 
-    <form class="form" *ngIf="canChangePassword" (ngSubmit)="changePassword()" aria-labelledby="profile-password-title">
-      <section class="form-section">
-        <h2 class="form-section-title" id="profile-password-title">Password</h2>
-        <p class="form-section-note">Changing it signs you out everywhere else; here you stay signed in.</p>
+    <!-- Where your access comes from. -->
+    <section class="ui-panel" aria-labelledby="profile-groups-title">
+      <div class="ui-panel-head">
+        <span class="ui-panel-icon is-hued"><lucide-icon name="users" [size]="16" aria-hidden="true"></lucide-icon></span>
+        <h2 class="ui-panel-title" id="profile-groups-title">Your groups</h2>
+        <span class="ui-panel-aside">{{ groups.length }}</span>
+      </div>
+      <p class="admin-lead">What you may do comes from Everyone, and from the groups you are in.</p>
+      <app-list label="Your groups" *ngIf="groups.length">
+        <app-row *ngFor="let group of groups" [name]="group">
+          <lucide-icon rowMark name="users" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
+        </app-row>
+      </app-list>
+      <app-empty *ngIf="!groups.length" icon="users" title="You are in no group but Everyone"
+                 line="Your access is what everyone gets. Ask an administrator if you need more."></app-empty>
+    </section>
+
+    <form class="ui-panel" *ngIf="canChangePassword" (ngSubmit)="changePassword()" aria-labelledby="profile-password-title">
+      <div class="ui-panel-head">
+        <span class="ui-panel-icon is-hued"><lucide-icon name="key-round" [size]="16" aria-hidden="true"></lucide-icon></span>
+        <h2 class="ui-panel-title" id="profile-password-title">Password</h2>
+      </div>
+      <p class="admin-lead">Changing it signs you out everywhere else; here you stay signed in.</p>
+      <div class="form">
         <input class="visually-hidden" type="email" name="username" autocomplete="username" readonly tabindex="-1" aria-hidden="true" [value]="me.email" />
         <app-field label="Current password" [error]="triedPassword && !currentPassword ? 'Enter the password you use now.' : ''">
           <input class="input" type="password" name="current-password" autocomplete="current-password"
@@ -50,9 +64,12 @@
         <p class="form-notice is-error" role="alert" *ngIf="passwordError">{{ passwordError }}</p>
         <p class="form-notice" role="status" *ngIf="passwordChanged">Your password is changed.</p>
         <div>
-          <button class="btn" type="submit" [disabled]="changingPassword">{{ changingPassword ? "Changing…" : "Change password" }}</button>
+          <button class="btn" type="submit" [disabled]="changingPassword">
+            <lucide-icon name="lock" [size]="14" aria-hidden="true"></lucide-icon>
+            {{ changingPassword ? "Changing…" : "Change password" }}
+          </button>
         </div>
-      </section>
+      </div>
     </form>
-  </ng-container>
+  </div>
 </app-page>

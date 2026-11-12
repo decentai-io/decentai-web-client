@@ -112,13 +112,13 @@ export const mainRoutes: RouteNode[] = [
         children: [],
       },
       {
-        name: 'Waiting for you',
+        name: 'Approvals',
         url: 'ai/waiting',
         icon: 'inbox',
         domain: 'Global',
         active: true,
         requiredAction: 'ai:activity:list',
-        title: 'Waiting for you',
+        title: 'Approvals',
         children: [],
       },
       {

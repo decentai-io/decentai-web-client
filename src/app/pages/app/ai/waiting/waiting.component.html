@@ -1,33 +1,94 @@
 <app-page
-  title="Waiting for you"
-  sentence="What your chats ask you, in one place: approvals, questions and offers, each waiting however long you take."
+  title="Approvals"
+  icon="inbox"
+  [hue]="186"
+  sentence="Approvals and questions from your chats that wait for your answer, in one place, each waiting however long you take."
   [wide]="true"
 >
+  <button pageActions class="btn sm" type="button" [disabled]="loading" (click)="load()">
+    <lucide-icon [name]="loading ? 'loader-circle' : 'refresh-cw'" [size]="16" aria-hidden="true"></lucide-icon>
+    Refresh
+  </button>
+
   <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
 
-  <div class="waiting-head">
-    <button class="btn sm" type="button" [disabled]="loading" (click)="load()">
-      <lucide-icon name="refresh-cw" [size]="16" aria-hidden="true"></lucide-icon>
-      Refresh
-    </button>
+  <!-- What waits, by kind, each a tile. -->
+  <ul class="ui-tiles" *ngIf="groups.length" aria-label="What waits, in numbers">
+    <li class="ui-tile" *ngFor="let tile of tiles">
+      <span class="ui-tile-icon" [class.is-warn]="tile.warn">
+        <lucide-icon [name]="tile.icon" [size]="20" aria-hidden="true"></lucide-icon>
+      </span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ tile.value }}</span>
+        <span class="ui-tile-label">{{ tile.label }}</span>
+      </span>
+    </li>
+    <li class="ui-tile">
+      <span class="ui-tile-icon"><lucide-icon name="message-square-text" [size]="20" aria-hidden="true"></lucide-icon></span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ groups.length }}</span>
+        <span class="ui-tile-label">{{ groups.length === 1 ? "Chat" : "Chats" }} asking</span>
+      </span>
+    </li>
+  </ul>
+
+  <div class="waiting-loading" *ngIf="loading && !groups.length" aria-busy="true" aria-label="Loading what waits for your answer">
+    <span class="sk waiting-sk"></span>
+    <span class="sk waiting-sk"></span>
   </div>
 
-  <p class="waiting-empty" role="status" *ngIf="!loading && !groups.length && !error">Nothing waits for you.</p>
+  <app-empty
+    *ngIf="!loading && !groups.length && !error"
+    icon="inbox"
+    title="Nothing waits for you"
+    line="When a chat asks you to allow a call, or the assistant asks you a question, it waits here until you answer."
+  ></app-empty>
 
+  <!-- Each chat's cards in a panel of their own, oldest first. -->
   <section class="waiting-chat" *ngFor="let group of groups" [attr.aria-label]="group.title">
-    <h2 class="waiting-title">
-      <a [routerLink]="['/ai/chats', group.chatId]">{{ group.title }}</a>
-      <span class="waiting-count">{{ group.cards.length }} waiting</span>
-    </h2>
+    <header class="waiting-head">
+      <span class="ui-panel-icon is-hued"><lucide-icon name="message-square-text" [size]="16" aria-hidden="true"></lucide-icon></span>
+      <h2 class="waiting-title">
+        <a [routerLink]="['/ai/chats', group.chatId]">{{ group.title }}</a>
+      </h2>
+      <span class="ui-pill is-warn waiting-count">{{ group.cards.length }} waiting</span>
+      <a class="btn ghost sm waiting-open" [routerLink]="['/ai/chats', group.chatId]">
+        Open the chat
+        <lucide-icon name="arrow-right" [size]="14" aria-hidden="true"></lucide-icon>
+      </a>
+    </header>
+
     <div class="waiting-cards">
-      <ng-container *ngFor="let card of group.cards">
+      <article class="waiting-card" *ngFor="let card of group.cards" [class.is-busy]="answering.has(card.card_id)">
+        <!-- What is asked, by whom, since when: over the card. -->
+        <p class="waiting-kicker">
+          <span class="waiting-kind" [attr.data-kind]="card.kind">
+            <lucide-icon [name]="kindIcon(card)" [size]="14" aria-hidden="true"></lucide-icon>
+            {{ kindWord(card) }}
+          </span>
+          <span class="ui-pill">
+            <lucide-icon name="bot" [size]="12" aria-hidden="true"></lucide-icon>
+            {{ who(card) }}
+          </span>
+          <span class="ui-pill" *ngIf="since(card)">
+            <lucide-icon name="clock" [size]="12" aria-hidden="true"></lucide-icon>
+            {{ since(card) }}
+          </span>
+        </p>
+
         <app-chat-approval-card *ngIf="!inChat(card)" [card]="card" [busy]="answering.has(card.card_id)"
                                 (decided)="onDecision($event)"></app-chat-approval-card>
-        <p class="waiting-elsewhere" *ngIf="inChat(card)">
-          {{ card.kind === 'form' ? 'A sign-in is asked for' : 'A file is asked for' }}:
-          <a [routerLink]="['/ai/chats', group.chatId]">answer it in its chat</a>.
-        </p>
-      </ng-container>
+        <div class="waiting-elsewhere" *ngIf="inChat(card)">
+          <p>
+            {{ card.kind === 'form' ? 'A sign-in is asked for' : 'A file is asked for' }}:
+            answer it in its chat, where {{ card.kind === 'form' ? 'the sign-in opens' : 'the file is uploaded' }}.
+          </p>
+          <a class="btn primary sm" [routerLink]="['/ai/chats', group.chatId]">
+            Answer it in its chat
+            <lucide-icon name="arrow-right" [size]="14" aria-hidden="true"></lucide-icon>
+          </a>
+        </div>
+      </article>
     </div>
   </section>
 </app-page>

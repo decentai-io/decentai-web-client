@@ -4,6 +4,24 @@ import { Refused } from 'src/app/services/request.service';
 import { dayDate } from 'src/app/components/ui/dates';
 import { AuthService } from 'src/app/services/auth.service';
 import { Organization, OrganizationService } from 'src/app/services/organization.service';
+import { settingsPageOpen, settingsPages } from 'src/app/website/config/config';
+
+/** A page that lives inside the organization, as a card on its page. */
+interface Place {
+  name: string;
+  line: string;
+  icon: string;
+  link: string;
+  /** Any one of these opens it. */
+  actions: string[];
+}
+
+/** The pages inside the organization, in the order they are cards. */
+const PLACES: Place[] = [
+  { name: 'Users', line: 'Who is in it, invited, or held back.', icon: 'users', link: '/admin/users', actions: ['iam:user:list'] },
+  { name: 'Groups', line: 'What gives people their policies.', icon: 'users', link: '/admin/groups', actions: ['iam:group:list'] },
+  { name: 'Policies', line: 'What is allowed, denied or asked first.', icon: 'scroll-text', link: '/admin/policies', actions: ['iam:policy:list'] },
+];
 
 /**
  * Admin → Organization.
@@ -43,6 +61,17 @@ export class OrganizationsComponent implements OnInit {
     } finally {
       this.loading = false;
     }
+  }
+
+  /** The cards under the name: the pages inside it this person may
+   *  open, and Settings when any of its pages opens for them. */
+  get places(): Place[] {
+    const can = (action: string) => this.auth.can(action);
+    const places = PLACES.filter((place) => place.actions.some(can));
+    if (settingsPages.some((page) => settingsPageOpen(page, can))) {
+      places.push({ name: 'Settings', line: 'How the platform is set up here, and for you.', icon: 'settings', link: '/settings', actions: [] });
+    }
+    return places;
   }
 
   get canRename(): boolean {

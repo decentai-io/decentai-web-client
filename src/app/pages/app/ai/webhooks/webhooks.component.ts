@@ -113,6 +113,13 @@ export class WebhooksComponent extends DataPageBase implements OnInit, OnDestroy
     return this.limit ? `${on} on · ${this.webhooks.length} of ${this.limit}` : `${on} on`;
   }
 
+  // ── The numbers at the head ─────────────────────────────────────────
+
+  /** The person's webhooks that take calls. */
+  get onCount(): number { return this.webhooks.filter((hook) => hook.enabled).length; }
+  /** Those whose calls must be signed. */
+  get signedCount(): number { return this.webhooks.filter((hook) => hook.require_signature).length; }
+
   // ── The address ─────────────────────────────────────────────────────
 
   private readOpened(): void {

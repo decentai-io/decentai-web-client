@@ -1,9 +1,42 @@
 <app-page guide="admin#people" title="Users"
           [sentence]="adds ? 'You add people here and hand each a temporary password. What a person may do is exactly what their groups give.'
                            : 'Everyone arrives by invitation. What a person may do is exactly what their groups give.'"
-          [wide]="true">
+          [wide]="true" icon="users" [hue]="262">
   <p class="form-notice is-error" role="alert" *ngIf="error && !dialogOpen">{{ error }}</p>
   <p class="form-notice" role="status" *ngIf="notice">{{ notice }}</p>
+
+  <!-- The numbers at a glance: the people, those who administer, those
+       invited and not arrived, and those held back. -->
+  <ul class="ui-tiles" aria-label="Users in numbers" *ngIf="!loading">
+    <li class="ui-tile">
+      <span class="ui-tile-icon"><lucide-icon name="users" [size]="20" aria-hidden="true"></lucide-icon></span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ members.length }}</span>
+        <span class="ui-tile-label">{{ members.length === 1 ? "Person" : "People" }}</span>
+      </span>
+    </li>
+    <li class="ui-tile">
+      <span class="ui-tile-icon"><lucide-icon name="shield-check" [size]="20" aria-hidden="true"></lucide-icon></span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ adminCount }}</span>
+        <span class="ui-tile-label">{{ adminCount === 1 ? "Administrator" : "Administrators" }}</span>
+      </span>
+    </li>
+    <li class="ui-tile" *ngIf="canReadInvitations">
+      <span class="ui-tile-icon"><lucide-icon name="mail" [size]="20" aria-hidden="true"></lucide-icon></span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ invitations.length }}</span>
+        <span class="ui-tile-label">Invited</span>
+      </span>
+    </li>
+    <li class="ui-tile" *ngIf="heldCount">
+      <span class="ui-tile-icon is-warn"><lucide-icon name="user-x" [size]="20" aria-hidden="true"></lucide-icon></span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ heldCount }}</span>
+        <span class="ui-tile-label">Disabled or stopped</span>
+      </span>
+    </li>
+  </ul>
 
   <app-list label="Users" [loading]="loading">
     <ng-container listToolbar>
@@ -18,14 +51,23 @@
     </ng-container>
 
     <app-row *ngFor="let member of shown" [name]="member.name || member.email">
-      <lucide-icon rowMark name="user" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
+      <!-- Their initials in the mark: a list of people reads as people. -->
+      <span rowMark class="admin-initials" [class.is-held]="member.status === 'disabled' || member.stopped" aria-hidden="true">{{ initials(member) }}</span>
       <span rowChips class="chip accent" *ngIf="isSelf(member)">You</span>
+      <span rowChips class="chip" *ngIf="isAdmin(member)"><lucide-icon name="shield-check" [size]="12" aria-hidden="true"></lucide-icon>Admin</span>
       <span rowChips class="chip" *ngIf="member.status === 'disabled'">Disabled</span>
       <span rowChips class="chip warn" *ngIf="member.stopped"
             matTooltip="Nothing of theirs runs until they resume">Stopped</span>
       <span rowChips class="chip warn" *ngIf="member.must_change_password"
             matTooltip="They sign in with it once and are asked to choose their own">Temporary password</span>
-      <ng-container rowMeta>{{ member.email }} · {{ groupNames(member.groups) }}</ng-container>
+      <ng-container rowMeta>
+        <span class="admin-email">{{ member.email }}</span>
+        <!-- Their groups, each a pill. -->
+        <span class="ui-pills admin-pills">
+          <span class="ui-pill" *ngIf="!member.groups.length">No groups</span>
+          <span class="ui-pill" *ngFor="let name of groupList(member.groups)"><lucide-icon name="users" [size]="12" aria-hidden="true"></lucide-icon>{{ name }}</span>
+        </span>
+      </ng-container>
 
       <button rowState class="icon-btn sm" type="button" *ngIf="hasActions(member)"
               [attr.aria-label]="'More for ' + (member.name || member.email)" [disabled]="isBusy(member.user_id)"
@@ -34,18 +76,30 @@
       </button>
     </app-row>
 
-    <app-empty *ngIf="members.length && !shown.length" icon="search-x" title="Nobody matches" line="Try another search."></app-empty>
+    <app-empty *ngIf="members.length && !shown.length" icon="search-x" title="Nobody matches" line="Try another search.">
+      <button class="btn" type="button" (click)="query = ''">Clear the search</button>
+    </app-empty>
   </app-list>
 
   <!-- ── Invitations that nobody has taken up yet ────────────────────── -->
   <section class="admin-section" *ngIf="canReadInvitations && invitations.length" aria-labelledby="invitations-title">
-    <h2 class="admin-section-title" id="invitations-title">Pending invitations</h2>
+    <h2 class="admin-section-title" id="invitations-title">
+      <span class="ui-panel-icon is-hued"><lucide-icon name="mail-plus" [size]="16" aria-hidden="true"></lucide-icon></span>
+      Pending invitations
+      <span class="ui-pill">{{ invitations.length }}</span>
+    </h2>
     <app-list label="Pending invitations">
       <app-row *ngFor="let invitation of invitations" [name]="invitation.email">
         <lucide-icon rowMark name="mail" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
-        <ng-container rowMeta>{{ groupNames(invitation.groups) }} · ends {{ day(invitation.expires_at) }}</ng-container>
+        <span rowMeta class="ui-pills">
+          <span class="ui-pill"><lucide-icon name="users" [size]="12" aria-hidden="true"></lucide-icon>{{ groupNames(invitation.groups) }}</span>
+          <span class="ui-pill"><lucide-icon name="hourglass" [size]="12" aria-hidden="true"></lucide-icon>ends {{ day(invitation.expires_at) }}</span>
+        </span>
         <button rowState class="btn sm" type="button" *ngIf="canInvite" [disabled]="isBusy(invitation.invitation_id)"
-                (click)="resend(invitation)">Send again</button>
+                (click)="resend(invitation)">
+          <lucide-icon name="send" [size]="14" aria-hidden="true"></lucide-icon>
+          Send again
+        </button>
         <button rowState class="btn ghost danger sm" type="button" *ngIf="canRevokeInvitations"
                 [disabled]="isBusy(invitation.invitation_id)" (click)="revoke(invitation)">Withdraw</button>
       </app-row>
@@ -54,13 +108,27 @@
 
   <mat-menu #memberMenu="matMenu" xPosition="before">
     <ng-template matMenuContent let-member="member">
-      <button mat-menu-item *ngIf="canAssignGroups" (click)="startEditGroups(member)">Groups</button>
-      <button mat-menu-item *ngIf="canResetPassword && !isSelf(member)" (click)="resetPassword(member)">Reset password</button>
-      <button mat-menu-item *ngIf="canStop && !isSelf(member) && !member.stopped" (click)="setStopped(member, true)">Stop everything</button>
-      <button mat-menu-item *ngIf="canStop && member.stopped" (click)="setStopped(member, false)">Let them resume</button>
-      <button mat-menu-item *ngIf="canDisable && !isSelf(member) && member.status === 'active'" (click)="setStatus(member, 'disabled')">Disable</button>
-      <button mat-menu-item *ngIf="canDisable && member.status === 'disabled'" (click)="setStatus(member, 'active')">Enable</button>
-      <button mat-menu-item *ngIf="canDelete && !isSelf(member)" (click)="requestRemove(member)">Remove</button>
+      <button mat-menu-item *ngIf="canAssignGroups" (click)="startEditGroups(member)">
+        <lucide-icon name="users" [size]="16" aria-hidden="true"></lucide-icon>Groups
+      </button>
+      <button mat-menu-item *ngIf="canResetPassword && !isSelf(member)" (click)="resetPassword(member)">
+        <lucide-icon name="key-round" [size]="16" aria-hidden="true"></lucide-icon>Reset password
+      </button>
+      <button mat-menu-item *ngIf="canStop && !isSelf(member) && !member.stopped" (click)="setStopped(member, true)">
+        <lucide-icon name="circle-stop" [size]="16" aria-hidden="true"></lucide-icon>Stop everything
+      </button>
+      <button mat-menu-item *ngIf="canStop && member.stopped" (click)="setStopped(member, false)">
+        <lucide-icon name="play" [size]="16" aria-hidden="true"></lucide-icon>Let them resume
+      </button>
+      <button mat-menu-item *ngIf="canDisable && !isSelf(member) && member.status === 'active'" (click)="setStatus(member, 'disabled')">
+        <lucide-icon name="user-x" [size]="16" aria-hidden="true"></lucide-icon>Disable
+      </button>
+      <button mat-menu-item *ngIf="canDisable && member.status === 'disabled'" (click)="setStatus(member, 'active')">
+        <lucide-icon name="user-cog" [size]="16" aria-hidden="true"></lucide-icon>Enable
+      </button>
+      <button mat-menu-item *ngIf="canDelete && !isSelf(member)" (click)="requestRemove(member)">
+        <lucide-icon name="trash-2" [size]="16" aria-hidden="true"></lucide-icon>Remove
+      </button>
     </ng-template>
   </mat-menu>
 

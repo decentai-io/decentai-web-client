@@ -1,22 +1,82 @@
-/* One record, read: its head, its actions, its fields as names and
-   values, its content by type, and its foot. The chips, the buttons,
+/* One record, read: its header band, its actions, its fields as names
+   and values in a panel, its content by type in panels, and its foot. The chips, the buttons,
    the table and the code tile are the shared ones. */
 :host {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
   min-width: 0;
 }
 
+/* ── Its header band ───────────────────────────────────────────────
+   Across the top of the opened panel (.side-opened, 20px in): a wash
+   of the section's hue (--hue), the kind's tile lifted off it, the
+   kind, the name, and its facts as pills. */
 .record-head {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 14px;
+  margin: -20px -20px 0;
+  padding: 22px 20px 20px;
+  border-bottom: 1px solid color-mix(in srgb, hsl(var(--hue, 214) 50% 50%) 14%, var(--line));
+  border-radius: calc(var(--r-lg) - 1px) calc(var(--r-lg) - 1px) 0 0;
+  background:
+    radial-gradient(90% 160% at 0% 0%, hsl(var(--hue, 214) 70% 91% / 0.85), transparent 62%),
+    radial-gradient(60% 140% at 100% 100%, hsl(calc(var(--hue, 214) + 40) 70% 94% / 0.6), transparent 60%),
+    var(--surface);
+}
+
+:host-context(.dark) .record-head {
+  border-bottom-color: color-mix(in srgb, hsl(var(--hue, 214) 40% 50%) 20%, var(--line));
+  background:
+    radial-gradient(90% 160% at 0% 0%, hsl(var(--hue, 214) 45% 21% / 0.9), transparent 62%),
+    radial-gradient(60% 140% at 100% 100%, hsl(calc(var(--hue, 214) + 40) 40% 17% / 0.6), transparent 60%),
+    var(--surface);
+}
+
+.record-face {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: hsl(var(--hue, 214) 62% 93%);
+  color: hsl(var(--hue, 214) 58% 28%);
+  box-shadow: 0 6px 16px -8px hsl(var(--hue, 214) 50% 30% / 0.45), inset 0 0 0 1px rgb(255 255 255 / 0.5);
+}
+
+:host-context(.dark) .record-face {
+  background: hsl(var(--hue, 214) 34% 20%);
+  color: hsl(var(--hue, 214) 62% 80%);
+  box-shadow: 0 8px 18px -8px rgb(0 0 0 / 0.6), inset 0 0 0 1px rgb(255 255 255 / 0.06);
+}
+
+.record-face lucide-icon {
+  display: flex;
 }
 
 .record-words {
+  display: flex;
   flex: 1;
+  flex-direction: column;
+  gap: 4px;
   min-width: 0;
+}
+
+/* The kind, over the name, as an eyebrow. */
+.record-kind {
+  color: hsl(var(--hue, 214) 50% 32%);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: var(--lh-xs);
+  text-transform: uppercase;
+}
+
+:host-context(.dark) .record-kind {
+  color: hsl(var(--hue, 214) 60% 76%);
 }
 
 .record-name {
@@ -28,20 +88,12 @@
 }
 
 .record-line {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 6px;
-  margin-top: 2px;
-  color: var(--ink-2);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  margin-top: 4px;
 }
 
-/* The dot follows a fact, so a wrapped line never begins with one. */
-.record-line span:not(:last-child)::after {
-  content: '·';
-  margin-left: 6px;
-  color: var(--ink-3);
+/* The pills sit on the wash: a surface under each, so they read. */
+.record-line .ui-pill:not(.is-accent) {
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
 }
 
 .record-actions {
@@ -54,11 +106,24 @@
   display: none;
 }
 
+/* A part of the record: a quiet panel with its icon and its label. */
+.record-panel {
+  min-width: 0;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.record-panel-head {
+  margin-bottom: 12px;
+}
+
 /* A field's label at the left, its value at the right. */
 .record-fields {
   display: grid;
   grid-template-columns: minmax(96px, max-content) minmax(0, 1fr);
-  gap: 8px 16px;
+  gap: 10px 20px;
   font-size: var(--t-sm);
   line-height: var(--lh-sm);
 }
@@ -134,18 +199,6 @@
   font-size: var(--t-xs);
 }
 
-.record-part {
-  min-width: 0;
-}
-
-.record-part-title {
-  margin-bottom: 4px;
-  color: var(--ink-2);
-  font-size: var(--t-sm);
-  font-weight: 500;
-  line-height: var(--lh-sm);
-}
-
 .record-raw .code-tile {
   max-height: 50vh;
   margin: 8px 0 0;
@@ -162,6 +215,16 @@
   color: var(--ink-2);
   font-size: var(--t-xs);
   line-height: var(--lh-xs);
+}
+
+.record-foot-when {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.record-foot-when lucide-icon {
+  display: flex;
 }
 
 .record-foot-ref {

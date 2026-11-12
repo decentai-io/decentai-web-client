@@ -17,6 +17,12 @@ import { STATE_WORDS, ScheduleState, failuresOf, lastRun, stateOf, whatOf } from
 
 const STATES: ScheduleState[] = ['active', 'paused', 'done', 'failing'];
 
+/** What a card asks, as an icon. */
+const CARD_ICONS: Record<Card['kind'], string> = {
+  approval: 'shield-alert', network: 'globe', question: 'circle-help',
+  form: 'key-round', skill: 'sparkles', memory: 'brain-circuit',
+};
+
 /**
  * What waits for the person across their chats: the cards that wait for
  * an answer, each leading to its chat, and everything their chats keep
@@ -190,6 +196,37 @@ export class SchedulesComponent extends DataPageBase implements OnInit, OnDestro
     }
   }
 
+  /** A card's kind as its mark: what is asked, at a glance. */
+  cardIcon(card: Card): string {
+    return CARD_ICONS[card.kind] ?? 'inbox';
+  }
+
+  // ── The numbers at the head ─────────────────────────────────────────
+
+  /** How many stand each way, for the tiles. */
+  count(state: ScheduleState): number {
+    return this.schedules.filter((schedule) => stateOf(schedule) === state).length;
+  }
+
+  /** The schedule that runs next, of those that run. */
+  get upcoming(): Schedule | null {
+    const at = (schedule: Schedule) => secondsOf(schedule.next_at) || Infinity;
+    return this.schedules.filter((schedule) => !schedule.paused && secondsOf(schedule.next_at))
+      .sort((a, b) => at(a) - at(b))[0] ?? null;
+  }
+
+  /** When the next run is, short: "in 14 h"; held while stopped. */
+  get upcomingWhen(): string {
+    const schedule = this.upcoming;
+    if (!schedule) return '—';
+    return this.stopped ? 'On hold' : until(secondsOf(schedule.next_at), this.now);
+  }
+
+  /** A tile narrows the list to its state, and a second press lifts it. */
+  toggleState(state: ScheduleState): void {
+    this.filter('state', this.state === state ? 'all' : state);
+  }
+
   // ── The list ────────────────────────────────────────────────────────
 
   /** A chat's title, or what to call one without. */
@@ -277,6 +314,9 @@ export class SchedulesComponent extends DataPageBase implements OnInit, OnDestro
     const moment = momentWords(at, this.zoneOf(schedule));
     return this.stopped ? `Next ${moment}, once you resume` : `Next ${moment} (${until(at, this.now)})`;
   }
+
+  /** The last run failed: its fact is said in the danger colour. */
+  lastFailed(schedule: Schedule): boolean { return !!lastRun(schedule)?.failed; }
 
   /** "last ran Mon 13 Oct, 09:00 · failed". */
   last(schedule: Schedule): string {

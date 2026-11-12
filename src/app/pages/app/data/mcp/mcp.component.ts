@@ -12,6 +12,14 @@ import { DataPageBase } from '../../data-page-base';
 import { ShareEditor, SharingChip } from '../../share-editor';
 import { CredentialDraft, hostOf, lastRead, toolsWord } from './mcp-shared';
 
+/** A number over the page: its icon, the number and its word. */
+interface Tile {
+  icon: string;
+  value: string | number;
+  label: string;
+  warn?: boolean;
+}
+
 /**
  * MCP servers: remote tool servers a person adds for their chats, and
  * those colleagues shared with them. A runtime reads a server's tools
@@ -120,6 +128,32 @@ export class McpComponent extends DataPageBase implements OnInit, OnDestroy {
   lastRead(server: McpServer): string { return lastRead(server); }
   lastReadInFull(server: McpServer): string { return fullDate(server.read_at); }
   sharing(server: McpServer): SharingChip { return this.share.chip(server.owner, server.created_by); }
+
+  /** How many of a server's tools are on. */
+  onOf(server: McpServer): number {
+    return server.tools.filter((tool) => tool.on).length;
+  }
+
+  /** How many servers, what they offer, what is on, and what waits. */
+  get tiles(): Tile[] {
+    const read = this.servers.filter((server) => server.read_at);
+    const offered = read.reduce((sum, server) => sum + server.tools.length, 0);
+    const on = read.reduce((sum, server) => sum + this.onOf(server), 0);
+    const tiles: Tile[] = [
+      { icon: 'server', value: this.servers.length, label: this.servers.length === 1 ? 'Server' : 'Servers' },
+      { icon: 'square-terminal', value: offered, label: 'Tools offered' },
+      { icon: 'zap', value: on, label: 'Tools on' },
+      { icon: 'users', value: this.servers.filter((server) => !this.mine(server)).length, label: 'Shared with you' },
+    ];
+    const unread = this.servers.length - read.length;
+    if (unread) tiles.push({ icon: 'circle-dashed', value: unread, label: 'Not read yet', warn: true });
+    return tiles;
+  }
+
+  /** A tile is known by its icon, so the row is not drawn again. */
+  byIcon(_: number, tile: Tile): string {
+    return tile.icon;
+  }
 
   get foot(): string {
     return this.servers.length ? 'A chat calls only the tools switched on, and only of the servers it uses.' : '';

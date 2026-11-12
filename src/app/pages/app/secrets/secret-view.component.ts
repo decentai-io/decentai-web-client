@@ -62,6 +62,11 @@ export class SecretViewComponent implements OnChanges {
     this.provider = providerName(this.shape);
   }
 
+  /** It holds a value that is encrypted, said once in its band. */
+  get encrypted(): boolean {
+    return this.fields.some((field) => field.hidden && field.set);
+  }
+
   get account(): string {
     return String(this.secret.keys?.['account'] || '');
   }
