@@ -74,6 +74,11 @@ export class ChatMessageComponent implements OnChanges, AfterViewChecked, OnDest
   private ownPictures = new WeakSet<HTMLImageElement>();
   /** Links to the server's files already made to open with the session. */
   private ownLinks = new WeakSet<HTMLAnchorElement>();
+  /** An agent's table's rows and a chart's data, made once for each: a new
+   *  array on every check is new data to the table, which redraws, which
+   *  is checked again, without end. */
+  private rowsOf = new WeakMap<AgentTable, Record<string, unknown>[]>();
+  private chartsOf = new WeakMap<AgentChart, ChartInput>();
   private blobs: string[] = [];
 
   constructor(
@@ -291,16 +296,26 @@ export class ChatMessageComponent implements OnChanges, AfterViewChecked, OnDest
 
   /** An agent's table, as rows the table component reads by column. */
   tableRows(table: AgentTable): Record<string, unknown>[] {
-    return (table.rows || []).map((row) =>
-      Object.fromEntries((table.columns || []).map((column, index) => [column, row?.[index]])));
+    let rows = this.rowsOf.get(table);
+    if (!rows) {
+      rows = (table.rows || []).map((row) =>
+        Object.fromEntries((table.columns || []).map((column, index) => [column, row?.[index]])));
+      this.rowsOf.set(table, rows);
+    }
+    return rows;
   }
 
   /** An agent's chart, as the chart component reads it. */
   chartData(chart: AgentChart): ChartInput {
-    return {
-      labels: chart.labels || [],
-      datasets: (chart.series || []).map((series) => ({ label: series.name, data: series.values })),
-    };
+    let data = this.chartsOf.get(chart);
+    if (!data) {
+      data = {
+        labels: chart.labels || [],
+        datasets: (chart.series || []).map((series) => ({ label: series.name, data: series.values })),
+      };
+      this.chartsOf.set(chart, data);
+    }
+    return data;
   }
 
   /** What a webhook brought, as it brought it. */

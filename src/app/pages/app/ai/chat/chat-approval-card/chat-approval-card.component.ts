@@ -149,21 +149,36 @@ export class ChatApprovalCardComponent {
 
   // ── Question ─────────────────────────────────────────────────────────
 
-  /** A question's table, as rows the table component reads by column. */
+  /** A question's table, as rows the table component reads by column:
+   *  made once for each table, since a new array on every check is new
+   *  data to the table, which redraws without end. */
   get tableRows(): Record<string, unknown>[] {
     const table = this.request.table;
-    return (table?.rows || []).map((row: unknown[]) =>
-      Object.fromEntries((table.columns || []).map((column: string, index: number) => [column, row?.[index]])));
+    if (table !== this.rowsFor) {
+      this.rowsFor = table;
+      this.rows = (table?.rows || []).map((row: unknown[]) =>
+        Object.fromEntries((table.columns || []).map((column: string, index: number) => [column, row?.[index]])));
+    }
+    return this.rows;
   }
+  private rowsFor: unknown = null;
+  private rows: Record<string, unknown>[] = [];
 
+  /** A question's chart, made once for each chart, as its table is. */
   get chartData(): ChartInput | null {
     const chart = this.request.chart;
-    return chart ? {
-      labels: chart.labels || [],
-      datasets: (chart.series || []).map((series: { name: string; values: number[] }) =>
-        ({ label: series.name, data: series.values })),
-    } : null;
+    if (chart !== this.chartFor) {
+      this.chartFor = chart;
+      this.chart = chart ? {
+        labels: chart.labels || [],
+        datasets: (chart.series || []).map((series: { name: string; values: number[] }) =>
+          ({ label: series.name, data: series.values })),
+      } : null;
+    }
+    return this.chart;
   }
+  private chartFor: unknown = null;
+  private chart: ChartInput | null = null;
 
   // ── Form ─────────────────────────────────────────────────────────────
 

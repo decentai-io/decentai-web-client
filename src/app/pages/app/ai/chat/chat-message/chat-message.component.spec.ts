@@ -108,3 +108,25 @@ describe('ChatMessageComponent: a code block and the fold', () => {
     expect(scrolled.calls.mostRecent().object as unknown).toBe(root.querySelector('.msg-fold'));
   });
 });
+
+describe('ChatMessageComponent: an agent table', () => {
+  it('hands its table the same rows on every check, so the table is not redrawn without end', async () => {
+    await TestBed.configureTestingModule({
+      imports: [HttpClientModule, MarkdownModule.forRoot()],
+      declarations: [ChatMessageComponent],
+      providers: [
+        { provide: Clipboard, useValue: { copy: () => true } },
+        { provide: FilesService, useValue: {} },
+        { provide: ReadAloudService, useValue: { speaking: '', problemAt: '' } },
+      ],
+      schemas: [NO_ERRORS_SCHEMA],
+    }).compileComponents();
+    const message = TestBed.createComponent(ChatMessageComponent).componentInstance;
+    const table = { title: 'Reached', columns: ['target', 'outcome'], rows: [['example.com', 'reached']] };
+    const rows = message.tableRows(table);
+    expect(rows).toEqual([{ target: 'example.com', outcome: 'reached' }]);
+    expect(message.tableRows(table)).toBe(rows);
+    const chart = { title: 'Calls', type: 'bar' as const, labels: ['a'], series: [{ name: 's', values: [1] }] };
+    expect(message.chartData(chart)).toBe(message.chartData(chart));
+  });
+});
