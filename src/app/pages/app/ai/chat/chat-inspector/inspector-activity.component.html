@@ -1,0 +1,91 @@
+@if (filterable) {
+  <app-segmented class="act-filters" label="Which calls" [choices]="filters" [ngModel]="filter"
+                 (ngModelChange)="setFilter($event)"></app-segmented>
+}
+
+<ul class="insp-list" aria-label="Calls, newest first">
+  @for (row of shown; track row.key) {
+    <li>
+      <div class="insp-row">
+        <button class="act-toggle" type="button" (click)="toggle(row.key)" [attr.aria-expanded]="opened.has(row.key)">
+          <span class="insp-row-icon" [class.is-danger]="row.status === 'failed'" [class.is-live]="live(row)">
+            <lucide-icon [name]="row.icon" [size]="14" aria-hidden="true"></lucide-icon>
+          </span>
+          <span class="insp-main">
+            <span class="insp-name">{{ row.title }}</span>
+            @if (row.by) { <span class="insp-meta">{{ row.by }}</span> }
+          </span>
+          <span class="act-figures">
+            <span class="act-headline" [class.is-failed]="row.status === 'failed'" [class.is-live]="live(row)">
+              @if (row.status === 'running') {
+                <lucide-icon class="is-spinning" name="loader-circle" [size]="12" aria-hidden="true"></lucide-icon>
+              }
+              {{ headline(row) }}
+            </span>
+            <span class="insp-meta">{{ footnote(row) }}</span>
+          </span>
+        </button>
+        @if (row.work && live(row)) {
+          <button class="icon-btn sm" type="button" [attr.aria-label]="'Stop ' + row.title" matTooltip="Stop this alone"
+                  [disabled]="stopping.includes(row.work.id)" (click)="stopWork.emit(row.work.id)">
+            <lucide-icon name="circle-stop" [size]="14" aria-hidden="true"></lucide-icon>
+          </button>
+        }
+      </div>
+
+      @if (opened.has(row.key)) {
+        @if (row.work; as work) {
+          <dl class="insp-story">
+            <dt>Started</dt><dd>{{ clockTime(work.started) || '—' }}</dd>
+            @if (row.took !== null) { <dt>{{ live(row) ? 'Running for' : 'Took' }}</dt><dd>{{ duration(row.took) }}</dd> }
+            @if (work.why) { <dt>Why</dt><dd>{{ work.why }}</dd> }
+            @if (work.inputs) { <dt>Given</dt><dd><code>{{ work.inputs }}</code></dd> }
+            @if (work.output?.line || work.line) {
+              <dt>Came back</dt>
+              <dd>
+                {{ work.output?.line || work.line }}
+                @if (work.output?.ref) {
+                  <button class="btn ghost sm act-more" type="button" (click)="openOutput.emit(work)">Open the whole output</button>
+                }
+              </dd>
+            }
+            @if (work.files?.length) {
+              <dt>Files</dt>
+              <dd>
+                @for (id of work.files; track id) {
+                  <a class="chip" [routerLink]="['/data/files', id]">{{ fileNames[id] || 'A file' }}</a>
+                }
+              </dd>
+            }
+            @if (touched(work); as words) { <dt>Records</dt><dd>{{ words }}</dd> }
+            @if (work.card) {
+              <dt>Asked you</dt><dd>{{ work.status === 'waiting' ? 'Waiting for your answer, above the message box' : 'You answered' }}</dd>
+            }
+          </dl>
+        } @else if (row.call; as call) {
+          <dl class="insp-story">
+            <dt>At</dt><dd>{{ clockTime(call.at) }}</dd>
+            <dt>Model</dt><dd>{{ call.provider ? call.provider + ' · ' : '' }}{{ call.model }}</dd>
+            <dt>For</dt><dd>{{ agentName(call.agent, names) }}</dd>
+            <dt>Took</dt><dd>{{ duration(call.latency_ms) }}</dd>
+            <dt>Tokens in</dt><dd>{{ tokens(call.input) }}</dd>
+            <dt>Tokens out</dt><dd>{{ tokens(call.output) }}</dd>
+            @if (call.reasoning) { <dt>Reasoning</dt><dd>{{ tokens(call.reasoning) }}</dd> }
+            @if (call.cache_read || call.cache_write) {
+              <dt>Cache</dt><dd>{{ tokens(call.cache_read) }} read · {{ tokens(call.cache_write) }} written</dd>
+            }
+          </dl>
+        }
+      }
+    </li>
+  } @empty {
+    <li><app-empty icon="activity" [title]="emptyTitle" line="Each call shows here as the chat makes it."></app-empty></li>
+  }
+</ul>
+
+@if (filterable && chatId) {
+  <a class="btn ghost sm act-audit" routerLink="/audit" [queryParams]="{ chat: chatId }">
+    <lucide-icon name="history" [size]="14" aria-hidden="true"></lucide-icon>
+    Everything this chat did, in the audit
+  </a>
+}

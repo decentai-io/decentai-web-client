@@ -1,0 +1,243 @@
+/* What the inspector's tabs say the same way: a section with its small
+   heading, a list of rows (an icon, a name with a line under it, numbers
+   at the right), a quiet line, the story a row opens to, and a table.
+   Loaded by the inspector and each of its tabs. Numbers are tabular,
+   colours few: ink for what matters, ink-3 for what is beside it. */
+:host {
+  display: block;
+  color: var(--ink);
+  font: 400 var(--t-sm) / var(--lh-sm) var(--font-sans);
+}
+
+.insp-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.insp-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.insp-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  line-height: var(--lh-xs);
+}
+
+.insp-label-count {
+  color: var(--ink-3);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.insp-label .btn {
+  margin-left: auto;
+}
+
+.insp-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.insp-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+  color: inherit;
+  text-decoration: none;
+}
+
+.insp-list > li:first-child > .insp-row,
+.insp-list > .insp-row:first-child {
+  border-top: 0;
+}
+
+a.insp-row:hover .insp-name,
+.insp-name a:hover {
+  text-decoration: underline;
+}
+
+.insp-row-icon {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+
+.insp-row-icon.is-warn {
+  background: var(--warn-soft);
+  color: var(--warn-ink);
+}
+
+.insp-row-icon.is-danger {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+}
+
+.insp-row-icon.is-live {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.insp-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.insp-name {
+  overflow: hidden;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.insp-name a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.insp-meta,
+.insp-aside {
+  overflow: hidden;
+  color: var(--ink-3);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--lh-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.insp-aside {
+  flex: none;
+  max-width: 45%;
+  text-align: right;
+}
+
+.insp-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+}
+
+.insp-note {
+  margin: 0;
+  padding: 8px 0;
+  color: var(--ink-3);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
+}
+
+.insp-num {
+  font-variant-numeric: tabular-nums;
+}
+
+.is-spinning {
+  animation: spin 1.2s linear infinite;
+}
+
+/* What a row opens to: a few facts, a word each, side by side. */
+.insp-story {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 12px;
+  margin: 0 0 10px 42px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  font-size: var(--t-xs);
+  line-height: var(--lh-xs);
+}
+
+.insp-story dt {
+  color: var(--ink-3);
+}
+
+.insp-story dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+.insp-story code {
+  font-family: var(--font-mono);
+  white-space: pre-wrap;
+}
+
+.insp-story .chip {
+  margin: 0 4px 4px 0;
+  text-decoration: none;
+}
+
+/* A table, for what reads better in columns once widened. */
+.insp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.insp-table th {
+  padding: 6px 8px 6px 0;
+  color: var(--ink-3);
+  font-size: var(--t-xs);
+  font-weight: 500;
+  line-height: var(--lh-xs);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.insp-table td {
+  max-width: 0;
+  padding: 8px 8px 8px 0;
+  overflow: hidden;
+  border-top: 1px solid var(--line);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.insp-table .is-num {
+  width: 1%;
+  max-width: none;
+  text-align: right;
+}
+
+.insp-table tfoot td {
+  border-top: 1px solid var(--line-strong);
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+a.insp-meta {
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 2px;
+}
+
+a.insp-meta:hover {
+  color: var(--ink);
+}

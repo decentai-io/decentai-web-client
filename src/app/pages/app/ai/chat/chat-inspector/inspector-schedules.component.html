@@ -1,0 +1,62 @@
+<div class="insp-sections">
+  @if (error) {
+    <p class="form-notice is-error" role="alert">{{ error }}</p>
+  }
+
+  <section class="insp-section" aria-labelledby="sched-chat">
+    <h3 class="insp-label" id="sched-chat">This chat <span class="insp-label-count">{{ list.length }}</span></h3>
+    <ul class="insp-list">
+      @for (schedule of list; track schedule.schedule_id) {
+        <li class="insp-row">
+          <span class="insp-row-icon" [class.is-warn]="failing(schedule)" [class.is-live]="!schedule.paused && schedule.next_at && !failing(schedule)">
+            <lucide-icon name="calendar-clock" [size]="14" aria-hidden="true"></lucide-icon>
+          </span>
+          <span class="insp-main">
+            <span class="insp-name">{{ what(schedule) }}</span>
+            <span class="insp-meta">{{ meta(schedule) }}</span>
+          </span>
+          <span class="insp-actions">
+            @if (schedule.next_at || schedule.paused) {
+              <button class="icon-btn sm" type="button" [disabled]="busy.has(schedule.schedule_id)"
+                      (click)="setPaused(schedule, !schedule.paused)" [matTooltip]="schedule.paused ? 'Resume' : 'Pause'"
+                      [attr.aria-label]="(schedule.paused ? 'Resume ' : 'Pause ') + what(schedule)">
+                <lucide-icon [name]="schedule.paused ? 'play' : 'pause'" [size]="14" aria-hidden="true"></lucide-icon>
+              </button>
+            }
+            <a class="icon-btn sm" [routerLink]="['/ai/schedules', schedule.schedule_id]" matTooltip="Open"
+               [attr.aria-label]="'Open ' + what(schedule)">
+              <lucide-icon name="arrow-right" [size]="14" aria-hidden="true"></lucide-icon>
+            </a>
+            <button class="icon-btn sm danger" type="button" [disabled]="busy.has(schedule.schedule_id)"
+                    (click)="remove(schedule)" matTooltip="Delete" [attr.aria-label]="'Delete ' + what(schedule)">
+              <lucide-icon name="trash-2" [size]="14" aria-hidden="true"></lucide-icon>
+            </button>
+          </span>
+        </li>
+      } @empty {
+        <li class="insp-note">None. Ask the assistant to do something later, or every day.</li>
+      }
+    </ul>
+  </section>
+
+  <section class="insp-section" aria-labelledby="sched-upcoming">
+    <h3 class="insp-label" id="sched-upcoming">
+      Upcoming in your other chats
+      <a class="btn ghost sm" routerLink="/ai/schedules">All schedules</a>
+    </h3>
+    <ul class="insp-list">
+      @for (run of upcoming; track run.schedule_id) {
+        <li class="insp-row">
+          <span class="insp-row-icon"><lucide-icon name="calendar-clock" [size]="14" aria-hidden="true"></lucide-icon></span>
+          <span class="insp-main">
+            <span class="insp-name">{{ what(run) }}</span>
+            <a class="insp-meta sched-chat" [routerLink]="['/ai/chats', run.chat_id]">{{ run.chat_title || 'Untitled chat' }}</a>
+          </span>
+          <span class="insp-aside">{{ due(run) }}</span>
+        </li>
+      } @empty {
+        <li class="insp-note">Nothing due in your other chats.</li>
+      }
+    </ul>
+  </section>
+</div>

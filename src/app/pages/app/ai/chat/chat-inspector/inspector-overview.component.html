@@ -1,0 +1,134 @@
+<div class="insp-sections">
+  <div class="ov-status-wrap">
+    <div class="ov-status" [class.is-working]="working">
+      <span class="ov-dot" aria-hidden="true"></span>
+      <span class="insp-main">
+        <span class="ov-state">{{ working ? 'Working' : 'Idle' }}</span>
+        @if (holder) { <span class="insp-meta">{{ holder }}</span> }
+      </span>
+      @if (working) {
+        <button class="btn sm danger outline" type="button" [disabled]="stoppingAll" (click)="stopAll.emit()">
+          <lucide-icon name="circle-stop" [size]="14" aria-hidden="true"></lucide-icon>
+          Stop
+        </button>
+      }
+    </div>
+    @if (waiting) {
+      <p class="form-notice is-warn ov-waiting">
+        {{ waiting === 1 ? 'A card waits' : waiting + ' cards wait' }} for your answer, above the message box.
+      </p>
+    }
+  </div>
+
+  <ul class="ui-tiles ov-tiles" aria-label="This chat in numbers">
+    @for (tile of tiles; track tile.label) {
+      <li>
+        <button class="ui-tile" type="button" (click)="go.emit({ tab: tile.tab, filter: tile.filter })">
+          <span class="ui-tile-icon" [class.is-warn]="tile.warn">
+            <lucide-icon [name]="tile.icon" [size]="16" aria-hidden="true"></lucide-icon>
+          </span>
+          <span class="ui-tile-words">
+            <span class="ui-tile-value">{{ tile.value }}</span>
+            <span class="ui-tile-label">{{ tile.label }}</span>
+          </span>
+        </button>
+      </li>
+    }
+  </ul>
+
+  @if (models.length || agents.length) {
+    <section class="insp-section" aria-labelledby="ov-tokens">
+      <h3 class="insp-label" id="ov-tokens">Tokens</h3>
+      @if (models.length) {
+        <div class="tok-scroll">
+          <table class="insp-table tok-table">
+            <caption class="visually-hidden">Tokens by model</caption>
+            <thead>
+              <tr>
+                <th scope="col">By model</th>
+                <th scope="col" class="is-num">Calls</th>
+                <th scope="col" class="is-num">In</th>
+                <th scope="col" class="is-num">Out</th>
+                <th scope="col" class="is-num" title="Read from the cache / written to it">Cache r/w</th>
+                <th scope="col" class="is-num">Reasoning</th>
+                <th scope="col" class="is-num" title="The mean time a call took">Avg</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of models; track row.key) {
+                <tr>
+                  <td [title]="row.name + ' · ' + row.share + '% of the tokens'">
+                    <span class="tok-name">{{ row.name }}</span>
+                    <span class="tok-bar" aria-hidden="true"><span [style.width.%]="row.share"></span></span>
+                  </td>
+                  <td class="is-num">{{ row.calls }}</td>
+                  <td class="is-num">{{ tokens(row.input) }}</td>
+                  <td class="is-num">{{ tokens(row.output) }}</td>
+                  <td class="is-num">{{ tokens(row.cache_read) }} / {{ tokens(row.cache_write) }}</td>
+                  <td class="is-num">{{ tokens(row.reasoning) }}</td>
+                  <td class="is-num">{{ duration(row.latency) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+      @if (agents.length) {
+        <div class="tok-scroll">
+          <table class="insp-table tok-table">
+            <caption class="visually-hidden">Tokens by agent</caption>
+            <thead>
+              <tr>
+                <th scope="col">By agent</th>
+                <th scope="col" class="is-num">Calls</th>
+                <th scope="col" class="is-num">In</th>
+                <th scope="col" class="is-num">Out</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of agents; track row.key) {
+                <tr>
+                  <td [title]="row.name + ' · ' + row.share + '% of the tokens'">
+                    <span class="tok-name">{{ row.name }}</span>
+                    <span class="tok-bar" aria-hidden="true"><span [style.width.%]="row.share"></span></span>
+                  </td>
+                  <td class="is-num">{{ row.calls }}</td>
+                  <td class="is-num">{{ tokens(row.input) }}</td>
+                  <td class="is-num">{{ tokens(row.output) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+
+  <section class="insp-section" aria-labelledby="ov-latest">
+    <h3 class="insp-label" id="ov-latest">
+      Latest calls
+      <button class="btn ghost sm" type="button" (click)="go.emit({ tab: 'activity', filter: 'all' })">See all</button>
+    </h3>
+    <app-inspector-activity [rows]="latest" [fileNames]="fileNames" [names]="names" [stopping]="stopping"
+                            (stopWork)="stopWork.emit($event)" (openOutput)="openOutput.emit($event)"></app-inspector-activity>
+  </section>
+
+  <section class="insp-section" aria-labelledby="ov-next">
+    <h3 class="insp-label" id="ov-next">
+      Next run
+      <button class="btn ghost sm" type="button" (click)="go.emit({ tab: 'schedules' })">Schedules</button>
+    </h3>
+    @if (next; as schedule) {
+      <div class="insp-row">
+        <span class="insp-row-icon"><lucide-icon name="calendar-clock" [size]="14" aria-hidden="true"></lucide-icon></span>
+        <span class="insp-main">
+          <span class="insp-name">{{ what(schedule) }}</span>
+          <span class="insp-meta">{{ cadence(schedule) }}</span>
+        </span>
+        <span class="insp-aside">{{ due(schedule) }}</span>
+      </div>
+    } @else {
+      <p class="insp-note">Nothing scheduled in this chat.</p>
+    }
+  </section>
+</div>

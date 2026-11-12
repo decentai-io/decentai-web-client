@@ -6,7 +6,7 @@
 import { Component, ElementRef, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, skip } from 'rxjs';
 
 import { Card, Chat, ChatEvent, ChatSettings, DEFAULT_CHAT_SETTINGS, Doing, Screen } from 'src/app/models/chat-protocol';
 import { ActivityService } from 'src/app/services/activity.service';
@@ -73,8 +73,9 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
   /** Every piece of the chat's work, and what its own thread is doing now. */
   work: WorkEntry[] = [];
   doing: Doing | null = null;
-  /** The panel about this chat is open beside the conversation. */
+  /** The inspector is open beside the conversation, and widened. */
   panelOpen = false;
+  panelExpanded = false;
   cards: Card[] = [];
   /** The reply as it is being written. */
   saying = '';
@@ -291,6 +292,12 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
     const initial: Prompt | null = initialMessage || null;
     if (initial) history.replaceState(rest, '');
     this.chat_id = this.route.snapshot.paramMap.get('chat_id') || '';
+    // Another chat opened from this one (the inspector's runs in other
+    // chats): the page stays, so it lets go of this chat and opens that.
+    this.subscriptions.add(this.route.paramMap.pipe(skip(1)).subscribe((params) => {
+      const chatId = params.get('chat_id') || '';
+      if (chatId && chatId !== this.chat_id) this.switchChat(chatId);
+    }));
     void this.readAgents();
     void this.initChat().then((opened) => {
       if (opened && initial) void this.onPrompt(initial);
@@ -313,6 +320,23 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
   // =========================
   // Reading the chat
   // =========================
+
+  /** Leave this chat for another, on the same page: what was held of this
+   *  one goes, and that one is read and connected to. */
+  private switchChat(chatId: string): void {
+    if (this.screenTaken && this.screen) this.onScreenInput([{ type: 'control', action: 'release' }]);
+    this.connection.disconnect();
+    this.state.reset();
+    this.endScreen();
+    this.chat_id = chatId;
+    this.setChat(null);
+    this.files = {};
+    this.askedFiles.clear();
+    this.scheduleCount = 0;
+    this.stoppingWork = [];
+    this.hasOlderMessages = false;
+    void this.initChat();
+  }
 
   /** Read the chat from its records, and open its socket from there. */
   private async initChat(): Promise<boolean> {
@@ -710,6 +734,11 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
     }
     this.setChat(res.data.chat);
     return true;
+  }
+
+  /** A setting changed in the inspector. */
+  onSettingsChosen(changes: Partial<ChatSettings>): void {
+    void this.change(changes);
   }
 
   onTrustLevelChange(trust: number): void {

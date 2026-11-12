@@ -327,15 +327,21 @@
   --screen-chrome: 248px;
 }
 
-/* About this chat: a column at the right, its own scroll; on a phone, a
-   sheet over the conversation. */
+/* The inspector: a column at the right, its own scroll; widened to half
+   the row for reading its tables; on a phone, a sheet over the
+   conversation. */
 .chat-panel {
-  flex: 0 0 320px;
+  flex: 0 0 420px;
   min-width: 0;
   min-height: 0;
   overflow-y: auto;
   border-left: 1px solid var(--line);
   background: var(--surface);
+  transition: flex-basis var(--dur-2) var(--ease);
+}
+
+.chat-panel.is-expanded {
+  flex-basis: max(420px, 50%);
 }
 
 .chat-panel.is-sheet {

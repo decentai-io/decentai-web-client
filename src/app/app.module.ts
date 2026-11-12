@@ -207,7 +207,13 @@ import { ChatMessageComponent } from './pages/app/ai/chat/chat-message/chat-mess
 import { ChatMessagesContainerComponent } from './pages/app/ai/chat/chat-messages-container/chat-messages-container.component';
 import { ChatWorkComponent } from './pages/app/ai/chat/chat-work/chat-work.component';
 import { ChatOutputDialogComponent } from './pages/app/ai/chat/chat-output-dialog/chat-output-dialog.component';
-import { ChatPanelComponent } from './pages/app/ai/chat/chat-panel/chat-panel.component';
+import { ChatInspectorComponent } from './pages/app/ai/chat/chat-inspector/chat-inspector.component';
+import { InspectorActivityComponent } from './pages/app/ai/chat/chat-inspector/inspector-activity.component';
+import { InspectorDataComponent } from './pages/app/ai/chat/chat-inspector/inspector-data.component';
+import { InspectorOverviewComponent } from './pages/app/ai/chat/chat-inspector/inspector-overview.component';
+import { InspectorRunsComponent } from './pages/app/ai/chat/chat-inspector/inspector-runs.component';
+import { InspectorSchedulesComponent } from './pages/app/ai/chat/chat-inspector/inspector-schedules.component';
+import { InspectorSetupComponent } from './pages/app/ai/chat/chat-inspector/inspector-setup.component';
 import { ChatAgentsDialogComponent } from './pages/app/ai/chat/chat-agents-dialog/chat-agents-dialog.component';
 import { ChatSkillsDialogComponent } from './pages/app/ai/chat/chat-skills-dialog/chat-skills-dialog.component';
 import { ChatModelPickerComponent } from './pages/app/ai/chat/chat-model-picker/chat-model-picker.component';
@@ -378,7 +384,13 @@ import { AgentCardComponent } from './pages/app/agents/agent-card.component';
     ChatMessagesContainerComponent,
     ChatWorkComponent,
     ChatOutputDialogComponent,
-    ChatPanelComponent,
+    ChatInspectorComponent,
+    InspectorOverviewComponent,
+    InspectorActivityComponent,
+    InspectorDataComponent,
+    InspectorRunsComponent,
+    InspectorSchedulesComponent,
+    InspectorSetupComponent,
     ChatAgentsDialogComponent,
     ChatSkillsDialogComponent,
     ChatModelPickerComponent,

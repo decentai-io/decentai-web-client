@@ -1,0 +1,80 @@
+/* A row is one button: its icon, what and by whom, and its two figures
+   at the right; a stop beside it while it runs. */
+.act-filters {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.act-toggle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.act-toggle:hover .insp-name {
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 3px;
+}
+
+.act-toggle:focus-visible {
+  border-radius: var(--r-sm);
+  outline: none;
+  box-shadow: var(--focus);
+}
+
+.act-figures {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  max-width: 45%;
+  text-align: right;
+}
+
+.act-headline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-2);
+  font-size: var(--t-xs);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  line-height: var(--lh-xs);
+  white-space: nowrap;
+}
+
+.act-headline lucide-icon {
+  display: flex;
+}
+
+.act-headline.is-live {
+  color: var(--accent-ink);
+}
+
+.act-headline.is-failed {
+  color: var(--danger-ink);
+}
+
+.act-more {
+  margin: 4px 0 0 -8px;
+}
+
+.act-audit {
+  align-self: flex-start;
+  margin: 8px 0 0 -8px;
+}
+
+:host {
+  display: flex;
+  flex-direction: column;
+}

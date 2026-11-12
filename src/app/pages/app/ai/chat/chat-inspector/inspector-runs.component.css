@@ -1,0 +1,26 @@
+/* A host on its line, its agent under it; a refusal in the warning ink. */
+.runs-host,
+.runs-agent {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.runs-refused {
+  color: var(--warn-ink);
+  font-weight: 600;
+}
+
+.runs-detail {
+  color: var(--danger-ink);
+  white-space: normal;
+}
+
+/* The table scrolls sideways rather than squeeze its host. */
+.runs-scroll {
+  overflow-x: auto;
+}
+
+.runs-last {
+  color: var(--ink-3);
+}

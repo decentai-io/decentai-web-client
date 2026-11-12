@@ -1,0 +1,31 @@
+/* A setting changed in place: its name, the control, what the choice
+   means under it. */
+.setup-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 6px 0 12px;
+}
+
+.setup-name {
+  color: var(--ink);
+}
+
+.setup-hint {
+  white-space: normal;
+}
+
+.setup-rows {
+  border-top: 1px solid var(--line);
+}
+
+.setup-rows > .insp-row:first-child {
+  border-top: 0;
+}
+
+.setup-outcome {
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
