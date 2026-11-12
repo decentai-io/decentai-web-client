@@ -4,22 +4,27 @@ import {
 
 import { ChatSettings } from 'src/app/models/chat-protocol';
 import { LlmConnection, SettingsLlmService } from 'src/app/services/settings-llm.service';
-import { EFFORT_CHOICES } from '../chat-defaults';
+import { EFFORT_CHOICES, ModelPick, modelOf } from '../chat-defaults';
 
 /** What a chat's assistant thinks with: a model connection ('' for the
- *  organization's default) and how hard it is asked to think. */
-export interface ChatModel {
-  model: string;
+ *  organization's default), one of its models ('' for its first), and how
+ *  hard it is asked to think. */
+export interface ChatModel extends ModelPick {
   effort: ChatSettings['effort'];
 }
 
+/** One row of the list: a connection and one of its models. */
+export interface ModelOption {
+  connection: LlmConnection;
+  model: string;
+}
+
 /**
- * Which model connection this chat thinks with, chosen where the message
- * is written.
+ * Which model this chat thinks with, chosen where the message is written.
  *
- * A button names the connection; pressing it lists the organization's
- * default and every connection the person may use, narrowed as they
- * type, and how hard the model is asked to think at the foot.
+ * A button names the model; pressing it lists the organization's default
+ * and every model of every connection the person may use, narrowed as
+ * they type, and how hard the model is asked to think at the foot.
  *
  * The component chooses and says so (`chosen`); saving the choice — to
  * the chat, and as what the person's next chat starts with — is the
@@ -32,7 +37,7 @@ export interface ChatModel {
   styleUrls: ['./chat-model-picker.component.css'],
 })
 export class ChatModelPickerComponent implements OnInit {
-  @Input() llm: ChatModel = { model: '', effort: '' };
+  @Input() llm: ChatModel = { model: '', model_id: '', effort: '' };
   @Input() disabled = false;
 
   @Output() chosen = new EventEmitter<ChatModel>();
@@ -63,9 +68,13 @@ export class ChatModelPickerComponent implements OnInit {
     return this.connections.find((connection) => connection.default);
   }
 
+  /** The chosen model by what tells it apart: its connection's name, or
+   *  the model's own where the connection offers several. */
   get label(): string {
     const chosen = this.connections.find((connection) => connection.connection_id === this.llm.model);
-    const name = this.llm.model ? chosen?.name || 'A model' : this.standard?.name || 'Default model';
+    const name = !this.llm.model ? this.standard?.name || 'Default model'
+      : !chosen ? 'A model'
+      : chosen.models.length > 1 ? modelOf(this.llm, chosen) : chosen.name;
     const effort = this.efforts.find((choice) => choice.value === this.llm.effort && choice.value);
     return effort ? `${name} · ${effort.name}` : name;
   }
@@ -83,14 +92,19 @@ export class ChatModelPickerComponent implements OnInit {
     }
   }
 
-  /** The connections, narrowed by what was typed: a word matches a
-   *  connection's name, its provider, or one of its models. */
-  get visible(): LlmConnection[] {
+  /** Every model of every connection, narrowed by what was typed: a word
+   *  matches the connection's name, its provider, or the model. */
+  get visible(): ModelOption[] {
     const words = this.query.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    return this.connections.filter((connection) => {
-      const text = `${connection.name} ${connection.provider} ${connection.models.join(' ')}`.toLowerCase();
-      return words.every((word) => text.includes(word));
-    });
+    return this.connections.flatMap((connection) => connection.models.map((model) => ({ connection, model })))
+      .filter(({ connection, model }) => {
+        const text = `${connection.name} ${connection.provider} ${model}`.toLowerCase();
+        return words.every((word) => text.includes(word));
+      });
+  }
+
+  isChosen(option: ModelOption): boolean {
+    return this.llm.model === option.connection.connection_id && modelOf(this.llm, option.connection) === option.model;
   }
 
   toggle(): void {
@@ -144,8 +158,9 @@ export class ChatModelPickerComponent implements OnInit {
 
   // ── Choosing ────────────────────────────────────────────────────────
 
-  choose(connectionId: string): void {
-    this.chosen.emit({ ...this.llm, model: connectionId });
+  /** A connection and one of its models; none for the organization's default. */
+  choose(connectionId: string, model = ''): void {
+    this.chosen.emit({ ...this.llm, model: connectionId, model_id: model });
     this.close();
   }
 

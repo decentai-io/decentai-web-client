@@ -107,7 +107,12 @@ describe('ChatMessagesContainerComponent, a turn’s work', () => {
       firstChange: false, isFirstChange: () => false } } as any);
   }
 
-  it('shows three dots while a turn is thought about', () => {
+  const turn = (work: any[] = [], more: any = {}) => ({ kind: 'turn', turn: {
+    key: 'm1', at: '2026-11-12T10:00:00Z', run: null, assistantMessages: [], work,
+    userMessage: { message_id: 'm1', seq: 1, actor: 'person', parts: [], files: [], client_id: '', at: '2026-11-12T10:00:00Z' },
+    ...more } }) as any;
+
+  it('shows three dots while a turn is thought about, and says it thinks', () => {
     const component = container();
     expect(component.showLiveWork).toBeFalse();
     expect(component.thinking).toBeFalse();
@@ -115,15 +120,36 @@ describe('ChatMessagesContainerComponent, a turn’s work', () => {
     turnOn(component, true);
     expect(component.thinking).toBeTrue();
     expect(component.showLiveWork).toBeFalse();
+    component.doing = { thread: '', kind: 'chat', run: null, what: 'thinking', step: 15, budget: 24, at: '' };
+    expect(component.liveLine).toBe('Thinking · step 15 of 24');
   });
 
-  it('has a work card once something runs, and says what runs', () => {
+  it('has a work card once something runs, and says what runs, or that it waits for the person', () => {
     const component = container();
     turnOn(component, true);
-    component.steps = { '': [{ id: 'work:w1', text: 'Saving the note', status: 'running' }] };
+    component.timeline = [turn([{ id: 'c1', title: 'Notes · Save', status: 'running', kind: 'call' }])];
     expect(component.showLiveWork).toBeTrue();
     expect(component.thinking).toBeTrue();
-    expect(component.liveLine).toBe('Working · 1 running');
+    expect(component.liveLine).toBe('Running Notes · Save');
+
+    component.timeline = [turn([{ id: 'c1', title: 'Notes · Save', status: 'waiting', kind: 'call' }])];
+    component.waiting = 1;
+    expect(component.liveLine).toBe('Waiting for you: 1 card');
+  });
+
+  it('says under an answer the model that wrote it, its calls and how long it took', () => {
+    const component = container();
+    const answer = { message_id: 'm2', seq: 2, actor: 'assistant', parts: [], files: [], client_id: '',
+                     at: '2026-11-12T10:00:31Z', model: 'claude-opus-5-5' };
+    const item = turn([{ id: 'c1', title: 'Notes · Save', status: 'done', kind: 'call' }], { assistantMessages: [answer] });
+    expect(component.footer(item.turn)).toBe('claude-opus-5-5 · 1 call · 31s');
+  });
+
+  it('keeps the answer being written and the live line in the chat\'s own turn, not a run\'s', () => {
+    const component = container();
+    component.timeline = [turn(), { kind: 'turn', turn: { key: 'run:r3', at: '2026-11-12T10:01:00Z', userMessage: null,
+      run: { thread: 'r3', origin: 'schedule:s1', title: 'Daily', message: 0 }, assistantMessages: [], work: [] } } as any];
+    expect(component.lastKey).toBe('m1');
   });
 
   it('does not end the turn on a blink of the flag', () => {

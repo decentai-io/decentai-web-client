@@ -35,13 +35,14 @@
         <p class="model-note">No model matches “{{ query }}”.</p>
       }
 
-      @for (connection of visible; track connection.connection_id) {
+      <!-- A connection of one model is named; one of several, by its models. -->
+      @for (option of visible; track option.connection.connection_id + '|' + option.model) {
         <button type="button" class="model-option" role="option"
-                [attr.aria-selected]="llm.model === connection.connection_id"
-                (click)="choose(connection.connection_id)">
-          <span class="model-name">{{ connection.name }}</span>
-          <span class="model-of">{{ connection.models.join(', ') || connection.provider }}</span>
-          @if (llm.model === connection.connection_id) {
+                [attr.aria-selected]="isChosen(option)"
+                (click)="choose(option.connection.connection_id, option.model)">
+          <span class="model-name">{{ option.connection.models.length > 1 ? option.model : option.connection.name }}</span>
+          <span class="model-of">{{ option.connection.models.length > 1 ? option.connection.name : option.model }}</span>
+          @if (isChosen(option)) {
             <lucide-icon class="model-check" name="check" [size]="16" aria-hidden="true"></lucide-icon>
           }
         </button>

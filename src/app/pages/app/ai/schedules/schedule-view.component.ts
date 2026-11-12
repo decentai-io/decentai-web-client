@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from
 
 import { Choice } from 'src/app/components/ui/radio-keys';
 import { Schedule, ScheduleRun } from 'src/app/services/activity.service';
+import { TRUST_CHOICES } from '../chat/chat-defaults';
 import { cadenceWords, momentWords, secondsOf, until } from './cadence-words';
 import { STATE_WORDS, ScheduleState, failuresOf, stateOf } from './schedule-shared';
 
@@ -38,6 +39,10 @@ export class ScheduleViewComponent implements OnChanges {
   @Output() closed = new EventEmitter<void>();
   @Output() edit = new EventEmitter<void>();
   @Output() setPaused = new EventEmitter<boolean>();
+  /** The trust its runs act at, chosen. */
+  @Output() setTrust = new EventEmitter<number>();
+
+  readonly trustChoices = TRUST_CHOICES;
   @Output() runNow = new EventEmitter<void>();
   @Output() remove = new EventEmitter<void>();
 
@@ -70,6 +75,12 @@ export class ScheduleViewComponent implements OnChanges {
   }
 
   get stateWord(): string { return STATE_WORDS[this.state]; }
+
+  /** The trust its runs act at, in words; its chat's for one older than trusts. */
+  get trustName(): string {
+    const trust = this.schedule.trust;
+    return trust === null || trust === undefined ? "Its chat's" : TRUST_CHOICES[trust]?.name || `Level ${trust}`;
+  }
 
   get shownRuns(): ScheduleRun[] {
     return this.runFilter === 'failed' ? this.runs.filter((run) => run.failed) : this.runs;

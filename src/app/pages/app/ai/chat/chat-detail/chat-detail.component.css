@@ -327,6 +327,24 @@
   --screen-chrome: 248px;
 }
 
+/* About this chat: a column at the right, its own scroll; on a phone, a
+   sheet over the conversation. */
+.chat-panel {
+  flex: 0 0 320px;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  border-left: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.chat-panel.is-sheet {
+  position: absolute;
+  z-index: 5;
+  inset: 0;
+  border-left: 0;
+}
+
 /* ── A phone ───────────────────────────────────────────────────────── */
 @media (max-width: 700px) {
   .chat-bar,

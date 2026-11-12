@@ -112,6 +112,16 @@ export const mainRoutes: RouteNode[] = [
         children: [],
       },
       {
+        name: 'Waiting for you',
+        url: 'ai/waiting',
+        icon: 'inbox',
+        domain: 'Global',
+        active: true,
+        requiredAction: 'ai:activity:list',
+        title: 'Waiting for you',
+        children: [],
+      },
+      {
         name: 'Schedules',
         url: 'ai/schedules',
         icon: 'calendar-clock',

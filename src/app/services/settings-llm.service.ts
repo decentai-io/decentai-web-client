@@ -30,6 +30,12 @@ export interface LlmProvider {
   popular?: number;
 }
 
+/** A model the catalog knows a provider to offer. */
+export interface LlmModel {
+  id: string;
+  name: string;
+}
+
 /** What a connection is made or changed with. A key left out keeps the
  *  one kept; a new address needs the key again. */
 export interface LlmConnectionDraft {
@@ -70,6 +76,13 @@ export class SettingsLlmService {
   async providers(): Promise<LlmProvider[]> {
     const r = await this.request.gateway('Settings:Llm:providers');
     return Array.isArray(r.providers) ? r.providers : [];
+  }
+
+  /** The chat models the catalog knows a provider to offer, newest first;
+   *  none for a provider it says nothing of. */
+  async models(provider: string): Promise<LlmModel[]> {
+    const r = await this.request.gateway('Settings:Llm:providers', { provider });
+    return Array.isArray(r.models) ? r.models : [];
   }
 
   /** Ask a runtime to reach a connection and list its models: one saved,

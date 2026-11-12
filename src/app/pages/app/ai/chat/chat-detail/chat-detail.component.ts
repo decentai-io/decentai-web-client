@@ -8,13 +8,15 @@ import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
-import { Card, Chat, ChatEvent, ChatSettings, DEFAULT_CHAT_SETTINGS, Screen } from 'src/app/models/chat-protocol';
+import { Card, Chat, ChatEvent, ChatSettings, DEFAULT_CHAT_SETTINGS, Doing, Screen } from 'src/app/models/chat-protocol';
 import { ActivityService } from 'src/app/services/activity.service';
 import { AgentsService, InstalledAgent } from 'src/app/services/agents.service';
 import { AiSessionService } from 'src/app/services/ai-session.service';
 import { AuthService } from 'src/app/services/auth.service';
 import { ChatConnectionService, ChatConnectionState } from 'src/app/services/chat-connection.service';
-import { ChatStateService, ChatTurn, InlineChatError, WorkStep } from 'src/app/services/chat-state.service';
+import {
+  ChatStateService, ChatTurn, InlineChatError, TimelineItem, WorkEntry,
+} from 'src/app/services/chat-state.service';
 import { ConfirmService } from 'src/app/services/confirm.service';
 import { FilesService } from 'src/app/services/files.service';
 import { OauthConnectService } from 'src/app/services/oauth.service';
@@ -31,6 +33,7 @@ import { Prompt } from '../chat-composer/chat-composer.component';
 import { TRUST_CHOICES, TURN_BUDGET_CHOICES, chatDefaults } from '../chat-defaults';
 import { KnownFile } from '../chat-message/chat-message.component';
 import { ChatModel } from '../chat-model-picker/chat-model-picker.component';
+import { ChatOutputDialogComponent, OutputDialogData } from '../chat-output-dialog/chat-output-dialog.component';
 import { ScreenInputEvent, ScreenTab, ScreenView, screenLog } from '../chat-screen/chat-screen.component';
 import { ChatSkillsDialogComponent } from '../chat-skills-dialog/chat-skills-dialog.component';
 import { FileChoice } from '../file-picker/file-picker.component';
@@ -56,7 +59,7 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
   chat_id = '';
   chat: Chat | null = null;
   /** What the chat thinks with, as the model picker shows it. */
-  chatModel: ChatModel = { model: '', effort: '' };
+  chatModel: ChatModel = { model: '', model_id: '', effort: '' };
   /** The agents this chat uses, by name: those it lists, or every one. */
   enabledAgentNames: string[] = [];
 
@@ -65,7 +68,13 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
   titleDraft = '';
 
   turns: ChatTurn[] = [];
-  steps: Record<string, WorkStep[]> = {};
+  /** The conversation as it is read: turns, run blocks and notes, by time. */
+  timeline: TimelineItem[] = [];
+  /** Every piece of the chat's work, and what its own thread is doing now. */
+  work: WorkEntry[] = [];
+  doing: Doing | null = null;
+  /** The panel about this chat is open beside the conversation. */
+  panelOpen = false;
   cards: Card[] = [];
   /** The reply as it is being written. */
   saying = '';
@@ -197,12 +206,33 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
     return this.inlineErrors.slice(-2).reverse();
   }
 
-  /** The header's one word on what this chat needs: cards first, since
-   *  they wait on the person; else whether work goes on. */
+  /** The header's word on what this chat needs: cards first, since they
+   *  wait on the person; else what it is doing. */
   get attentionLabel(): string {
     const count = this.cards.length;
     if (count) return count === 1 ? '1 waiting for you' : `${count} waiting for you`;
-    return this.working ? 'Working' : '';
+    if (!this.working) return '';
+    return this.doing?.what === 'thinking' ? 'Thinking' : this.doing?.what === 'folding' ? 'Summarizing' : 'Working';
+  }
+
+  /** The agents this chat uses: those it lists, or every one. */
+  get chatAgents(): InstalledAgent[] {
+    const listed = this.settings.agents;
+    return this.agents.filter((agent) => !listed || listed.includes(agent.agent_id));
+  }
+
+  /** The model, as the panel names it. */
+  get modelLabel(): string {
+    const model = this.settings.model_id || (this.settings.model ? 'Its connection’s default' : 'The organization’s default');
+    return this.settings.effort ? `${model} · ${this.settings.effort} effort` : model;
+  }
+
+  /** A piece of work's whole output, in a dialog. */
+  openOutput(entry: WorkEntry): void {
+    if (!entry.output?.ref) return;
+    this.dialog.open<ChatOutputDialogComponent, OutputDialogData>(ChatOutputDialogComponent, {
+      width: '760px', maxWidth: '95vw', data: { chatId: this.chat_id, ref: entry.output.ref, title: entry.title },
+    });
   }
 
   get schedulesLabel(): string {
@@ -242,7 +272,9 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
     this.subscriptions.add(this.viewport.wide$.subscribe((wide) => (this.isWide = wide)));
     this.subscriptions.add(this.state.state$.subscribe((state) => {
       this.turns = state.turns;
-      this.steps = state.steps;
+      this.timeline = state.timeline;
+      this.work = Object.values(state.work);
+      this.doing = state.doing[''] ?? null;
       this.cards = state.cards;
       this.saying = state.saying;
       this.working = state.working;
@@ -306,6 +338,9 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
     if (first) {
       this.hasOlderMessages = res.data.messages.length >= ChatDetailComponent.PAGE;
       void this.readModels();
+      // The work and what happened besides, as they were before the page was.
+      const kept = await this.aiSession.events(this.chat_id, Math.max(0, res.data.events - 500)).catch(() => []);
+      if (!this.destroyed && opening === this.opening) this.state.replay(kept);
     }
     void this.knowFiles();
     void this.countSchedules();
@@ -321,7 +356,9 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
   /** The chat as the API server last answered it, and what is shown of it. */
   private setChat(chat: Chat | null): void {
     this.chat = chat;
-    this.chatModel = { model: this.settings.model, effort: this.settings.effort };
+    this.chatModel = {
+      model: this.settings.model, model_id: this.settings.model_id ?? '', effort: this.settings.effort,
+    };
     const listed = this.settings.agents;
     this.enabledAgentNames = this.agents.filter((agent) => !listed || listed.includes(agent.agent_id))
       .map((agent) => agent.name);
@@ -418,9 +455,12 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
       case 'saying':
         this.state.addSaying(String(event.data.text || ''));
         return;
+      case 'doing':
+        this.state.setDoing(event.data);
+        return;
       case 'progress': {
-        const { agent, call, line } = event.data;
-        this.state.progress(this.names[agent] || agent, call, line);
+        const { call, line } = event.data;
+        this.state.progress(event.data.work, line);
         // The screen's own call speaking: its words go in the log under
         // the picture.
         if (this.screen?.call === call && line) this.screen = { ...this.screen, log: screenLog(this.screen.log, line) };
@@ -440,23 +480,20 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
         this.killing = false;
         this.endScreen();
         this.state.stopped();
+        this.state.remember(event);
         return;
       case 'runtime_unavailable':
         this.state.setWorking(false);
         this.state.addError('connection', 'runtime_unavailable',
           'No runtime can take this chat now. What you wrote is kept, and read once one can.', true);
         return;
-      case 'schedule_added': {
-        const what = event.data.what?.prompt || event.data.what?.function || '';
-        this.state.note(`Scheduled${what ? `: ${what}` : ''}.`,
-          { text: 'Open', to: `/ai/schedules/${event.data.schedule_id}` });
+      case 'schedule_added':
+        this.state.remember(event);
         void this.countSchedules();
         return;
-      }
       case 'schedule_ran':
-        this.state.note(event.data.failed ? `A scheduled run failed: ${event.data.summary || 'no reason was given.'}`
-          : `A scheduled run ended${event.data.summary ? `: ${event.data.summary}` : '.'}`,
-          { text: 'Open', to: `/ai/schedules/${event.data.schedule_id}` });
+      case 'settings_changed':
+        this.state.remember(event);
         return;
     }
   }
@@ -699,10 +736,11 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
   /** The model picked under the composer: this chat thinks with it from
    *  its next turn, and the person's next chat starts with it. */
   async onModelChosen(model: ChatModel): Promise<void> {
-    if (!(await this.change({ model: model.model, effort: model.effort }))) return;
+    const picked = { model: model.model, model_id: model.model_id, effort: model.effort };
+    if (!(await this.change(picked))) return;
     void this.readModels();
     const kept = await this.defaults();
-    const saved = await this.profileService.savePreferences({ chat: { ...kept, model: model.model, effort: model.effort } });
+    const saved = await this.profileService.savePreferences({ chat: { ...kept, ...picked } });
     if (saved.error) {
       this.onError(`The model was changed for this chat, but could not be kept for your next: ${saved.error}`);
     }

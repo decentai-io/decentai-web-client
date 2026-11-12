@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 
 import {
-  CardAnswer, Chat, ChatMessage, ChatSettings, ChatSnapshot,
+  CardAnswer, Chat, ChatEvent, ChatMessage, ChatSettings, ChatSnapshot,
 } from 'src/app/models/chat-protocol';
 import { chatDefaults } from 'src/app/pages/app/ai/chat/chat-defaults';
 import { EngineService } from './engine.service';
@@ -137,6 +137,18 @@ export class AiSessionService {
    *  last event, which the socket replays from. */
   async openChat(chatId: string): Promise<{ data?: ChatSnapshot; error?: string }> {
     return this.ai('AI:Chat:open', { chat_id: chatId });
+  }
+
+  /** The events a chat kept after one, oldest first: up to the last 500. */
+  async events(chatId: string, after: number): Promise<ChatEvent[]> {
+    const res = await this.ai('AI:Event:list', { chat_id: chatId, after });
+    return Array.isArray(res.data?.events) ? res.data.events : [];
+  }
+
+  /** A page of the whole output of a chat's work. */
+  async output(chatId: string, ref: string, offset = 0): Promise<{ data?: { text: string; size: number };
+      error?: string }> {
+    return this.ai('AI:Output:see', { chat_id: chatId, ref, offset, limit: 50000 });
   }
 
   /** Messages before one, oldest first. */

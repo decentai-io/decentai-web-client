@@ -10,12 +10,21 @@ describe('ChatApprovalCardComponent', () => {
     return { component, emitted };
   }
 
-  it('lets an agent\'s call through, or not, remembered where the person says', () => {
-    const { component, emitted } = card('approval', { function: 'send', call: 'record.read:logins', record: 'r1', level: 2 });
-    expect(component.callLabel).toBe('read a record of logins');
+  it('lets a step\'s calls through: all, none, or each as ticked, remembered where the person says', () => {
+    const { component, emitted } = card('approval', { why: 'Sending both', items: [
+      { id: 'c1', agent: 'mail', function: 'send', name: 'Mail · Send', call: 'record.read:logins', level: 2 },
+      { id: 'c2', agent: 'mail', function: 'send', name: 'Mail · Send', level: 2 },
+    ] });
+    expect(component.callLabel(component.items[0])).toBe('read a record of logins');
+    expect(component.approvalTitle).toBe('mail asks to run 2 calls');
+    component.ticked = { c2: false };
     component.remember = true;
-    component.allow(true);
-    expect(emitted).toEqual([{ card_id: 'd1', answer: { allowed: true, remember: true } }]);
+    component.decide(null);
+    component.decide(true);
+    expect(emitted).toEqual([
+      { card_id: 'd1', answer: { items: { c1: true, c2: false }, remember: true } },
+      { card_id: 'd1', answer: { items: { c1: true, c2: true }, remember: true } },
+    ]);
   });
 
   it('answers a network card with a yes or a no alone', () => {

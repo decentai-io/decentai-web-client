@@ -78,7 +78,7 @@ export class ChatComposerComponent implements OnChanges, OnInit, OnDestroy {
    *  page says so, naming `llm`, and still usable while the composer
    *  itself is closed for want of a model (`modelLocked` closes it). */
   @Input() modelPicker = false;
-  @Input() llm: ChatModel = { model: '', effort: '' };
+  @Input() llm: ChatModel = { model: '', model_id: '', effort: '' };
   @Input() modelLocked = false;
   @Output() modelChosen = new EventEmitter<ChatModel>();
 

@@ -11,8 +11,8 @@ import {
   OnDestroy,
   Output,
 } from '@angular/core';
-import { ChatMessage } from 'src/app/models/chat-protocol';
-import { ChatTurn, WorkStep } from 'src/app/services/chat-state.service';
+import { ChatMessage, Doing } from 'src/app/models/chat-protocol';
+import { ChatTurn, TimelineItem, WorkEntry } from 'src/app/services/chat-state.service';
 import { KnownFile } from '../chat-message/chat-message.component';
 
 @Component({
@@ -29,9 +29,10 @@ export class ChatMessagesContainerComponent
   /** The reply as it is being written, shown as one until its message lands. */
   @Input() draft = '';
   draftMessage: ChatMessage | null = null;
-  /** Each turn's work, by the turn's key: one card between question and
-   *  answer. */
-  @Input() steps: Record<string, WorkStep[]> = {};
+  /** What the chat's own thread is doing now, as the runtime last said. */
+  @Input() doing: Doing | null = null;
+  /** How many cards wait for the person. */
+  @Input() waiting = 0;
   @Input() stoppingAll = false;
   @Output() stopAll = new EventEmitter<void>();
   @Input() stoppingWork: string[] = [];
@@ -40,7 +41,8 @@ export class ChatMessagesContainerComponent
    *  the messages. */
   @Input() files: Record<string, KnownFile> = {};
   @Input() names: Record<string, string> = {};
-  @Input() turns: ChatTurn[] = [];
+  /** The conversation: turns, run blocks and notes, by time. */
+  @Input() timeline: TimelineItem[] = [];
   @Input() hasMore = false;
   @Input() loadingOlder = false;
 
@@ -55,6 +57,39 @@ export class ChatMessagesContainerComponent
   }
   @Output() loadOlder = new EventEmitter<void>();
   @Output() opener = new EventEmitter<string>();
+  /** Read a piece of work's whole output. */
+  @Output() openOutput = new EventEmitter<WorkEntry>();
+
+  /** The turns and run blocks, without the notes between them. */
+  get turns(): ChatTurn[] {
+    return this.timeline.flatMap((item) => (item.kind === 'turn' ? [item.turn] : []));
+  }
+
+  /** The chat's own last turn, where the answer being written and the
+   *  live line go: not a schedule's or webhook's run. */
+  get lastKey(): string | null {
+    const own = this.turns.filter((turn) => !turn.run && turn.userMessage?.actor !== 'webhook');
+    return own.length ? own[own.length - 1].key : null;
+  }
+
+  private get lastTurn(): ChatTurn | undefined {
+    return this.turns.find((turn) => turn.key === this.lastKey);
+  }
+
+  /** Under an answer, once it is over: the model that wrote it, how many
+   *  calls it made, and how long it took. */
+  footer(turn: ChatTurn): string {
+    const last = turn.assistantMessages[turn.assistantMessages.length - 1];
+    if (!last) return '';
+    const calls = turn.work.filter((entry) => entry.kind === 'call' || entry.kind === 'mcp').length;
+    const took = (Date.parse(last.at) - Date.parse(turn.userMessage?.at || turn.at)) / 1000;
+    return [last.model || '', calls ? `${calls} call${calls === 1 ? '' : 's'}` : '',
+      took >= 1 ? this.duration(took) : ''].filter(Boolean).join(' · ');
+  }
+
+  private duration(seconds: number): string {
+    return seconds < 60 ? `${Math.round(seconds)}s` : `${Math.floor(seconds / 60)}m ${Math.round(seconds % 60)}s`;
+  }
 
   /** Openers worth offering: enough to show the shape of a request,
    *  never so many that the page becomes a menu. */
@@ -93,7 +128,7 @@ export class ChatMessagesContainerComponent
    *  turn that only talks has none, during or after: the answer is all
    *  there is to say. */
   get showLiveWork(): boolean {
-    return !!this.steps[this.turns[this.turns.length - 1]?.key ?? '']?.length;
+    return !!this.lastTurn?.work.length;
   }
 
   /** The assistant is on it and has nothing to show yet: three dots
@@ -102,13 +137,23 @@ export class ChatMessagesContainerComponent
     return this.busy && !this.draftMessage;
   }
 
-  /** What the turn is doing, as its last line says it, and, past a few
-   *  seconds, for how long. */
+  /** What the turn is doing, as its last line says it: thinking, folding
+   *  earlier messages, running which work, pausing, or waiting for the
+   *  person; past half its budget, its step; past a few seconds, for how
+   *  long. */
   get liveLine(): string {
-    const steps = this.steps[this.turns[this.turns.length - 1]?.key ?? ''] || [];
-    const running = steps.filter((step) => step.status === 'running').length;
-    const said = running ? `Working · ${running} running` : 'Thinking';
-    return this.elapsedSeconds >= 4 ? `${said} · ${this.elapsedSeconds}s` : said;
+    const running = (this.lastTurn?.work ?? []).filter((entry) => entry.status === 'running');
+    const named = running.slice(0, 2).map((entry) => entry.title).join(', ')
+      + (running.length > 2 ? ` and ${running.length - 2} more` : '');
+    const said = this.doing?.what === 'thinking' ? 'Thinking'
+      : this.doing?.what === 'folding' ? 'Summarizing earlier messages'
+      : running.length && running.every((entry) => entry.kind === 'sleep') ? 'Pausing'
+      : running.length ? `Running ${named}`
+      : this.waiting ? `Waiting for you: ${this.waiting} ${this.waiting === 1 ? 'card' : 'cards'}`
+      : 'Working';
+    const doing = this.doing;
+    const step = doing && doing.budget && doing.step * 2 > doing.budget ? `step ${doing.step} of ${doing.budget}` : '';
+    return [said, step, this.elapsedSeconds >= 4 ? `${this.elapsedSeconds}s` : ''].filter(Boolean).join(' · ');
   }
 
   /** How long the current turn has been running, ticking once a second
@@ -148,14 +193,16 @@ export class ChatMessagesContainerComponent
   ngOnChanges(changes: SimpleChanges): void {
     // A new message arrived → scroll (always for the user's own message; for AI
     // replies only when the user is already following along near the bottom).
-    if (changes['turns']) {
+    if (changes['timeline']) {
       requestAnimationFrame(() => {
         if (this.resizeObs && this.messagesInner) {
           this.resizeObs.observe(this.messagesInner.nativeElement);
         }
       });
-      const curr: ChatTurn[] = changes['turns'].currentValue || [];
-      const prev: ChatTurn[] = changes['turns'].previousValue || [];
+      const turnsOf = (items: TimelineItem[] | undefined): ChatTurn[] =>
+        (items || []).flatMap((item) => (item.kind === 'turn' ? [item.turn] : []));
+      const curr = turnsOf(changes['timeline'].currentValue);
+      const prev = turnsOf(changes['timeline'].previousValue);
       const additions = this.activityCount(curr) - this.activityCount(prev);
       if (additions > 0) {
         const isPrepend = !!prev.length && curr.some((turn, index) =>
@@ -186,7 +233,7 @@ export class ChatMessagesContainerComponent
 
     // The live work renders below the messages, so reveal it as it
     // updates — otherwise it gets buried offscreen.
-    if (changes['steps'] && this.userNearBottom) {
+    if (changes['timeline'] && this.busy && this.userNearBottom) {
       this.deferScrollToBottom(true);
     }
 

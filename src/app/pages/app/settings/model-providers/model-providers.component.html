@@ -23,6 +23,12 @@
       *ngIf="connection.default"
       matTooltip="Used by a chat whose person has not picked one."
     >Default</span>
+    <span
+      rowChips
+      class="chip warn"
+      *ngIf="!connection.models.length"
+      matTooltip="Chats can't use it until it names a model."
+    >No model</span>
     <span rowChips class="chip">{{ shareLabel(connection) }}</span>
     <ng-container rowMeta>{{ summary(connection) }}</ng-container>
 
@@ -31,8 +37,8 @@
       class="icon-btn sm"
       type="button"
       *ngIf="canCheck"
-      [attr.aria-label]="'Check ' + connection.name"
-      matTooltip="Check that it answers"
+      [attr.aria-label]="'Test ' + connection.name"
+      matTooltip="Test that it answers"
       [disabled]="!!busyId"
       (click)="check(connection)"
     >
@@ -95,13 +101,11 @@
 <!-- ── Add / edit: shown on the dialog shell ──────────────────────── -->
 <ng-template #editor>
   <h2 mat-dialog-title>
-    {{ choosing ? "Add a provider"
-       : isCreating ? "Connect " + (chosen?.endpoint ? chosen?.name : "your own server")
-       : "Edit " + draft.name }}
+    {{ choosing ? "Add a provider" : isCreating ? "Connect a provider" : "Edit " + draft.name }}
   </h2>
 
   <!-- Step one: which provider. The few most people look for, then every
-       one by name — searched, or all of them, scrolled. A server of the
+       one by name, searched or all of them scrolled. A server of the
        person's own is apart from the list, always first. -->
   <mat-dialog-content *ngIf="choosing">
     <span class="search-field provider-search">
@@ -148,166 +152,194 @@
     <button class="btn" type="button" (click)="closeEditor()">Cancel</button>
   </mat-dialog-actions>
 
-  <!-- Step two: the key. Everything else has an answer already. -->
+  <!-- Step two: what only the person knows, the key first. Everything else
+       has an answer already. -->
   <form *ngIf="!choosing" (ngSubmit)="save()">
     <mat-dialog-content>
       <div class="form">
-      <app-field
-        *ngIf="endpointIsYours"
-        label="Address"
-        help="The base address of an OpenAI-compatible API, with its version path. A server on this computer is reached at host.docker.internal, not localhost."
-        [error]="errorFor('address')"
-      >
-        <input
-          class="input"
-          type="url"
-          name="address"
-          placeholder="http://host.docker.internal:11434/v1"
-          [ngModel]="draft.address"
-          (ngModelChange)="setEndpoint($event)"
-        />
-        <span class="provider-servers">
-          On this computer:
-          <button class="btn ghost sm" type="button" *ngFor="let server of ownServers" (click)="setEndpoint(server.address)">
-            {{ server.name }}
+        <div class="provider-picked">
+          <lucide-icon name="brain-circuit" [size]="18" aria-hidden="true"></lucide-icon>
+          <span class="provider-picked-name">{{ chosenLine }}</span>
+          <button class="btn ghost sm" type="button" *ngIf="isCreating" [disabled]="saving" (click)="chooseAnother()">
+            Change
           </button>
-        </span>
-      </app-field>
+        </div>
 
-      <app-field
-        *ngIf="asksEndpoint"
-        label="Endpoint"
-        help="As the Azure portal shows it, under Keys and Endpoint."
-        [error]="errorFor('address')"
-      >
-        <input
-          class="input"
-          type="url"
-          name="endpoint"
-          placeholder="https://my-resource.cognitiveservices.azure.com/openai/v1/"
-          [ngModel]="draft.address"
-          (ngModelChange)="setEndpoint($event)"
-        />
-      </app-field>
-
-      <app-field
-        *ngFor="let blank of blanks"
-        [label]="blankLabel(blank)"
-        [help]="blankHelp(blank)"
-        [error]="errorFor('blank:' + blank)"
-      >
-        <input
-          class="input"
-          [name]="'blank-' + blank"
-          [attr.list]="blank === 'aws-region' ? 'llm-aws-regions' : null"
-          [placeholder]="blankExample(blank)"
-          [ngModel]="blankValues[blank]"
-          (ngModelChange)="setBlank(blank, $event)"
-        />
-      </app-field>
-      <datalist id="llm-aws-regions">
-        <option *ngFor="let region of awsRegions" [value]="region"></option>
-      </datalist>
-
-      <app-field
-        label="API key"
-        [help]="endpointIsYours ? 'Encrypted when saved, and never shown again. Leave it empty for a server that asks for none.'
-          : 'Encrypted when saved, and never shown again.'"
-        [error]="errorFor('key')"
-      >
-        <span class="secret-field">
-          <input
-            class="input"
-            name="api-key"
-            autocomplete="new-password"
-            [type]="keyShown ? 'text' : 'password'"
-            [placeholder]="isCreating ? 'Paste the key' : 'Set · never shown. Type to replace it.'"
-            [(ngModel)]="draft.key"
-          />
-          <button
-            class="icon-btn sm"
-            type="button"
-            [attr.aria-label]="keyShown ? 'Hide the key' : 'Show the key'"
-            [attr.aria-pressed]="keyShown"
-            (click)="keyShown = !keyShown"
-          >
-            <lucide-icon name="eye" [size]="16" aria-hidden="true"></lucide-icon>
-          </button>
-        </span>
-      </app-field>
-      <p class="provider-note" *ngIf="keyPlace as place">
-        A key is made in {{ place.where }}:
-        <a [href]="place.url" target="_blank" rel="noopener">{{ place.url }}</a>
-      </p>
-
-      <app-field
-        label="Models"
-        [help]="asksEndpoint ? 'Your deployments’ names, as you named them in Azure.'
-          : 'The provider’s own ids for the models chats may use. None named, every model the platform knows for the provider is offered.'"
-      >
-        <app-token-list
-          name="models"
-          placeholder="claude-sonnet-4-5"
-          addLabel="Add"
-          listLabel="Models"
-          [(ngModel)]="draft.models"
-        ></app-token-list>
-        <span class="provider-servers" *ngIf="canCheck">
-          <button class="btn ghost sm" type="button" [disabled]="checking" (click)="checkForm()">
-            {{ checking ? "Checking…" : "Check" }}
-          </button>
-          <button class="btn ghost sm" type="button" *ngFor="let model of offeredModels" (click)="addModel(model)"
-                  [attr.aria-label]="'Add ' + model">
-            <lucide-icon name="plus" [size]="14" aria-hidden="true"></lucide-icon>
-            {{ model }}
-          </button>
-        </span>
-      </app-field>
-
-      <!-- Sharing decides whose chats may think with this provider. -->
-      <fieldset class="provider-groups">
-        <legend class="provider-groups-title">Whose chats may use it</legend>
-        <mat-checkbox class="check-row" *ngFor="let group of groups; let first = first"
-                      [checked]="draft.groups.includes(group.group_id)" (change)="toggleGroup(group.group_id)">
-          <span class="check-name">{{ group.name }}</span>
-          <span class="check-hint" *ngIf="first">Every person of the organization.</span>
-        </mat-checkbox>
-        <p class="provider-note" *ngIf="!draft.groups.length">Shared with no group, nobody's chats may use it.</p>
-      </fieldset>
-
-      <!-- What has an answer already, for whoever wants another. -->
-      <button
-        class="btn ghost provider-more"
-        type="button"
-        [attr.aria-expanded]="showMore"
-        (click)="showMore = !showMore"
-      >
-        <lucide-icon [name]="showMore ? 'chevron-down' : 'chevron-right'" [size]="16" aria-hidden="true"></lucide-icon>
-        Name and address
-      </button>
-      <ng-container *ngIf="showMore">
-        <app-field label="Name" [error]="errorFor('name')">
-          <input class="input" name="name" placeholder="Anthropic" [ngModel]="draft.name" (ngModelChange)="setName($event)" />
-        </app-field>
         <app-field
-          *ngIf="!endpointIsYours && !asksEndpoint"
+          *ngIf="endpointIsYours"
           label="Address"
-          help="Filled in for you. Change it only to reach this provider through a gateway of your own."
+          help="Its OpenAI-compatible API, with the version path. A server on this computer is at host.docker.internal, not localhost."
           [error]="errorFor('address')"
         >
-          <input class="input" type="url" name="gateway" [ngModel]="draft.address" (ngModelChange)="setEndpoint($event)" />
+          <input
+            class="input"
+            type="url"
+            name="address"
+            placeholder="http://host.docker.internal:11434/v1"
+            [ngModel]="draft.address"
+            (ngModelChange)="setEndpoint($event)"
+          />
+          <span class="provider-servers">
+            On this computer:
+            <button class="btn ghost sm" type="button" *ngFor="let server of ownServers" (click)="setEndpoint(server.address)">
+              {{ server.name }}
+            </button>
+          </span>
         </app-field>
-      </ng-container>
 
-      <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
+        <app-field
+          *ngIf="asksEndpoint"
+          label="Endpoint"
+          help="As the Azure portal shows it, under Keys and Endpoint."
+          [error]="errorFor('address')"
+        >
+          <input
+            class="input"
+            type="url"
+            name="endpoint"
+            placeholder="https://my-resource.cognitiveservices.azure.com/openai/v1/"
+            [ngModel]="draft.address"
+            (ngModelChange)="setEndpoint($event)"
+          />
+        </app-field>
+
+        <app-field
+          *ngFor="let blank of blanks"
+          [label]="blankLabel(blank)"
+          [help]="blankHelp(blank)"
+          [error]="errorFor('blank:' + blank)"
+        >
+          <input
+            class="input"
+            [name]="'blank-' + blank"
+            [attr.list]="blank === 'aws-region' ? 'llm-aws-regions' : null"
+            [placeholder]="blankExample(blank)"
+            [ngModel]="blankValues[blank]"
+            (ngModelChange)="setBlank(blank, $event)"
+          />
+        </app-field>
+        <datalist id="llm-aws-regions">
+          <option *ngFor="let region of awsRegions" [value]="region"></option>
+        </datalist>
+
+        <app-field label="API key" [help]="keyHelp" [error]="errorFor('key')">
+          <span class="secret-field">
+            <input
+              class="input"
+              name="api-key"
+              autocomplete="new-password"
+              [type]="keyShown ? 'text' : 'password'"
+              [placeholder]="isCreating ? 'Paste the key' : 'Kept, never shown. Type to replace it.'"
+              [ngModel]="draft.key"
+              (ngModelChange)="setKey($event)"
+            />
+            <button
+              class="icon-btn sm"
+              type="button"
+              [attr.aria-label]="keyShown ? 'Hide the key' : 'Show the key'"
+              [attr.aria-pressed]="keyShown"
+              (click)="keyShown = !keyShown"
+            >
+              <lucide-icon [name]="keyShown ? 'eye-off' : 'eye'" [size]="16" aria-hidden="true"></lucide-icon>
+            </button>
+          </span>
+          <a class="provider-key-link" *ngIf="keyPlace as place" [href]="place.url" target="_blank" rel="noopener">
+            Get a key from {{ place.where }}
+            <lucide-icon name="external-link" [size]="14" aria-hidden="true"></lucide-icon>
+          </a>
+        </app-field>
+
+        <app-field label="Default model" [help]="modelHelp" [error]="errorFor('model')">
+          <input
+            class="input"
+            name="model"
+            list="llm-models"
+            autocomplete="off"
+            [placeholder]="endpointIsYours ? 'e.g. llama3.2' : 'Choose or type a model'"
+            [ngModel]="draft.model"
+            (ngModelChange)="setModel($event)"
+          />
+          <datalist id="llm-models">
+            <option *ngFor="let model of models" [value]="model.id">{{ model.name }}</option>
+          </datalist>
+        </app-field>
+
+        <app-field label="Other models people may pick" help="Optional. A person picks among these in their chat.">
+          <app-token-list
+            name="others"
+            placeholder="Another model"
+            addLabel="Add"
+            listLabel="Other models"
+            [(ngModel)]="draft.others"
+          ></app-token-list>
+          <span class="provider-servers" *ngIf="suggested.length">
+            <button class="btn ghost sm" type="button" *ngFor="let model of suggested" (click)="addOther(model.id)"
+                    [attr.aria-label]="'Add ' + model.name">
+              <lucide-icon name="plus" [size]="14" aria-hidden="true"></lucide-icon>
+              {{ model.name }}
+            </button>
+          </span>
+        </app-field>
+
+        <app-field label="Who can use it">
+          <app-segmented
+            name="sharing"
+            [choices]="sharings"
+            [ngModel]="sharing"
+            (ngModelChange)="setSharing($event)"
+          ></app-segmented>
+          <div class="provider-groups" *ngIf="sharing === 'some'">
+            <mat-checkbox class="check-row" *ngFor="let group of someGroups"
+                          [checked]="draft.groups.includes(group.group_id)" (change)="toggleGroup(group.group_id)">
+              <span class="check-name">{{ group.name }}</span>
+            </mat-checkbox>
+            <p class="provider-note" *ngIf="!someGroups.length">This organization has no other groups yet.</p>
+            <p class="provider-note" *ngIf="someGroups.length && !draft.groups.length">
+              Pick the groups whose chats may use it. With none, nobody's may.
+            </p>
+          </div>
+        </app-field>
+
+        <!-- What has an answer already, for whoever wants another. -->
+        <button
+          class="btn ghost provider-more"
+          type="button"
+          [attr.aria-expanded]="showMore"
+          (click)="showMore = !showMore"
+        >
+          <lucide-icon [name]="showMore ? 'chevron-down' : 'chevron-right'" [size]="16" aria-hidden="true"></lucide-icon>
+          More options
+        </button>
+        <ng-container *ngIf="showMore">
+          <app-field label="Name" help="How people see it when they pick a model." [error]="errorFor('name')">
+            <input class="input" name="name" placeholder="Anthropic" [ngModel]="draft.name" (ngModelChange)="setName($event)" />
+          </app-field>
+          <app-field
+            *ngIf="!endpointIsYours && !asksEndpoint"
+            label="Address"
+            help="Filled in for you. Change it only to reach this provider through a gateway of your own."
+            [error]="errorFor('address')"
+          >
+            <input class="input" type="url" name="gateway" [ngModel]="draft.address" (ngModelChange)="setEndpoint($event)" />
+          </app-field>
+        </ng-container>
+
+        <p class="form-notice is-error" role="alert" *ngIf="tested && !tested.ok">{{ tested.text }}</p>
+        <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
       </div>
     </mat-dialog-content>
 
     <mat-dialog-actions>
-      <button class="btn provider-back" type="button" *ngIf="isCreating" [disabled]="saving" (click)="chooseAnother()">
-        <lucide-icon name="arrow-left" [size]="16" aria-hidden="true"></lucide-icon>
-        Back
-      </button>
+      <span class="provider-test" *ngIf="canCheck">
+        <button class="btn ghost" type="button" [disabled]="testing || saving" (click)="test()">
+          <lucide-icon [name]="testing ? 'loader-circle' : 'circle-check'" [size]="16" aria-hidden="true"></lucide-icon>
+          {{ testing ? "Testing…" : "Test connection" }}
+        </button>
+        <span class="chip accent" role="status" *ngIf="tested?.ok">
+          <lucide-icon name="check" [size]="12" aria-hidden="true"></lucide-icon>
+          It answered
+        </span>
+      </span>
       <button class="btn" type="button" [disabled]="saving" (click)="closeEditor()">Cancel</button>
       <button class="btn primary" type="submit" [disabled]="saving">
         {{ saving ? "Saving…" : isCreating ? "Connect" : "Save" }}

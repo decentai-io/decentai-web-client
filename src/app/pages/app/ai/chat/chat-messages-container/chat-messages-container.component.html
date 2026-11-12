@@ -15,55 +15,80 @@
           </button>
         </div>
       }
-      @if (turns.length > 0) {
+      @if (timeline.length > 0) {
         <div class="thread-column thread-turns" #messagesInner>
-          @for (turn of turns; track turn.key; let lastTurn = $last) {
-            <section class="chat-turn">
-              @if (turn.userMessage) {
-                <app-chat-message [message]="turn.userMessage" [files]="files" [agentNames]="names"></app-chat-message>
-              }
-              <!-- The turn's work, between what was asked and the
-                   answer, where it happened. -->
-              @if (steps[turn.key]?.length) {
-                <app-chat-work [steps]="steps[turn.key]" [live]="lastTurn && busy" [elapsed]="lastTurn ? elapsedSeconds : 0"
-                               [stoppingAll]="stoppingAll" (stopAll)="stopAll.emit()"
-                               [stopping]="stoppingWork" (stopOne)="stopWork.emit($event)"></app-chat-work>
-              }
-              <!-- The assistant's side of the turn: one speaker, one
-                   header, however many messages the answer took. -->
-              @for (msg of turn.assistantMessages; track msg.message_id; let first = $first) {
-                <app-chat-message [message]="msg" [continuation]="!first" [files]="files" [agentNames]="names"
-                                  [copyText]="first ? turnText(turn) : null">
-                </app-chat-message>
-              }
-              @if (lastTurn && draftMessage) {
-                <app-chat-message [message]="draftMessage" [continuation]="turn.assistantMessages.length > 0"
-                                  [streaming]="true"></app-chat-message>
-              }
-              <!-- While the turn goes on and nothing is being written,
-                   its last line says so: what runs, and for how long. -->
-              @if (lastTurn && thinking) {
-                <ng-container *ngTemplateOutlet="dots"></ng-container>
-              }
-            </section>
+          @for (item of timeline; track item.kind === 'turn' ? item.turn.key : item.note.id) {
+            @if (item.kind === 'note') {
+              <!-- What happened besides the conversation: a line of its own. -->
+              <p class="thread-note">
+                <lucide-icon [name]="item.note.icon" [size]="14" aria-hidden="true"></lucide-icon>
+                <span>{{ item.note.text }}</span>
+                <time class="thread-note-time" [attr.datetime]="item.note.at">{{ item.note.at | date: 'shortTime' }}</time>
+                @if (item.note.link; as link) { <a [routerLink]="link.to">{{ link.text }}</a> }
+              </p>
+            } @else {
+              @let turn = item.turn;
+              @let current = turn.key === lastKey;
+              <section class="chat-turn" [class.is-run]="!!turn.run">
+                <!-- A schedule's or webhook's run: its own block, not under the last message. -->
+                @if (turn.run; as run) {
+                  <header class="run-head">
+                    <lucide-icon [name]="run.origin === 'webhook' ? 'webhook' : 'calendar-clock'" [size]="16" aria-hidden="true"></lucide-icon>
+                    <span class="run-kind">{{ run.origin === 'webhook' ? 'Webhook' : 'Scheduled' }}</span>
+                    <span class="run-title">{{ run.title }}</span>
+                    <time class="run-time" [attr.datetime]="turn.at">{{ turn.at | date: 'shortTime' }}</time>
+                  </header>
+                }
+                @if (turn.userMessage) {
+                  <app-chat-message [message]="turn.userMessage" [files]="files" [agentNames]="names"></app-chat-message>
+                }
+                <!-- The turn's work, between what was asked and the answer. -->
+                @if (turn.work.length) {
+                  <app-chat-work [work]="turn.work" [live]="current && busy" [elapsed]="current ? elapsedSeconds : 0"
+                                 [files]="files" [stoppingAll]="stoppingAll" (stopAll)="stopAll.emit()"
+                                 [stopping]="stoppingWork" (stopOne)="stopWork.emit($event)"
+                                 (openOutput)="openOutput.emit($event)"></app-chat-work>
+                }
+                <!-- The assistant's side of the turn: one speaker, one
+                     header, however many messages the answer took. -->
+                @for (msg of turn.assistantMessages; track msg.message_id; let first = $first) {
+                  <app-chat-message [message]="msg" [continuation]="!first" [files]="files" [agentNames]="names"
+                                    [copyText]="first ? turnText(turn) : null">
+                  </app-chat-message>
+                }
+                @if (current && draftMessage) {
+                  <app-chat-message [message]="draftMessage" [continuation]="turn.assistantMessages.length > 0"
+                                    [streaming]="true"></app-chat-message>
+                }
+                <!-- While the turn goes on and nothing is being written,
+                     its last line says what is happening. -->
+                @if (current && thinking) {
+                  <ng-container *ngTemplateOutlet="dots"></ng-container>
+                } @else if (footer(turn); as said) {
+                  <p class="turn-foot">{{ said }}</p>
+                }
+              </section>
+            }
+          }
+          @if (!lastKey && (thinking || draftMessage)) {
+            @if (draftMessage) {
+              <app-chat-message [message]="draftMessage" [streaming]="true"></app-chat-message>
+            } @else {
+              <ng-container *ngTemplateOutlet="dots"></ng-container>
+            }
           }
         </div>
       }
-      @if (!turns.length && (showLiveWork || thinking || draftMessage)) {
+      @if (!timeline.length && (thinking || draftMessage)) {
         <div class="thread-column">
-          @if (showLiveWork) {
-            <app-chat-work [steps]="steps['']" [live]="busy" [elapsed]="elapsedSeconds"
-                           [stoppingAll]="stoppingAll" (stopAll)="stopAll.emit()"
-                           [stopping]="stoppingWork" (stopOne)="stopWork.emit($event)"></app-chat-work>
-          } @else if (thinking) {
-            <ng-container *ngTemplateOutlet="dots"></ng-container>
-          }
           @if (draftMessage) {
             <app-chat-message [message]="draftMessage" [streaming]="true"></app-chat-message>
+          } @else {
+            <ng-container *ngTemplateOutlet="dots"></ng-container>
           }
         </div>
       }
-      @if (!turns.length && !busy && !isProcessing && !draftMessage) {
+      @if (!timeline.length && !busy && !isProcessing && !draftMessage) {
         <div class="thread-column thread-empty">
           <lucide-icon class="thread-empty-mark" name="sparkles" [size]="24" aria-hidden="true"></lucide-icon>
           <h2 class="thread-empty-title">Start the conversation</h2>
@@ -87,7 +112,7 @@
   }
 </div>
 
-<!-- The assistant is on it and nothing shows yet: what runs, and for how long. -->
+<!-- The assistant is on it and nothing is written yet: what it is doing, and for how long. -->
 <ng-template #dots>
   <div class="thinking" role="status" aria-live="polite" [attr.aria-label]="liveLine">
     <span class="thinking-dots" aria-hidden="true"><i></i><i></i><i></i></span>

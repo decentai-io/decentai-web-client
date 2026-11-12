@@ -18,6 +18,10 @@ describe('ModelProvidersComponent', () => {
   ] as any[];
   const provider = (id: string) => catalog.find((entry) => entry.id === id);
   const groups = [{ group_id: 'g0', name: 'Everyone' }, { group_id: 'g1', name: 'Design' }];
+  // What the catalog knows Anthropic to offer, newest first; it knows nothing of the others here.
+  const claude = [{ id: 'claude-sonnet-5-5', name: 'Claude Sonnet 5.5' }, { id: 'claude-opus-5-5', name: 'Claude Opus 5.5' }];
+  /** Until what the form asked for in the background has come. */
+  const settled = () => new Promise((resolve) => setTimeout(resolve));
 
   function create(connections: any[] = [], calls: Record<string, any> = {}, service: any = {}) {
     const component = new ModelProvidersComponent(
@@ -39,6 +43,7 @@ describe('ModelProvidersComponent', () => {
           return {};
         },
         check: async () => ({ ok: true, models: ['claude-sonnet-5', 'claude-opus-5-5'], error: '' }),
+        models: async (id: string) => (id === 'anthropic' ? claude : []),
         ...service,
       } as any,
       { can: () => true } as any,
@@ -58,11 +63,13 @@ describe('ModelProvidersComponent', () => {
     expect(component.visible.map((c) => c.name)).toEqual(['Home']);
   });
 
-  it('says a row’s provider, where it is and its models, and whose chats may use it', () => {
+  it('says a row’s provider, where it is, its models, and whose chats may use it', () => {
     const component = create();
 
-    expect(component.summary(connection('Work'))).toBe('Anthropic · api.anthropic.com · 1 model');
-    expect(component.summary(connection('Anthropic', { models: [] }))).toBe('api.anthropic.com · the provider’s models');
+    expect(component.summary(connection('Work'))).toBe('Anthropic · api.anthropic.com · claude-sonnet-5');
+    expect(component.summary(connection('Anthropic', { models: [] }))).toBe('api.anthropic.com');
+    expect(component.summary(connection('Work', { models: ['a', 'b', 'c'] })))
+      .toBe('Anthropic · api.anthropic.com · a +2 more');
     expect(component.shareLabel(connection('Work'))).toBe('Everyone');
     expect(component.shareLabel(connection('Work', { groups: ['g1'] }))).toBe('1 group');
     expect(component.shareLabel(connection('Work', { groups: [] }))).toBe('Nobody yet');
@@ -77,25 +84,70 @@ describe('ModelProvidersComponent', () => {
     expect(component.custom?.id).toBe('openai_compatible');
   });
 
-  it('asks only for the key once a provider is chosen, and shares a new one with everyone', async () => {
+  it('asks only for the key once a provider is chosen, with the newest model chosen, shared with everyone', async () => {
     const calls: Record<string, any> = {};
     const component = create([], calls);
     component.startCreate();
     component.selectProvider(provider('anthropic'));
+    await settled();
 
     expect(component.draft.address).toBe('https://api.anthropic.com');
     expect(component.draft.name).toBe('Anthropic');
-    expect(component.draft.groups).toEqual(['g0']);
+    expect(component.draft.model).toBe('claude-sonnet-5-5');
+    expect(component.models).toEqual(claude);
+    expect(component.sharing).toBe('everyone');
     expect(component.blocker).toBe('Paste the API key.');
 
-    component.draft.key = 'sk-ant';
-    component.draft.models = ['claude-sonnet-5'];
+    component.setKey('sk-ant');
     await component.save();
 
     expect(calls['created']).toEqual([{
-      name: 'Anthropic', provider: 'anthropic', address: 'https://api.anthropic.com', models: ['claude-sonnet-5'],
+      name: 'Anthropic', provider: 'anthropic', address: 'https://api.anthropic.com', models: ['claude-sonnet-5-5'],
       groups: ['g0'], key: 'sk-ant',
     }]);
+  });
+
+  it('sends the default model first, then the others people may pick', async () => {
+    const calls: Record<string, any> = {};
+    const component = create([], calls);
+    component.startEdit(connection('Work', { models: ['a', 'b', 'c'] }));
+
+    expect(component.draft.model).toBe('a');
+    expect(component.draft.others).toEqual(['b', 'c']);
+    component.setModel('c');
+    await component.save();
+    expect(calls['updated'][0][1].models).toEqual(['c', 'b']);
+
+    component.startEdit(connection('Empty', { models: [] }));
+    component.setModel('');
+    expect(component.blocker).toBe('Choose the model chats use.');
+  });
+
+  it('suggests a few of the catalog’s models not offered yet, each added with a click', async () => {
+    const component = create();
+    component.startCreate();
+    component.selectProvider(provider('anthropic'));
+    await settled();
+
+    expect(component.suggested.map((model) => model.id)).toEqual(['claude-opus-5-5']);
+    component.addOther('claude-opus-5-5');
+    expect(component.draft.others).toEqual(['claude-opus-5-5']);
+    expect(component.suggested).toEqual([]);
+  });
+
+  it('shares with everyone, or with the groups picked', () => {
+    const component = create();
+    component.startCreate();
+    component.selectProvider(provider('anthropic'));
+
+    component.setSharing('some');
+    expect(component.draft.groups).toEqual([]);
+    expect(component.someGroups.map((group) => group.group_id)).toEqual(['g1']);
+    component.toggleGroup('g1');
+    expect(component.draft.groups).toEqual(['g1']);
+    expect(component.sharing).toBe('some');
+    component.setSharing('everyone');
+    expect(component.draft.groups).toEqual(['g0']);
   });
 
   it('names a second connection to the same provider apart from the first', () => {
@@ -130,6 +182,7 @@ describe('ModelProvidersComponent', () => {
     component.providers = [...catalog, azure];
     component.startCreate();
     component.selectProvider(azure);
+    await settled();
 
     expect(component.asksEndpoint).toBeTrue();
     expect(component.blanks).toEqual([]);
@@ -137,8 +190,9 @@ describe('ModelProvidersComponent', () => {
     expect(component.blocker).toBe('Paste your endpoint.');
 
     component.setEndpoint('https://foundry-dirir.cognitiveservices.azure.com/openai/v1/');
-    component.draft.key = 'k';
-    component.draft.models = ['gpt-5.6-sol'];
+    component.setKey('k');
+    expect(component.blocker).toBe('Choose the model chats use.');
+    component.setModel('gpt-5.6-sol');
     await component.save();
     expect(calls['created'][0].address).toBe('https://foundry-dirir.cognitiveservices.azure.com/openai/v1/');
     expect(calls['created'][0].name).toBe('Azure');
@@ -156,6 +210,7 @@ describe('ModelProvidersComponent', () => {
     component.startCreate();
     component.selectProvider(provider('openai_compatible'));
     component.setEndpoint(component.ownServers[0].address);
+    component.setModel('llama3.2');
 
     expect(component.draft.name).toBe('host.docker.internal:11434');
     await component.save();
@@ -177,24 +232,46 @@ describe('ModelProvidersComponent', () => {
     expect(component.blocker).toBe('Give the key again: it is sent to the new address.');
   });
 
-  it('checks the connection as the form says it, saved or not, and offers the models it finds', async () => {
+  it('tests the connection as the form says it, saved or not, and says in the form whether it answered', async () => {
     const asked: any[] = [];
     const component = create([], {}, {
       check: async (draft: any, id: string) => {
         asked.push([id, draft]);
-        return { ok: true, models: ['claude-sonnet-5', 'claude-opus-5-5'], error: '' };
+        return { ok: true, models: ['claude-sonnet-5', 'claude-new'], error: '' };
       },
     });
     component.startEdit(connection('Work'));
+    await settled();
 
-    await component.checkForm();
+    await component.test();
     expect(asked[0][0]).toBe(component.editingId);
     expect(asked[0][1].key).toBeUndefined();
-    expect(component.offeredModels).toEqual(['claude-opus-5-5']);
+    expect(asked[0][1].models).toEqual(['claude-sonnet-5']);
+    expect(component.tested).toEqual({ ok: true, text: 'It answered.' });
+    expect(component.models.map((model) => model.id)).toContain('claude-new');
 
-    component.addModel('claude-opus-5-5');
-    expect(component.draft.models).toEqual(['claude-sonnet-5', 'claude-opus-5-5']);
-    expect(component.offeredModels).toEqual([]);
+    component.setKey('sk-other');
+    expect(component.tested).toBeNull();
+  });
+
+  it('takes the model a test found answering when none was chosen', async () => {
+    const component = create([], {}, {
+      check: async () => ({ ok: true, models: ['llama3.2', 'qwen3'], error: '' }),
+    });
+    component.startCreate();
+    component.selectProvider(provider('openai_compatible'));
+    component.setEndpoint(component.ownServers[0].address);
+
+    await component.test();
+    expect(component.draft.model).toBe('llama3.2');
+  });
+
+  it('says in the form why a test did not answer', async () => {
+    const component = create([], {}, { check: async () => ({ ok: false, models: [], error: '401 Unauthorized' }) });
+    component.startEdit(connection('Work'));
+
+    await component.test();
+    expect(component.tested).toEqual({ ok: false, text: 'It did not answer: 401 Unauthorized.' });
   });
 
   it('says whether a connection answered a runtime', async () => {

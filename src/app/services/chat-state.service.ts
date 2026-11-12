@@ -1,34 +1,42 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
-import { Card, ChatEvent, ChatMessage, ChatSnapshot, WorkItem } from 'src/app/models/chat-protocol';
+import {
+  Card, ChatEvent, ChatMessage, ChatSettings, ChatSnapshot, Doing, RunInfo, WorkItem,
+} from 'src/app/models/chat-protocol';
+import { TRUST_CHOICES } from 'src/app/pages/app/ai/chat/chat-defaults';
 
-/** A message of the person, or a webhook's, and what the assistant said
- *  after it, until the next. None when the assistant spoke first: a
- *  schedule's run. */
-export interface ChatTurn {
-  /** The person's message's own id, or the id the page gave it while it
-   *  was on its way; the first message's for a turn nobody here began. */
-  key: string;
-  userMessage: ChatMessage | null;
-  assistantMessages: ChatMessage[];
+/** A piece of the assistant's work as last told, with its agent's latest
+ *  word on it. */
+export interface WorkEntry extends WorkItem {
+  line?: string;
 }
 
-/** One line of a turn's work: a call or task of the assistant with how
- *  it stands, an agent's latest word on its call, or a note of the
- *  page's own. */
-export interface WorkStep {
+/** A message of the person's or a webhook's, the work it led to and what
+ *  the assistant said after it; or a schedule's or webhook's run, with its
+ *  work and its report (`run`). None began a turn the assistant spoke
+ *  first in. */
+export interface ChatTurn {
+  key: string;
+  /** When it began. */
+  at: string;
+  userMessage: ChatMessage | null;
+  run: RunInfo | null;
+  assistantMessages: ChatMessage[];
+  work: WorkEntry[];
+}
+
+/** Something that happened in the chat besides its messages and work. */
+export interface ChatNote {
   id: string;
+  at: string;
+  icon: string;
   text: string;
-  /** For the assistant's calls and tasks: how it stands, and its id, which
-   *  stops it alone. */
-  status?: WorkItem['status'];
-  work?: string;
-  /** Whose words: an agent's line. */
-  agent?: string;
-  /** Where it leads, when what it made has a page of its own. */
   link?: { text: string; to: string };
 }
+
+/** The conversation as it is read: turns and notes, by time. */
+export type TimelineItem = { kind: 'turn'; turn: ChatTurn } | { kind: 'note'; note: ChatNote };
 
 export interface InlineChatError {
   id: number;
@@ -43,12 +51,16 @@ export interface ChatViewState {
   loading: boolean;
   messages: ChatMessage[];
   turns: ChatTurn[];
+  timeline: TimelineItem[];
   /** The cards still open. */
   cards: Card[];
   /** The assistant is busy: from `working` to `idle`. */
   working: boolean;
-  /** Each turn's work, by the turn's key. */
-  steps: Record<string, WorkStep[]>;
+  /** The assistant's work, by id, as last told. */
+  work: Record<string, WorkEntry>;
+  /** What each of its threads is doing, by thread: '' the chat's own. */
+  doing: Record<string, Doing>;
+  notes: ChatNote[];
   /** The words the assistant is writing, before its message lands. */
   saying: string;
   /** The number of the last event taken. */
@@ -57,18 +69,22 @@ export interface ChatViewState {
 }
 
 const initialState = (): ChatViewState => ({
-  loading: true, messages: [], turns: [], cards: [], working: false, steps: {}, saying: '',
-  latestEventSeq: 0, errors: [],
+  loading: true, messages: [], turns: [], timeline: [], cards: [], working: false, work: {}, doing: {}, notes: [],
+  saying: '', latestEventSeq: 0, errors: [],
 });
 
 /** The id a message is shown under while it is on its way. */
 const PENDING = 'pending:';
+/** How far ahead of a message work may seem to begin and still be its: the
+ *  runtime's clock and the API server's are not one. */
+const SKEW_MS = 2000;
+
+const time = (at: string | undefined): number => Date.parse(at || '') || 0;
 
 @Injectable({ providedIn: 'root' })
 export class ChatStateService {
   readonly state$ = new BehaviorSubject<ChatViewState>(initialState());
   private errorId = 0;
-  private noteId = 0;
 
   get value(): ChatViewState { return this.state$.value; }
 
@@ -83,9 +99,8 @@ export class ChatStateService {
     const known = new Set(snapshot.messages.flatMap((message) =>
       [message.message_id, ...(message.client_id ? [PENDING + message.client_id] : [])]));
     const kept = this.value.loading ? [] : this.value.messages.filter((message) => !known.has(message.message_id));
-    const messages = this.sorted([...snapshot.messages, ...kept]);
     this.patch({
-      loading: false, messages, turns: this.buildTurns(messages), cards: snapshot.cards,
+      loading: false, messages: this.sorted([...snapshot.messages, ...kept]), cards: snapshot.cards,
       working: snapshot.chat.working, saying: snapshot.chat.working ? this.value.saying : '',
       latestEventSeq: Math.max(this.value.latestEventSeq, snapshot.events),
     });
@@ -94,17 +109,34 @@ export class ChatStateService {
   /** How an event stands against what the page took. The events a chat
    *  keeps are numbered without gaps: the next one is taken, one taken
    *  already, replayed, is not taken twice, and one past the next says
-   *  some were missed (`gap`). `saying` and `screen` are never kept, and
-   *  carry the number of the last kept event before them: they come
-   *  another way than kept events, so one older than a kept event the page
-   *  took already arrived late, and is skipped. */
+   *  some were missed (`gap`). What only passes (`saying`, `doing`,
+   *  `screen`) is never kept, and carries the number of the last kept
+   *  event before it: one older than a kept event the page took already
+   *  arrived late, and is skipped. */
   sequence(event: ChatEvent): 'take' | 'skip' | 'gap' {
     const latest = this.value.latestEventSeq;
-    if (event.event === 'saying' || event.event === 'screen') return event.seq < latest ? 'skip' : 'take';
+    if (['saying', 'doing', 'screen'].includes(event.event)) return event.seq < latest ? 'skip' : 'take';
     if (event.seq <= latest) return 'skip';
     if (event.seq > latest + 1) return 'gap';
     this.patch({ latestEventSeq: event.seq });
     return 'take';
+  }
+
+  /** The kept events read back as the chat opens: its work, and what
+   *  happened besides, as they were before the page was. */
+  replay(events: ChatEvent[]): void {
+    for (const event of events) this.remember(event);
+  }
+
+  /** What an event leaves in the conversation: a piece of work, an agent's
+   *  line on its call, or a note. Taken twice, it is there once. */
+  remember(event: ChatEvent): void {
+    if (event.event === 'work') return this.work(event.data);
+    if (event.event === 'progress') return this.progress(event.data.work, event.data.line);
+    const note = this.noteOf(event);
+    if (note && !this.value.notes.some((held) => held.id === note.id)) {
+      this.patch({ notes: [...this.value.notes, note].sort((a, b) => time(a.at) - time(b.at)) });
+    }
   }
 
   /** The person's words go up at once, under the id the page gave them;
@@ -114,8 +146,7 @@ export class ChatStateService {
       message_id: `${PENDING}${clientId}`, seq: Number.MAX_SAFE_INTEGER, actor: 'person',
       parts: [{ type: 'text', text }], files, client_id: clientId, at: new Date().toISOString(),
     };
-    const messages = [...this.value.messages, pending];
-    this.patch({ messages, turns: this.buildTurns(messages), working: true });
+    this.patch({ messages: [...this.value.messages, pending], working: true });
     this.clearErrors('composer');
   }
 
@@ -123,9 +154,7 @@ export class ChatStateService {
    *  left on screen as though they had been heard. */
   dropSubmission(clientId: string): void {
     const messages = this.value.messages.filter((message) => message.message_id !== `${PENDING}${clientId}`);
-    if (messages.length !== this.value.messages.length) {
-      this.patch({ messages, turns: this.buildTurns(messages), working: false });
-    }
+    if (messages.length !== this.value.messages.length) this.patch({ messages, working: false });
   }
 
   /** A message: new, or one the page showed while it was on its way. An
@@ -133,22 +162,21 @@ export class ChatStateService {
   addMessage(message: ChatMessage): void {
     const messages = this.sorted([...this.value.messages.filter((held) => held.message_id !== message.message_id
       && !(message.client_id && held.message_id === `${PENDING}${message.client_id}`)), message]);
-    this.patch({
-      messages, turns: this.buildTurns(messages), ...(message.actor === 'assistant' ? { saying: '' } : {}),
-    });
+    this.patch({ messages, ...(message.actor === 'assistant' && !message.run ? { saying: '' } : {}) });
   }
 
   /** Older messages, read on the person's asking, before the rest. */
   addOlder(older: ChatMessage[]): void {
     const known = new Set(this.value.messages.map((message) => message.message_id));
-    const messages = this.sorted([...older.filter((message) => !known.has(message.message_id)), ...this.value.messages]);
-    this.patch({ messages, turns: this.buildTurns(messages) });
+    this.patch({ messages: this.sorted([...older.filter((message) => !known.has(message.message_id)),
+      ...this.value.messages]) });
   }
 
   /** The assistant got busy, or quiet. Quiet, what it was writing is
-   *  either in its message by now or was never to be. */
+   *  either in its message by now or was never to be, and none of its
+   *  threads is doing anything. */
   setWorking(working: boolean): void {
-    this.patch(working ? { working } : { working, saying: '' });
+    this.patch(working ? { working } : { working, saying: '', doing: {} });
   }
 
   /** Words the assistant wrote since the last. */
@@ -156,19 +184,22 @@ export class ChatStateService {
     if (text) this.patch({ saying: this.value.saying + text });
   }
 
-  /** A call or task of the assistant, as it starts or ends. */
+  /** What one of the assistant's threads is doing now. */
+  setDoing(doing: Doing): void {
+    this.patch({ doing: { ...this.value.doing, [doing.thread]: doing } });
+  }
+
+  /** A piece of the assistant's work, as it begins, waits, ends, and has
+   *  its output kept: told again in place. */
   work(item: WorkItem): void {
-    this.step({ id: `work:${item.id}`, text: item.title, status: item.status, work: item.id });
+    const held = this.value.work[item.id];
+    this.patch({ work: { ...this.value.work, [item.id]: { ...held, ...item } } });
   }
 
-  /** An agent's line on its call: the call's latest word. */
-  progress(agent: string, call: string, line: string): void {
-    if (line) this.step({ id: `call:${call}`, text: line, agent });
-  }
-
-  /** A note of the page's own in the turn's work. */
-  note(text: string, link?: WorkStep['link']): void {
-    if (text) this.step({ id: `note:${++this.noteId}`, text, link });
+  /** An agent's latest word on its call, under the work it is. */
+  progress(work: string | undefined, line: string): void {
+    const held = work ? this.value.work[work] : undefined;
+    if (held && line) this.patch({ work: { ...this.value.work, [held.id]: { ...held, line } } });
   }
 
   addCard(card: Card): void {
@@ -183,8 +214,7 @@ export class ChatStateService {
 
   /** The chat's work was stopped: nothing runs, and its cards expired. */
   stopped(): void {
-    this.patch({ working: false, saying: '', cards: [] });
-    this.note('Stopped.');
+    this.patch({ working: false, saying: '', doing: {}, cards: [] });
   }
 
   addError(scope: InlineChatError['scope'], code: string, message: string, retryable = false): void {
@@ -202,19 +232,15 @@ export class ChatStateService {
     this.patch({ errors: scope ? this.value.errors.filter((error) => error.scope !== scope) : [] });
   }
 
+  /** The changes, and the turns and the timeline again where the messages,
+   *  the work or the notes changed. */
   private patch(changes: Partial<ChatViewState>): void {
-    this.state$.next({ ...this.value, ...changes });
-  }
-
-  /** A step goes to the turn in hand; one already there by its id is
-   *  told again in place. */
-  private step(step: WorkStep): void {
-    const key = this.value.turns[this.value.turns.length - 1]?.key ?? '';
-    const steps = this.value.steps[key] || [];
-    const at = steps.findIndex((held) => held.id === step.id);
-    const next = at >= 0 ? steps.map((held, index) => (index === at ? { ...held, ...step } : held))
-      : [...steps.slice(-199), step];
-    this.patch({ steps: { ...this.value.steps, [key]: next } });
+    const next = { ...this.value, ...changes };
+    if ('messages' in changes || 'work' in changes || 'notes' in changes) {
+      next.turns = this.buildTurns(next.messages, Object.values(next.work));
+      next.timeline = this.buildTimeline(next.turns, next.notes);
+    }
+    this.state$.next(next);
   }
 
   /** In the chat's one order; one on its way last. */
@@ -222,21 +248,109 @@ export class ChatStateService {
     return messages.sort((a, b) => a.seq - b.seq);
   }
 
-  /** Turns are a reading aid, not a record: a person's or a webhook's
-   *  message and what the assistant said after it. What it said before
-   *  anyone spoke is a turn of its own with no such message. A message on its way is known
-   *  by the id the page gave it, so its turn keeps its key, and its
-   *  work, when the server's message takes its place. */
-  private buildTurns(messages: ChatMessage[]): ChatTurn[] {
+  /** Turns are a reading aid, not a record. A person's or a webhook's
+   *  message begins one, and the assistant's words after it are its, a
+   *  webhook's run's on the webhook's own. A schedule's run is a turn of
+   *  its own, by its thread. Work goes to its run, or else to the turn it
+   *  began in, by time. A message on its way keeps the key the page gave
+   *  it, and its work with it, when the server's message takes its place. */
+  private buildTurns(messages: ChatMessage[], work: WorkEntry[]): ChatTurn[] {
     const turns: ChatTurn[] = [];
+    const runs = new Map<string, ChatTurn>();
+    const bySeq = new Map<number, ChatTurn>();
+    const added = (key: string, at: string, userMessage: ChatMessage | null): ChatTurn => {
+      const made: ChatTurn = { key, at, userMessage, run: null, assistantMessages: [], work: [] };
+      turns.push(made);
+      return made;
+    };
+    const ofRun = (run: RunInfo, at: string): ChatTurn => {
+      const webhook = run.message ? bySeq.get(run.message) : undefined;
+      if (webhook) return webhook;
+      let held = runs.get(run.thread);
+      if (!held) {
+        held = { key: `run:${run.thread}`, at, userMessage: null, run, assistantMessages: [], work: [] };
+        runs.set(run.thread, held);
+      } else if (at && time(at) < time(held.at)) {
+        held.at = at;
+      }
+      return held;
+    };
+    /** The chat's own turns: not a webhook's, whose run speaks for it. */
+    const chatTurns = (): ChatTurn[] => turns.filter((one) => one.userMessage?.actor !== 'webhook');
     for (const message of messages) {
       if (message.actor !== 'assistant') {
-        turns.push({ key: message.client_id || message.message_id, userMessage: message, assistantMessages: [] });
+        bySeq.set(message.seq, added(message.client_id || message.message_id, message.at, message));
+      } else if (message.run) {
+        ofRun(message.run, message.at).assistantMessages.push(message);
       } else {
-        if (!turns.length) turns.push({ key: message.message_id, userMessage: null, assistantMessages: [] });
-        turns[turns.length - 1].assistantMessages.push(message);
+        const own = chatTurns();
+        (own[own.length - 1] ?? added(message.message_id, message.at, null)).assistantMessages.push(message);
       }
     }
-    return turns;
+    for (const entry of [...work].sort((a, b) => time(a.started) - time(b.started))) {
+      if (entry.run) {
+        ofRun(entry.run, entry.started || '').work.push(entry);
+        continue;
+      }
+      const own = chatTurns();
+      const begun = time(entry.started) + SKEW_MS;
+      // begun before every turn shown: older messages are not read yet, and the first is the nearest
+      const home = [...own].reverse().find((one) => time(one.at) <= begun) ?? own[0]
+        ?? added('', entry.started || '', null);
+      home.work.push(entry);
+    }
+    return [...turns, ...runs.values()].sort((a, b) => time(a.at) - time(b.at));
+  }
+
+  private buildTimeline(turns: ChatTurn[], notes: ChatNote[]): TimelineItem[] {
+    const items: TimelineItem[] = turns.map((turn) => ({ kind: 'turn', turn }));
+    for (const note of notes) {
+      const at = items.findIndex((item) => item.kind === 'turn' && time(item.turn.at) > time(note.at));
+      items.splice(at < 0 ? items.length : at, 0, { kind: 'note', note });
+    }
+    return items;
+  }
+
+  /** What an event says in the conversation's own lines, if anything. */
+  private noteOf(event: ChatEvent): ChatNote | null {
+    const id = `event:${event.seq}`;
+    switch (event.event) {
+      case 'schedule_added': {
+        const what = event.data.what?.prompt || event.data.what?.function || '';
+        return { id, at: event.at, icon: 'calendar-clock', text: what ? `Scheduled: ${what}` : 'A schedule was added',
+                 link: { text: 'Open', to: `/ai/schedules/${event.data.schedule_id}` } };
+      }
+      case 'schedule_ran':
+        return { id, at: event.at, icon: event.data.failed ? 'circle-alert' : 'calendar-check',
+                 text: event.data.failed ? `A scheduled run failed: ${event.data.summary || 'no reason was given'}`
+                   : `A scheduled run ended${event.data.summary ? `: ${event.data.summary}` : ''}`,
+                 link: { text: 'Open', to: `/ai/schedules/${event.data.schedule_id}` } };
+      case 'stopped':
+        return { id, at: event.at, icon: 'circle-stop', text: 'Work stopped' };
+      case 'settings_changed': {
+        const text = ChatStateService.changed(event.data.changes || {});
+        return text ? { id, at: event.at, icon: 'settings', text } : null;
+      }
+      default:
+        return null;
+    }
+  }
+
+  /** A chat's settings changed, in words: "Model: claude-opus-5-5 · Trust level: Trusted". */
+  static changed(changes: Partial<ChatSettings>): string {
+    const said: string[] = [];
+    if ('model' in changes || 'model_id' in changes) {
+      said.push(`Model: ${changes.model_id || (changes.model ? 'another connection' : 'the organization’s default')}`);
+    }
+    if ('effort' in changes) said.push(`Effort: ${changes.effort || 'the model’s default'}`);
+    if ('trust' in changes) {
+      said.push(`Trust level: ${TRUST_CHOICES.find((choice) => choice.value === changes.trust)?.name ?? changes.trust}`);
+    }
+    if ('turn_budget' in changes) said.push(`Turn budget: ${changes.turn_budget || 'unlimited'}`);
+    if ('agents' in changes) said.push('Agents changed');
+    if ('mcp_servers' in changes) said.push('Servers changed');
+    if ('skills' in changes) said.push('Skills changed');
+    if ('time_zone' in changes) said.push(`Time zone: ${changes.time_zone}`);
+    return said.join(' · ');
   }
 }

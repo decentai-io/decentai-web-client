@@ -14,27 +14,73 @@
     }
   </div>
 
-  @if (open && steps.length) {
+  @if (open && work.length) {
     <ul class="wc-rows" aria-label="This turn's work">
-      @for (step of steps; track step.id) {
-        <li class="wc-row" [attr.data-status]="step.status">
+      @for (row of rows; track row.entry.id) {
+        <li class="wc-row" [attr.data-status]="row.entry.status" [style.--depth]="row.depth">
           <div class="wc-line">
-            <lucide-icon class="wc-icon" [class.is-spinning]="step.status === 'running'" [name]="icon(step)"
-                         [size]="16" aria-hidden="true"></lucide-icon>
-            <div class="wc-main">
-              <span class="wc-title">
-                {{ step.text }}
-                @if (step.link; as link) { <a [routerLink]="link.to">{{ link.text }}</a> }
+            <button type="button" class="wc-row-toggle" (click)="toggleRow(row.entry.id)"
+                    [attr.aria-expanded]="opened.has(row.entry.id)" [attr.aria-label]="'Details of ' + row.entry.title">
+              <lucide-icon class="wc-icon" [name]="icon(row.entry)" [size]="16" aria-hidden="true"></lucide-icon>
+              <span class="wc-main">
+                <span class="wc-title">{{ row.entry.title }}</span>
+                @if (line(row.entry); as said) {
+                  <span class="wc-said" [class.is-error]="row.entry.status === 'failed'">{{ said }}</span>
+                }
               </span>
-            </div>
-            <span class="wc-meta">{{ meta(step) }}</span>
-            @if (step.status === 'running' && step.work) {
-              <button class="icon-btn sm" type="button" [attr.aria-label]="'Stop ' + step.text" matTooltip="Stop this alone"
-                      [disabled]="stopping.includes(step.work)" (click)="stopOne.emit(step.work)">
+            </button>
+            <span class="wc-meta">
+              <lucide-icon class="wc-state" [class.is-spinning]="row.entry.status === 'running'" [name]="statusIcon(row.entry)"
+                           [size]="14" aria-hidden="true"></lucide-icon>
+              {{ meta(row.entry) }}
+            </span>
+            @if (row.entry.status === 'running' || row.entry.status === 'waiting') {
+              <button class="icon-btn sm" type="button" [attr.aria-label]="'Stop ' + row.entry.title" matTooltip="Stop this alone"
+                      [disabled]="stopping.includes(row.entry.id)" (click)="stopOne.emit(row.entry.id)">
                 <lucide-icon name="circle-stop" [size]="14" aria-hidden="true"></lucide-icon>
               </button>
             }
           </div>
+
+          <!-- The whole story of one piece of work. -->
+          @if (opened.has(row.entry.id)) {
+            <dl class="wc-story">
+              @if (row.entry.why) {
+                <dt>Why</dt><dd class="wc-why">{{ row.entry.why }}</dd>
+              }
+              @if (row.entry.inputs) {
+                <dt>Given</dt><dd><code class="wc-code">{{ row.entry.inputs }}</code></dd>
+              }
+              @if (row.entry.output?.line) {
+                <dt>Came back</dt>
+                <dd>
+                  {{ row.entry.output?.line }}
+                  @if (row.entry.output?.ref) {
+                    <button class="btn ghost sm wc-more" type="button" (click)="openOutput.emit(row.entry)">
+                      Open the whole output ({{ row.entry.output?.size }} characters)
+                    </button>
+                  }
+                </dd>
+              }
+              @if (row.entry.files?.length) {
+                <dt>Files</dt>
+                <dd class="wc-chips">
+                  @for (id of row.entry.files; track id) { <span class="chip">{{ fileName(id) }}</span> }
+                </dd>
+              }
+              @if (records(row.entry); as touched) {
+                <dt>Records</dt><dd>{{ touched }}</dd>
+              }
+              @if (row.entry.card) {
+                <dt>Asked you</dt>
+                <dd>{{ row.entry.status === 'waiting' ? 'Waiting for your answer: its card is above the message box.' : 'You answered.' }}</dd>
+              }
+              @if (!row.entry.why && !row.entry.inputs && !row.entry.output?.line && !row.entry.files?.length
+                   && !row.entry.records?.length && !row.entry.card) {
+                <dd class="wc-none">Nothing more is known of it yet.</dd>
+              }
+            </dl>
+          }
         </li>
       }
     </ul>

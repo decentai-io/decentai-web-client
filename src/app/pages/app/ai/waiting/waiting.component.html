@@ -1,0 +1,33 @@
+<app-page
+  title="Waiting for you"
+  sentence="What your chats ask you, in one place: approvals, questions and offers, each waiting however long you take."
+  [wide]="true"
+>
+  <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
+
+  <div class="waiting-head">
+    <button class="btn sm" type="button" [disabled]="loading" (click)="load()">
+      <lucide-icon name="refresh-cw" [size]="16" aria-hidden="true"></lucide-icon>
+      Refresh
+    </button>
+  </div>
+
+  <p class="waiting-empty" role="status" *ngIf="!loading && !groups.length && !error">Nothing waits for you.</p>
+
+  <section class="waiting-chat" *ngFor="let group of groups" [attr.aria-label]="group.title">
+    <h2 class="waiting-title">
+      <a [routerLink]="['/ai/chats', group.chatId]">{{ group.title }}</a>
+      <span class="waiting-count">{{ group.cards.length }} waiting</span>
+    </h2>
+    <div class="waiting-cards">
+      <ng-container *ngFor="let card of group.cards">
+        <app-chat-approval-card *ngIf="!inChat(card)" [card]="card" [busy]="answering.has(card.card_id)"
+                                (decided)="onDecision($event)"></app-chat-approval-card>
+        <p class="waiting-elsewhere" *ngIf="inChat(card)">
+          {{ card.kind === 'form' ? 'A sign-in is asked for' : 'A file is asked for' }}:
+          <a [routerLink]="['/ai/chats', group.chatId]">answer it in its chat</a>.
+        </p>
+      </ng-container>
+    </div>
+  </section>
+</app-page>

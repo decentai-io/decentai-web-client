@@ -3,7 +3,7 @@ import { failuresOf, stateOf, whatOf } from './schedule-shared';
 
 const schedule = (more: Partial<Schedule>): Schedule => ({
   schedule_id: 'sch_1', chat_id: 'chat_1', what: { prompt: 'Send the report' }, when: { cron: '0 9 * * *' },
-  next_at: '2026-10-14T09:00:00+00:00', paused: false, by: 'person', runs: [], ...more,
+  next_at: '2026-10-14T09:00:00+00:00', paused: false, by: 'person', trust: 1, runs: [], ...more,
 });
 const run = (failed: boolean) => ({ at: '2026-10-13T09:00:00+00:00', failed, summary: '' });
 

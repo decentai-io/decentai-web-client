@@ -12,6 +12,8 @@ export interface ChatSettings {
   /** The model connection its assistant uses; '' for the organization's
    *  default. */
   model: string;
+  /** Which of the connection's models; '' for its first. */
+  model_id: string;
   effort: '' | 'low' | 'medium' | 'high';
   /** For its schedules. */
   time_zone: string;
@@ -23,7 +25,8 @@ export interface ChatSettings {
 }
 
 export const DEFAULT_CHAT_SETTINGS: ChatSettings = {
-  trust: 1, agents: null, model: '', effort: '', time_zone: 'UTC', turn_budget: 0, skills: null, mcp_servers: null,
+  trust: 1, agents: null, model: '', model_id: '', effort: '', time_zone: 'UTC', turn_budget: 0, skills: null,
+  mcp_servers: null,
 };
 
 /** A chat (`Chats.public`). */
@@ -69,6 +72,16 @@ export type MessagePart =
   /** What a webhook brought: its instruction and its data. */
   | { type: 'webhook'; text: string; data: unknown; test?: boolean };
 
+/** The schedule's or webhook's run a message or a piece of work belongs to:
+ *  its thread, `schedule:<id>` or `webhook`, its name, and the webhook's
+ *  message that began it (0 for none). */
+export interface RunInfo {
+  thread: string;
+  origin: string;
+  title: string;
+  message: number;
+}
+
 /** One message (`Messages.public`). */
 export interface ChatMessage {
   message_id: string;
@@ -81,10 +94,29 @@ export interface ChatMessage {
   /** The id the page gave what it sent, kept on the message. */
   client_id: string;
   at: string;
+  /** The model that wrote it, for the assistant's. */
+  model?: string;
+  /** The run that posted it, for a schedule's or webhook's. */
+  run?: RunInfo;
 }
 
-/** What each kind of card asks. */
-export interface ApprovalRequest { function: string; level?: number; call?: string; record?: string; }
+/** What each kind of card asks. An approval asks for the calls of one step
+ *  of the assistant at once, each an item the person allows or not; `why`
+ *  is what the assistant said as it made them. */
+export interface ApprovalItem {
+  id: string;
+  agent: string;
+  function: string;
+  /** The agent's and the function's names, as a person reads them. */
+  name?: string;
+  level?: number;
+  /** What a program's call reaches through the runtime, as `record.read:logins`. */
+  call?: string;
+  record?: string;
+  /** The inputs, written out. */
+  inputs?: string;
+}
+export interface ApprovalRequest { items: ApprovalItem[]; why?: string; }
 export interface NetworkRequest { hosts: string[]; purpose: string; code?: { language: string; text: string }; }
 export interface QuestionRequest {
   text?: string; table?: AgentTable; chart?: AgentChart; choices?: string[];
@@ -115,6 +147,8 @@ export type Card = {
   agent: string;
   status: 'open' | 'answered' | 'expired';
   at: string;
+  /** What its person answered, once they have. */
+  answer?: unknown;
 } & (
   | { kind: 'approval'; request: ApprovalRequest }
   | { kind: 'network'; request: NetworkRequest }
@@ -126,7 +160,10 @@ export type Card = {
 
 /** How each kind of card is answered (AI:Approval:decide). */
 export type CardAnswer =
-  | { allowed: boolean; remember?: boolean }
+  /** An approval: each item allowed or not, by its id; remembered where the
+   *  person says, for that agent, function and record. */
+  | { items: Record<string, boolean>; remember?: boolean }
+  | { allowed: boolean }
   | { text: string }
   | { choice: string }
   | { file: string }
@@ -139,7 +176,44 @@ export type CardAnswer =
 export interface WorkItem {
   id: string;
   title: string;
-  status: 'running' | 'done' | 'failed' | 'stopped';
+  /** `waiting`: for the person's answer; `unknown`: a restart cut it, and it
+   *  may have been done. */
+  status: 'running' | 'waiting' | 'done' | 'failed' | 'stopped' | 'unknown';
+  /** `call` (an agent's function), `mcp`, `task`, `question`, `sleep`,
+   *  `schedule`, `memory` or `skill`. */
+  kind?: string;
+  /** `person`, `schedule:<id>` or `webhook`. */
+  origin?: string;
+  /** The thread it began in: '' the chat's own, a task's id, or a run's. */
+  thread?: string;
+  run?: RunInfo | null;
+  means?: { agent?: string; function?: string; server?: string; tool?: string };
+  /** The assistant's words as it began it. */
+  why?: string;
+  /** Its inputs, cut. */
+  inputs?: string | null;
+  /** The card it waited on. */
+  card?: string;
+  started?: string;
+  ended?: string;
+  /** Its output's size and first line; `ref` reads it whole. */
+  output?: { size: number; line: string; ref?: string } | null;
+  /** The files it returned. */
+  files?: string[];
+  /** The records its program touched. */
+  records?: { operation: string; resource: string; ref: string }[];
+}
+
+/** What one thread of the assistant is doing now: `thinking`, `folding`, or
+ *  '' (its work says the rest), and the turn's step and budget. */
+export interface Doing {
+  thread: string;
+  kind: 'chat' | 'task' | 'run';
+  run: RunInfo | null;
+  what: '' | 'thinking' | 'folding';
+  step: number;
+  budget: number;
+  at: string;
 }
 
 /** An agent's screen: a picture of what it drives, and its tabs. */
@@ -171,7 +245,9 @@ export type ChatEvent = { seq: number; at: string } & (
   | { event: 'work'; data: WorkItem }
   /** Words the assistant wrote since the last; never replayed. */
   | { event: 'saying'; data: { text: string } }
-  | { event: 'progress'; data: { agent: string; call: string; line: string } }
+  | { event: 'progress'; data: { agent: string; call: string; line: string; work?: string } }
+  | { event: 'doing'; data: Doing }
+  | { event: 'settings_changed'; data: { changes: Partial<ChatSettings> } }
   /** Never replayed; `screen: null` closes it. */
   | { event: 'screen'; data: { agent: string; call: string; screen: Screen | null } }
   | { event: 'card_opened'; data: Card }

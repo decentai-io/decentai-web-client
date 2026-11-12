@@ -58,6 +58,11 @@
             <lucide-icon name="monitor" [size]="18" aria-hidden="true"></lucide-icon>
           </button>
         }
+        <!-- Everything about this chat, beside the conversation. -->
+        <button type="button" class="icon-btn" [class.is-on]="panelOpen" (click)="panelOpen = !panelOpen"
+                [attr.aria-pressed]="panelOpen" matTooltip="About this chat" aria-label="About this chat">
+          <lucide-icon name="info" [size]="18" aria-hidden="true"></lucide-icon>
+        </button>
         <!-- The two things done most from a chat, out of the menu. -->
         <a class="icon-btn" routerLink="/ai/chats" matTooltip="New chat" aria-label="New chat">
           <lucide-icon name="square-pen" [size]="18" aria-hidden="true"></lucide-icon>
@@ -114,6 +119,10 @@
 
 <mat-menu #chatMenu="matMenu" xPosition="before">
   @if (isNarrow) {
+    <button mat-menu-item (click)="panelOpen = true">
+      <lucide-icon name="info" [size]="16" aria-hidden="true"></lucide-icon>
+      <span>About this chat</span>
+    </button>
     <a mat-menu-item routerLink="/ai/chats">
       <lucide-icon name="square-pen" [size]="16" aria-hidden="true"></lucide-icon>
       <span>New chat</span>
@@ -235,16 +244,18 @@
     </div>
   }
 
-  <div class="chat-main" [class.has-side-screen]="showSideScreen" [style.--screen-ratio]="screenRatio">
+  <div class="chat-main" [class.has-side-screen]="showSideScreen || panelOpen" [style.--screen-ratio]="screenRatio">
   <div class="chat-column">
   <!-- Messages (scrolls internally) -->
   <div class="chat-body">
     <app-chat-messages-container
-      [turns]="turns"
+      [timeline]="timeline"
       [hasMore]="hasOlderMessages"
       [loadingOlder]="loadingOlderMessages"
       [draft]="saying"
-      [steps]="steps"
+      [doing]="doing"
+      [waiting]="cards.length"
+      (openOutput)="openOutput($event)"
       [files]="files"
       [names]="names"
       [stoppingAll]="killing"
@@ -302,6 +313,16 @@
 
   <!-- With room for it, the live view stands beside the thread: the
        person reads the conversation and watches the browser at once. -->
+  @if (panelOpen) {
+    <aside class="chat-panel" [class.is-sheet]="isNarrow">
+      <app-chat-panel [chatId]="chat_id" [settings]="settings" [work]="work" [waiting]="cards.length"
+                      [agents]="chatAgents" [names]="names" [model]="modelLabel" [stopping]="stoppingWork"
+                      (closed)="panelOpen = false" (stopWork)="stopWork($event)"
+                      (changeAgents)="onMessagesActionClicked('agents')"
+                      (changeSkills)="onMessagesActionClicked('skills')"></app-chat-panel>
+    </aside>
+  }
+
   @if (showSideScreen) {
     <aside class="chat-side" [class.is-minimized]="screenMinimized" [class.has-tabs]="screen?.tabs?.length" role="region" aria-label="Live view">
       <app-chat-screen [frame]="screen" [side]="true" (screenInput)="onScreenInput($event)" (closed)="onScreenClosed()" [(minimized)]="screenMinimized" [(taken)]="screenTaken"></app-chat-screen>

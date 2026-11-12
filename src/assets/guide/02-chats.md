@@ -20,7 +20,11 @@ When it lacks a fact it needs, the assistant asks you rather than guessing. File
 
 ## What it is doing
 
-While the assistant works, the chat says so, and shows each call and task as it starts and as it ends: running, done, failed or stopped. An agent may write a line of progress as it goes. While the assistant writes its answer, the words appear as they come; the message is kept once it is whole.
+While the assistant works, the last line of the chat says what it is doing: thinking, running which agent's function, pausing, summarizing earlier messages, or waiting for you, and, past half the turn's budget, which step it is on. Each call and task shows in the turn's work as it starts and as it ends: running, done, failed or stopped, with how long it took, and an agent's latest line of progress. Open a row for its whole story: why it ran, what it was given, what came back (the whole of it with **Open the whole output**), the files it returned, the records it touched, and whether it asked you. A task's own calls are under it. While the assistant writes its answer, the words appear as they come; the message is kept once it is whole, with the model that wrote it, its calls and how long it took under it.
+
+A schedule's or a webhook's run is a block of its own, with its work and what it said. What happened besides the conversation, a schedule added or run, work stopped, a setting you changed, is a quiet line of its own, at its time. All of it is there again when you come back to the chat.
+
+**About this chat**, the **i** in the chat's bar, opens a panel beside the conversation: what runs now, each with its own stop; the chat's schedules and when each runs next; the decisions you chose to remember for its agents, each to forget (they are yours, so they apply in every chat); and its setup.
 
 An agent can speak in the chat itself: words, a table, a chart, or choices. What it shows is the agent's, under its name; what the assistant says is the assistant's.
 
@@ -40,7 +44,7 @@ Each chat has its own:
 
 - **Trust level**, 0 to 3: how far its agents may act without asking.
 - **Agents**: every agent you may use, those installed later included, or only those you choose — none, if you like.
-- **Model** and **effort**: the model connection its assistant thinks with, and how hard; none chosen is the organization's default.
+- **Model** and **effort**: the model its assistant thinks with, picked among the models of the connections you may use, and how hard; none chosen is the organization's default.
 - **Time zone**: what "Friday 9 am" means to its schedules.
 - **Turn budget**, and the **skills** and **MCP servers** its assistant uses: every one, or those you choose.
 

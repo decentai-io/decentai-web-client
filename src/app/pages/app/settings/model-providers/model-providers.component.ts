@@ -1,10 +1,13 @@
 import { Component, EventEmitter, Input, Output, TemplateRef, ViewChild } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 
+import { Choice } from 'src/app/components/ui/radio-keys';
 import { AuthService } from 'src/app/services/auth.service';
 import { ConfirmService } from 'src/app/services/confirm.service';
 import { PeerGroup } from 'src/app/services/profile.service';
-import { LlmConnection, LlmConnectionDraft, LlmProvider, SettingsLlmService } from 'src/app/services/settings-llm.service';
+import {
+  LlmConnection, LlmConnectionDraft, LlmModel, LlmProvider, SettingsLlmService,
+} from 'src/app/services/settings-llm.service';
 import { DataPageBase } from '../../data-page-base';
 
 /** What the form edits. */
@@ -14,28 +17,34 @@ interface Draft {
   address: string;
   /** Blank on an edit keeps the key kept. */
   key: string;
-  models: string[];
+  /** The model a chat uses unless its person picks another: the
+   *  connection's first. */
+  model: string;
+  /** The other models people may pick. */
+  others: string[];
   groups: string[];
 }
 
 /** What is still missing from the form, and the field it belongs to. */
 interface Missing {
-  /** 'address', 'key', 'name', 'provider', or 'blank:<its name>'. */
+  /** 'address', 'key', 'model', 'name', 'provider', or 'blank:<its name>'. */
   field: string;
   message: string;
 }
 
+type Sharing = 'everyone' | 'some';
+
 /**
  * Settings › Model providers: the organization's connections to model
- * providers, each a provider, its address and its key, the models it
- * offers, and the groups whose chats may use it.
+ * providers, each a provider, its address and its key, the models people
+ * may pick from it (the first is what a chat uses unless its person picks
+ * another), and the groups whose chats may use it.
  *
- * Adding one is two steps and little typing: pick the provider — the few
- * most people look for first, the rest behind a search — then paste the
- * key. The address is filled in. A runtime, which is what calls models,
- * checks a connection and says which models it offers.
+ * Adding one is two steps: pick the provider, then paste the key. The
+ * address, the name and a model are filled in; Test asks a runtime,
+ * which is what calls models, whether the connection answers.
  *
- * One connection is the DEFAULT — the answer for every chat whose person
+ * One connection is the DEFAULT: the answer for every chat whose person
  * never chose.
  */
 @Component({
@@ -88,7 +97,7 @@ export class ModelProvidersComponent extends DataPageBase {
     const query = this.query.trim().toLowerCase();
     if (!query) return this.connections;
     return this.connections.filter((connection) =>
-      [connection.name, this.providerName(connection.provider), connection.address]
+      [connection.name, this.providerName(connection.provider), connection.address, ...connection.models]
         .join(' ').toLowerCase().includes(query));
   }
 
@@ -97,12 +106,12 @@ export class ModelProvidersComponent extends DataPageBase {
   }
 
   /** The line under a row's name: the provider, where that is not the
-   *  name already, where it is, and its models. */
+   *  name already, where it is, its default model and how many more
+   *  people may pick. */
   summary(connection: LlmConnection): string {
     const provider = this.providerName(connection.provider);
-    const models = connection.models.length
-      ? `${connection.models.length} model${connection.models.length === 1 ? '' : 's'}`
-      : 'the provider’s models';
+    const [model, ...more] = connection.models;
+    const models = model ? model + (more.length ? ` +${more.length} more` : '') : '';
     return [provider === connection.name ? '' : provider, this.hostOf(connection.address), models]
       .filter(Boolean).join(' · ');
   }
@@ -117,8 +126,7 @@ export class ModelProvidersComponent extends DataPageBase {
 
   /** How a row says whose chats may use it. */
   shareLabel(connection: LlmConnection): string {
-    const everyone = this.groups[0]?.group_id;
-    if (everyone && connection.groups.includes(everyone)) return 'Everyone';
+    if (this.everyone && connection.groups.includes(this.everyone)) return 'Everyone';
     if (!connection.groups.length) return 'Nobody yet';
     return `${connection.groups.length} group${connection.groups.length === 1 ? '' : 's'}`;
   }
@@ -137,10 +145,10 @@ export class ModelProvidersComponent extends DataPageBase {
   showAll = false;
 
   /** The providers offered: the popular few, until the person asks for
-   *  all of them or types; then every one — or every one that matches —
-   *  by name. The custom entry — a server of the person's own — is
-   *  offered apart. Kept between change detections: the whole catalog
-   *  is two hundred names to sort. */
+   *  all of them or types; then every one, or every one that matches,
+   *  by name. The custom entry, a server of the person's own, is offered
+   *  apart. Kept between change detections: the catalog is two hundred
+   *  names to sort. */
   get offered(): LlmProvider[] {
     const query = this.providerQuery.trim().toLowerCase();
     const key = `${this.showAll}|${query}`;
@@ -197,7 +205,7 @@ export class ModelProvidersComponent extends DataPageBase {
    *  any of those is closing the editor. */
   private openEditor(): void {
     if (!this.dialog || !this.editor || this.editorRef) return;
-    this.editorRef = this.dialog.open(this.editor, { width: '640px' });
+    this.editorRef = this.dialog.open(this.editor, { width: '600px' });
     this.editorRef.afterClosed().subscribe(() => {
       this.editorRef = undefined;
       this.editingId = null;
@@ -223,10 +231,17 @@ export class ModelProvidersComponent extends DataPageBase {
    *  needs the key again. */
   private savedAddress = '';
 
-  /** What a runtime found the connection offers, not named here yet. */
-  offeredModels: string[] = [];
-  /** A runtime is being asked. */
-  checking = false;
+  /** The models offered to choose from: the catalog's for the provider,
+   *  and what a test found. */
+  models: LlmModel[] = [];
+  /** A runtime is being asked, and what it said of the form as it was. */
+  testing = false;
+  tested: { ok: boolean; text: string } | null = null;
+
+  readonly sharings: Choice<Sharing>[] = [
+    { value: 'everyone', name: 'Everyone' },
+    { value: 'some', name: 'Some groups' },
+  ];
 
   /** The chosen provider's address while it still has parts that are
    *  the customer's own (`<aws-region>`), and what was typed for each.
@@ -280,29 +295,23 @@ export class ModelProvidersComponent extends DataPageBase {
    *  one thing the form asks for, and the one a person has to go and
    *  fetch. */
   private static readonly KEYS: Record<string, { where: string; url: string }> = {
-    anthropic: { where: 'the Anthropic Console, under API keys',
-                 url: 'https://console.anthropic.com/settings/keys' },
-    openai: { where: 'the OpenAI platform, under API keys',
-              url: 'https://platform.openai.com/api-keys' },
-    gemini: { where: 'Google AI Studio, under Get API key',
-              url: 'https://aistudio.google.com/apikey' },
-    openrouter: { where: 'OpenRouter, under Keys',
-                  url: 'https://openrouter.ai/settings/keys' },
-    'amazon-bedrock': { where: 'the AWS console: Amazon Bedrock, then API keys',
+    anthropic: { where: 'the Anthropic Console', url: 'https://console.anthropic.com/settings/keys' },
+    openai: { where: 'the OpenAI platform', url: 'https://platform.openai.com/api-keys' },
+    gemini: { where: 'Google AI Studio', url: 'https://aistudio.google.com/apikey' },
+    openrouter: { where: 'OpenRouter', url: 'https://openrouter.ai/settings/keys' },
+    'amazon-bedrock': { where: 'the AWS console, under Amazon Bedrock › API keys',
                         url: 'https://console.aws.amazon.com/bedrock/home#/api-keys' },
-    azure: { where: 'the Azure portal: your resource, then Keys and Endpoint',
-             url: 'https://portal.azure.com' },
-    'google-vertex': { where: 'Google Cloud: IAM, Service accounts, a key in JSON — paste the whole file. The account needs the Vertex AI User role',
+    azure: { where: 'the Azure portal, under your resource’s Keys and Endpoint', url: 'https://portal.azure.com' },
+    'google-vertex': { where: 'Google Cloud: a service account’s key in JSON, the whole file pasted. The account '
+                         + 'needs the Vertex AI User role',
                        url: 'https://console.cloud.google.com/iam-admin/serviceaccounts' },
-    'google-vertex-anthropic': { where: 'Google Cloud: IAM, Service accounts, a key in JSON — paste the whole file. The account needs the Vertex AI User role, and Claude enabled in Model Garden',
+    'google-vertex-anthropic': { where: 'Google Cloud: a service account’s key in JSON, the whole file pasted. The '
+                                   + 'account needs the Vertex AI User role, and Claude enabled in Model Garden',
                                  url: 'https://console.cloud.google.com/iam-admin/serviceaccounts' },
-    groq: { where: 'the Groq console, under API Keys',
-            url: 'https://console.groq.com/keys' },
-    mistral: { where: 'the Mistral console, under API keys',
-               url: 'https://console.mistral.ai/api-keys' },
-    xai: { where: 'the xAI console, under API keys', url: 'https://console.x.ai' },
-    deepseek: { where: 'the DeepSeek platform, under API keys',
-                url: 'https://platform.deepseek.com/api_keys' },
+    groq: { where: 'the Groq console', url: 'https://console.groq.com/keys' },
+    mistral: { where: 'the Mistral console', url: 'https://console.mistral.ai/api-keys' },
+    xai: { where: 'the xAI console', url: 'https://console.x.ai' },
+    deepseek: { where: 'the DeepSeek platform', url: 'https://platform.deepseek.com/api_keys' },
   };
 
   /** Addresses a model on this computer usually answers at, as the
@@ -323,6 +332,32 @@ export class ModelProvidersComponent extends DataPageBase {
     return ModelProvidersComponent.KEYS[this.draft.provider] ?? null;
   }
 
+  get keyHelp(): string {
+    return this.endpointIsYours
+      ? 'Encrypted when saved, and never shown again. Leave it empty for a server that asks for none.'
+      : 'Encrypted when saved, and never shown again.';
+  }
+
+  get modelHelp(): string {
+    const used = 'Chats use it unless their person picks another.';
+    if (this.asksEndpoint) return `Your deployment’s name, as you named it in Azure. ${used}`;
+    if (this.endpointIsYours) return `The model’s name on your server. ${used}`;
+    return used;
+  }
+
+  /** The catalog's models not offered yet, the newest first: a few, to
+   *  add with a click. */
+  get suggested(): LlmModel[] {
+    const offered = new Set([this.draft.model.trim(), ...this.draft.others]);
+    return this.models.filter((model) => !offered.has(model.id)).slice(0, 6);
+  }
+
+  addOther(model: string): void {
+    if (model !== this.draft.model.trim() && !this.draft.others.includes(model)) {
+      this.draft.others = [...this.draft.others, model];
+    }
+  }
+
   blankHelp(blank: string): string {
     return ModelProvidersComponent.BLANKS[blank]?.help ?? '';
   }
@@ -333,7 +368,7 @@ export class ModelProvidersComponent extends DataPageBase {
   }
 
   /** What an address has in each blank of the catalog's, or null when
-   *  it is not that address at all — a gateway of the person's own. */
+   *  it is not that address at all: a gateway of the person's own. */
   private blanksIn(template: string, address: string): Record<string, string> | null {
     const names = [...template.matchAll(/<([^>]+)>/g)].map((found) => found[1]);
     const pattern = template.replace(/\/+$/, '')
@@ -348,11 +383,16 @@ export class ModelProvidersComponent extends DataPageBase {
   /** The name follows the provider until the person types one. */
   private nameIsAuto = true;
 
+  /** The group every person of the organization is in, listed first. */
+  private get everyone(): string {
+    return this.groups?.[0]?.group_id ?? '';
+  }
+
   private blankDraft(): Draft {
-    const everyone = this.groups?.[0]?.group_id;
     // A new connection is for everyone's chats until said otherwise:
     // one shared with no group is used by nobody.
-    return { name: '', provider: '', address: '', key: '', models: [], groups: everyone ? [everyone] : [] };
+    return { name: '', provider: '', address: '', key: '', model: '', others: [],
+             groups: this.everyone ? [this.everyone] : [] };
   }
 
   private resetEditor(creating: boolean): void {
@@ -363,11 +403,20 @@ export class ModelProvidersComponent extends DataPageBase {
     this.keyShown = false;
     this.tried = false;
     this.savedAddress = '';
-    this.offeredModels = [];
+    this.models = [];
+    this.tested = null;
   }
 
   get chosen(): LlmProvider | null {
     return this.providers.find((p) => p.id === this.draft.provider) ?? null;
+  }
+
+  /** The provider as the form's first line says it: its name and where
+   *  it answers. */
+  get chosenLine(): string {
+    const name = this.chosen?.endpoint ? this.chosen.name : 'Your own server';
+    const host = this.draft.address && !/[<>]/.test(this.draft.address) ? this.hostOf(this.draft.address) : '';
+    return [name, host].filter(Boolean).join(' · ');
   }
 
   /** Whether the address is the person's to type in full: the custom
@@ -389,6 +438,17 @@ export class ModelProvidersComponent extends DataPageBase {
       this.draft.address = this.filled(provider.endpoint);
     }
     this.draft.name = this.freeName(provider.endpoint ? provider.name : '');
+    void this.loadModels(provider.id);
+  }
+
+  /** The catalog's models for the provider, the newest first chosen
+   *  where none is yet: on Azure a model is a deployment the person
+   *  named, so none is chosen for them there. */
+  private async loadModels(provider: string): Promise<void> {
+    const models = await this.service.models(provider);
+    if (this.draft.provider !== provider) return;
+    this.models = [...models, ...this.models.filter((found) => !models.some((model) => model.id === found.id))];
+    if (!this.draft.model && models.length && !this.asksEndpoint) this.draft.model = models[0].id;
   }
 
   /** The provider's name, or that with a number where a connection is
@@ -418,6 +478,7 @@ export class ModelProvidersComponent extends DataPageBase {
   setBlank(blank: string, value: string): void {
     this.blankValues[blank] = value;
     this.draft.address = this.filled(this.endpointTemplate);
+    this.tested = null;
   }
 
   /** The address with every part that was typed put in; one still
@@ -439,10 +500,21 @@ export class ModelProvidersComponent extends DataPageBase {
     this.nameIsAuto = false;
   }
 
+  setKey(key: string): void {
+    this.draft.key = key;
+    this.tested = null;
+  }
+
+  setModel(model: string): void {
+    this.draft.model = model;
+    this.tested = null;
+  }
+
   /** A server of the person's own is named after where it is, until
    *  they name it themselves. */
   setEndpoint(address: string): void {
     this.draft.address = address;
+    this.tested = null;
     if (!this.nameIsAuto || !this.endpointIsYours) return;
     try {
       this.draft.name = this.freeName(new URL(address.trim()).host);
@@ -451,18 +523,41 @@ export class ModelProvidersComponent extends DataPageBase {
     }
   }
 
+  // ── Whose chats may use it ──────────────────────────────────────────
+
+  get sharing(): Sharing {
+    return this.everyone && this.draft.groups.includes(this.everyone) ? 'everyone' : 'some';
+  }
+
+  setSharing(sharing: Sharing): void {
+    this.draft.groups = sharing === 'everyone' && this.everyone ? [this.everyone] : [];
+  }
+
+  /** The groups a connection may be shared with one by one: all but Everyone. */
+  get someGroups(): PeerGroup[] {
+    return this.groups.slice(1);
+  }
+
+  toggleGroup(groupId: string): void {
+    const groups = new Set(this.draft.groups);
+    if (!groups.delete(groupId)) groups.add(groupId);
+    this.draft.groups = this.groups.map((group) => group.group_id).filter((id) => groups.has(id));
+  }
+
+  // ── Editing ─────────────────────────────────────────────────────────
+
   startEdit(connection: LlmConnection): void {
     this.editingId = connection.connection_id;
     this.choosing = false;
     this.draft = {
-      name: connection.name, provider: connection.provider, address: connection.address,
-      key: '', models: [...connection.models], groups: [...connection.groups],
+      name: connection.name, provider: connection.provider, address: connection.address, key: '',
+      model: connection.models[0] ?? '', others: connection.models.slice(1), groups: [...connection.groups],
     };
     // A saved connection keeps its name and its address as they are.
     this.resetEditor(false);
     this.savedAddress = connection.address;
     // An address that is the provider's own with the person's parts in
-    // it is shown as those parts. One that is not — a gateway — stays an
+    // it is shown as those parts. One that is not, a gateway, stays an
     // address.
     const template = this.chosen?.endpoint ?? '';
     const parts = /<[^>]+>/.test(template) && !this.asksEndpoint ? this.blanksIn(template, connection.address) : null;
@@ -472,12 +567,7 @@ export class ModelProvidersComponent extends DataPageBase {
     }
     this.error = '';
     this.openEditor();
-  }
-
-  toggleGroup(groupId: string): void {
-    const groups = new Set(this.draft.groups);
-    if (!groups.delete(groupId)) groups.add(groupId);
-    this.draft.groups = this.groups.map((group) => group.group_id).filter((id) => groups.has(id));
+    void this.loadModels(connection.provider);
   }
 
   closeEditor(): void {
@@ -506,6 +596,7 @@ export class ModelProvidersComponent extends DataPageBase {
         return at('key', 'Give the key again: it is sent to the new address.');
       }
     }
+    if (!this.draft.model.trim()) return at('model', 'Choose the model chats use.');
     if (!this.draft.name.trim()) return at('name', 'Give it a name.');
     return null;
   }
@@ -521,13 +612,17 @@ export class ModelProvidersComponent extends DataPageBase {
     return missing?.field === field ? missing.message : '';
   }
 
+  /** Whether a field is under "More options". */
+  private hidden(field: string): boolean {
+    return field === 'name' || (field === 'address' && !this.endpointIsYours && !this.asksEndpoint);
+  }
+
   async save(): Promise<void> {
     if (this.saving) return;
     const missing = this.missing;
     if (missing) {
-      // Said under its field, which may be behind "More options".
       this.tried = true;
-      if (['name', 'address'].includes(missing.field)) this.showMore = true;
+      if (this.hidden(missing.field)) this.showMore = true;
       return;
     }
     this.saving = true;
@@ -548,27 +643,29 @@ export class ModelProvidersComponent extends DataPageBase {
     }
   }
 
-  /** What reaching the connection takes, as the form says it. A blank key
-   *  on an edit keeps the one kept. */
+  /** What reaching the connection takes, as the form says it: the
+   *  default model first. A blank key on an edit keeps the one kept. */
   private get sent(): LlmConnectionDraft {
+    const model = this.draft.model.trim();
     return {
       provider: this.draft.provider,
       address: this.draft.address.trim(),
-      models: this.draft.models,
+      models: [model, ...this.draft.others.filter((other) => other !== model)].filter(Boolean),
       ...(this.draft.key.trim() ? { key: this.draft.key.trim() } : {}),
     };
   }
 
   // ── Asking a runtime ────────────────────────────────────────────────
 
-  /** A runtime reaches the connection, and says whether it answered. */
+  /** A runtime reaches a saved connection, and says whether it answered. */
   async check(connection: LlmConnection): Promise<void> {
     if (this.busyId) return;
     this.busyId = connection.connection_id;
     try {
       const result = await this.service.check({}, connection.connection_id);
-      if (result.error) return this.fail(result.error);
-      if (!result.ok) return this.fail(`“${connection.name}” did not answer: ${result.error || 'no reason given'}.`);
+      if (result.error || !result.ok) {
+        return this.fail(`“${connection.name}” did not answer: ${result.error || 'no reason given'}.`);
+      }
       this.flash(`“${connection.name}” answered.`);
     } finally {
       this.busyId = '';
@@ -576,32 +673,31 @@ export class ModelProvidersComponent extends DataPageBase {
   }
 
   /** The connection as the form says it, saved or not, reached by a
-   *  runtime: whether it answers, and the models it offers, to add with
-   *  one click. */
-  async checkForm(): Promise<void> {
+   *  runtime with its model: whether it answers, said in the form. With
+   *  no model chosen the runtime tries the provider's newest, and the
+   *  form takes it when it answers. */
+  async test(): Promise<void> {
     const missing = this.missing;
-    if (this.checking || (missing && missing.field !== 'name')) {
+    if (this.testing || (missing && !['name', 'model'].includes(missing.field))) {
       this.tried = true;
       return;
     }
     const id = this.editingId;
-    this.checking = true;
+    this.testing = true;
+    this.tested = null;
     this.error = '';
     try {
       const result = await this.service.check(this.sent, id ?? '');
       if (this.editingId !== id) return;
-      if (result.error) return this.fail(result.error);
-      this.offeredModels = (result.models ?? []).filter((model) => !this.draft.models.includes(model));
-      if (!result.ok) this.fail(`It did not answer: ${result.error || 'no reason given'}.`);
-      else this.flash(this.offeredModels.length ? 'It answered: add the models it offers below.' : 'It answered.');
+      const found = (result.models ?? []).filter((model) => !this.models.some((known) => known.id === model));
+      this.models = [...this.models, ...found.map((model) => ({ id: model, name: model }))];
+      if (result.ok && !this.draft.model && result.models?.length) this.draft.model = result.models[0];
+      this.tested = result.ok && !result.error
+        ? { ok: true, text: 'It answered.' }
+        : { ok: false, text: `It did not answer: ${result.error || 'no reason given'}.` };
     } finally {
-      this.checking = false;
+      this.testing = false;
     }
-  }
-
-  addModel(model: string): void {
-    if (!this.draft.models.includes(model)) this.draft.models = [...this.draft.models, model];
-    this.offeredModels = this.offeredModels.filter((offered) => offered !== model);
   }
 
   // ── Default ─────────────────────────────────────────────────────────

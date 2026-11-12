@@ -15,13 +15,16 @@ import { LlmConnection, SettingsLlmService } from 'src/app/services/settings-llm
 import { ChatSettings, DEFAULT_CHAT_SETTINGS } from 'src/app/models/chat-protocol';
 import { ChatAgentsDialogComponent, ChatReach } from '../../ai/chat/chat-agents-dialog/chat-agents-dialog.component';
 import { ChatSkillsDialogComponent } from '../../ai/chat/chat-skills-dialog/chat-skills-dialog.component';
-import { EFFORT_CHOICES, TRUST_CHOICES, TURN_BUDGET_CHOICES, chatDefaults } from '../../ai/chat/chat-defaults';
+import {
+  EFFORT_CHOICES, TRUST_CHOICES, TURN_BUDGET_CHOICES, chatDefaults, modelChoices, modelPick, modelValue,
+} from '../../ai/chat/chat-defaults';
 
 /** What a new chat of this person starts with, of a chat's settings. */
-type ChatDefaults = Pick<ChatSettings, 'model' | 'effort' | 'trust' | 'turn_budget' | 'agents' | 'skills' | 'mcp_servers'>;
+type ChatDefaults = Pick<ChatSettings,
+  'model' | 'model_id' | 'effort' | 'trust' | 'turn_budget' | 'agents' | 'skills' | 'mcp_servers'>;
 
 const STANDARD: ChatDefaults = {
-  model: DEFAULT_CHAT_SETTINGS.model, effort: DEFAULT_CHAT_SETTINGS.effort,
+  model: DEFAULT_CHAT_SETTINGS.model, model_id: DEFAULT_CHAT_SETTINGS.model_id, effort: DEFAULT_CHAT_SETTINGS.effort,
   trust: DEFAULT_CHAT_SETTINGS.trust, turn_budget: DEFAULT_CHAT_SETTINGS.turn_budget,
   agents: null, skills: null, mcp_servers: null,
 };
@@ -58,9 +61,10 @@ export class ChatDefaultsComponent implements OnInit, HasUnsavedChanges {
   saveError = '';
 
   readonly draft = new Draft<ChatDefaults>(STANDARD);
-  /** The connections this person may use, and the organization's default
-   *  first: what the model is chosen among. */
+  /** Every model of the connections this person may use, and the
+   *  organization's default first: what the model is chosen among. */
   modelChoices: Choice<string>[] = [];
+  private connections: LlmConnection[] = [];
   /** "Saved", for a moment, beside the read-aloud switch. */
   readAloudNote = '';
   /** "Saved", for a moment, beside the speech choices. */
@@ -109,8 +113,8 @@ export class ChatDefaultsComponent implements OnInit, HasUnsavedChanges {
       ]);
       // No profile is no answer: the gateway reports a failure as one.
       if (!profile) throw new Error('no profile');
-      this.modelChoices = [{ value: '', name: 'The organization\'s default' },
-        ...connections.map((connection: LlmConnection) => ({ value: connection.connection_id, name: connection.name }))];
+      this.connections = connections;
+      this.modelChoices = modelChoices(connections);
       this.kept = profile.preferences.chat ?? {};
       this.draft.take(this.read());
       void this.readAloud.refresh();
@@ -131,13 +135,23 @@ export class ChatDefaultsComponent implements OnInit, HasUnsavedChanges {
   private read(): ChatDefaults {
     const chosen = chatDefaults(this.kept);
     return {
-      model: chosen.model ?? STANDARD.model, effort: chosen.effort ?? STANDARD.effort,
+      model: chosen.model ?? STANDARD.model, model_id: chosen.model_id ?? STANDARD.model_id,
+      effort: chosen.effort ?? STANDARD.effort,
       trust: chosen.trust ?? STANDARD.trust, turn_budget: chosen.turn_budget ?? STANDARD.turn_budget,
       agents: chosen.agents ?? null, skills: chosen.skills ?? null, mcp_servers: chosen.mcp_servers ?? null,
     };
   }
 
   readonly listWords = listWords;
+
+  /** The model chosen, as one of the choices: a connection and its model. */
+  get model(): string {
+    return modelValue(this.draft.value, this.connections);
+  }
+
+  set model(value: string) {
+    Object.assign(this.draft.value, modelPick(value));
+  }
 
   /** The agents and servers a new chat uses, chosen in the dialog a chat's
    *  own menu opens. */

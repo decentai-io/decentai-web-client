@@ -1,45 +1,73 @@
 @switch (card.kind) {
   @case ('approval') {
-    <!-- An agent's call waiting for the person's yes. -->
+    <!-- The calls of one step waiting for the person: all, none, or each. -->
     <div class="approval-card" role="group" aria-label="Approval required">
       <div class="approval-head">
         <lucide-icon class="approval-icon" name="shield-alert" [size]="20" aria-hidden="true"></lucide-icon>
         <div class="approval-title-wrap">
-          <span class="approval-title">{{ who }} asks to run “{{ functionLabel }}”</span>
-          <span class="approval-subtitle">Nothing runs until you allow it.</span>
+          <span class="approval-title">{{ approvalTitle }}</span>
+          <span class="approval-subtitle">Nothing runs until you allow it. It waits for you however long you take.</span>
         </div>
       </div>
-      <div class="approval-body">
-        <div class="approval-row">
-          <span class="approval-label">Function</span>
-          <code class="approval-value">{{ request.function }}</code>
-        </div>
-        @if (callLabel) {
-          <div class="approval-row">
-            <span class="approval-label">It would</span>
-            <span class="approval-value">{{ callLabel }}</span>
-          </div>
+      @if (request.why) {
+        <p class="approval-why">“{{ request.why }}”</p>
+      }
+      <ul class="approval-items">
+        @for (item of items; track item.id) {
+          <li class="approval-item">
+            @if (items.length > 1) {
+              <mat-checkbox [checked]="ticked[item.id] !== false" (change)="ticked[item.id] = $event.checked"
+                            [attr.aria-label]="'Allow ' + itemName(item)"></mat-checkbox>
+            }
+            <div class="approval-body">
+              <div class="approval-row">
+                <span class="approval-label">Call</span>
+                <span class="approval-value">{{ itemName(item) }}</span>
+              </div>
+              @if (callLabel(item)) {
+                <div class="approval-row">
+                  <span class="approval-label">It would</span>
+                  <span class="approval-value">{{ callLabel(item) }}</span>
+                </div>
+              }
+              @if (levelLabel(item)) {
+                <div class="approval-row">
+                  <span class="approval-label">Risk level</span>
+                  <span class="approval-level" [matTooltip]="'Level ' + item.level">{{ levelLabel(item) }}</span>
+                </div>
+              }
+              @if (item.inputs) {
+                <div class="approval-row">
+                  <span class="approval-label">With</span>
+                  <code class="approval-value approval-inputs">{{ item.inputs }}</code>
+                </div>
+              }
+            </div>
+          </li>
         }
-        @if (levelLabel) {
-          <div class="approval-row">
-            <span class="approval-label">Risk level</span>
-            <span class="approval-level" [matTooltip]="'Level ' + request.level">{{ levelLabel }}</span>
-          </div>
+      </ul>
+      @if (rememberable) {
+        <mat-checkbox class="check-row" [checked]="remember" (change)="remember = !remember">
+          <span class="check-name">Remember my {{ items.length > 1 ? 'answers' : 'answer' }}</span>
+          <span class="check-hint">For each agent and function, and its record where it names one. You can take it back on the agent's page.</span>
+        </mat-checkbox>
+      }
+      <div class="approval-actions">
+        <button type="button" class="btn" [disabled]="busy" (click)="decide(false)">
+          <lucide-icon name="x" [size]="16" aria-hidden="true"></lucide-icon>
+          {{ items.length > 1 ? 'Allow none' : "Don't allow" }}
+        </button>
+        @if (items.length > 1) {
+          <button type="button" class="btn" [disabled]="busy || !tickedCount" (click)="decide(null)">
+            <lucide-icon name="list-checks" [size]="16" aria-hidden="true"></lucide-icon>
+            Allow the {{ tickedCount }} ticked
+          </button>
         }
-        @if (request.inputs) {
-          <div class="approval-row">
-            <span class="approval-label">With</span>
-            <code class="approval-value">{{ request.inputs }}</code>
-          </div>
-        }
-        @if (!request.server) {
-          <mat-checkbox class="check-row" [checked]="remember" (change)="remember = !remember">
-            <span class="check-name">Remember my answer</span>
-            <span class="check-hint">For this agent and function{{ request.record ? ' on this record' : '' }}. You can take it back on the agent's page.</span>
-          </mat-checkbox>
-        }
+        <button type="button" class="btn primary" [disabled]="busy" (click)="decide(true)">
+          <lucide-icon name="check" [size]="16" aria-hidden="true"></lucide-icon>
+          {{ items.length > 1 ? 'Allow all' : 'Allow' }}
+        </button>
       </div>
-      <ng-container *ngTemplateOutlet="allowDeny"></ng-container>
     </div>
   }
 

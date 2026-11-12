@@ -100,8 +100,29 @@
 .wc-line {
   display: flex;
   align-items: flex-start;
+  gap: 8px;
+  padding: 4px 8px 4px calc(8px + var(--depth, 0) * 20px);
+}
+
+/* The row's own button: what it is and its latest word; opens its story. */
+.wc-row-toggle {
+  display: flex;
+  flex: 1;
+  align-items: flex-start;
   gap: 10px;
-  padding: 6px 12px;
+  min-width: 0;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.wc-row-toggle:hover {
+  background: var(--surface-2);
 }
 
 .wc-icon {
@@ -111,33 +132,95 @@
   color: var(--ink-3);
 }
 
-.wc-icon.is-spinning {
-  color: var(--accent);
-  animation: spin 1.2s linear infinite;
-}
-
-[data-status='done'] > .wc-line .wc-icon {
-  color: var(--accent-ink);
-}
-
-[data-status='failed'] > .wc-line .wc-icon {
-  color: var(--danger-ink);
-}
-
 .wc-main {
+  display: flex;
   flex: 1;
+  flex-direction: column;
   min-width: 0;
   color: var(--ink);
 }
 
-.wc-title a {
-  margin-left: 6px;
+.wc-said {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--ink-2);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.wc-said.is-error {
+  color: var(--danger-ink);
 }
 
 .wc-meta {
+  display: flex;
   flex: none;
-  margin-top: 1px;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
   color: var(--ink-3);
   font-size: var(--t-xs);
   font-variant-numeric: tabular-nums;
+}
+
+.wc-state.is-spinning {
+  color: var(--accent);
+  animation: spin 1.2s linear infinite;
+}
+
+[data-status='done'] .wc-state {
+  color: var(--accent-ink);
+}
+
+[data-status='failed'] .wc-state {
+  color: var(--danger-ink);
+}
+
+[data-status='waiting'] .wc-state {
+  color: var(--warn-ink);
+}
+
+/* A row's story: what it is, then each thing known of it. */
+.wc-story {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 4px 12px;
+  margin: 0 12px 8px calc(42px + var(--depth, 0) * 20px);
+  padding: 8px 12px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+}
+
+.wc-story dt {
+  color: var(--ink-3);
+}
+
+.wc-story dd {
+  margin: 0;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.wc-why {
+  font-style: italic;
+}
+
+.wc-code {
+  font: 400 var(--t-xs) / var(--lh-xs) var(--font-mono);
+  white-space: pre-wrap;
+}
+
+.wc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.wc-more {
+  margin-left: -8px;
+}
+
+.wc-none {
+  grid-column: 1 / -1;
+  color: var(--ink-3);
 }

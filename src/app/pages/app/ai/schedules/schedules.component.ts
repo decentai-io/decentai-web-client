@@ -178,7 +178,10 @@ export class SchedulesComponent extends DataPageBase implements OnInit, OnDestro
   cardWords(card: Card): string {
     const who = card.agent || 'Your assistant';
     switch (card.kind) {
-      case 'approval': return `${who} asks to run ${card.request.function}`;
+      case 'approval': {
+        const items = card.request.items || [];
+        return `${who} asks to run ${items.length === 1 ? items[0].name || items[0].function : items.length + ' calls'}`;
+      }
       case 'network': return `${who} asks to reach ${card.request.hosts.join(', ')}`;
       case 'question': return card.request.text ? `${who} asks: ${card.request.text}` : `${who} asks a question`;
       case 'form': return `${who} needs ${card.request.label || 'a sign-in'}`;
@@ -284,7 +287,8 @@ export class SchedulesComponent extends DataPageBase implements OnInit, OnDestro
 
   // ── The person's own hand on the clock ──────────────────────────────
 
-  private async change(schedule: Schedule, changes: { paused?: boolean; run_now?: boolean }, said: string): Promise<void> {
+  private async change(schedule: Schedule, changes: { paused?: boolean; run_now?: boolean; trust?: number },
+                       said: string): Promise<void> {
     this.busyId = schedule.schedule_id;
     try {
       const result = await this.service.update(schedule.schedule_id, changes);
@@ -299,6 +303,11 @@ export class SchedulesComponent extends DataPageBase implements OnInit, OnDestro
   setPaused(schedule: Schedule, paused: boolean): Promise<void> {
     return this.change(schedule, { paused },
       paused ? 'Paused. It runs no more until you resume it.' : 'Resumed.');
+  }
+
+  /** The trust its runs act at, from its next run on. */
+  setTrust(schedule: Schedule, trust: number): Promise<void> {
+    return this.change(schedule, { trust }, 'Saved. Its next runs act at that trust.');
   }
 
   /** Its next run is now: what it does shows up in its chat. */

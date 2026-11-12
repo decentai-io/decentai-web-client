@@ -51,6 +51,69 @@
   gap: 12px;
 }
 
+/* A schedule's or webhook's run: a block of its own, with a head that
+   says which and when. */
+.chat-turn.is-run {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+
+.run-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--ink-2);
+  font: 400 var(--t-sm) / var(--lh-sm) var(--font-sans);
+}
+
+.run-kind {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.run-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.run-time,
+.thread-note-time {
+  flex: none;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* What happened besides the conversation: one quiet centered line. */
+.thread-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--ink-2);
+  font: 400 var(--t-sm) / var(--lh-sm) var(--font-sans);
+  text-align: center;
+}
+
+.thread-note lucide-icon {
+  display: flex;
+  color: var(--ink-3);
+}
+
+/* Under an answer: who wrote it and what it took. */
+.turn-foot {
+  margin: -4px 0 0;
+  color: var(--ink-3);
+  font: 400 var(--t-xs) / var(--lh-xs) var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+
 .thread-older {
   display: flex;
   justify-content: center;

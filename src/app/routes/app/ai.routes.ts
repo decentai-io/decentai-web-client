@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { ChatHomeComponent } from '../../pages/app/ai/chat/chat-home/chat-home.component';
 import { ChatDetailComponent } from '../../pages/app/ai/chat/chat-detail/chat-detail.component';
 import { SchedulesComponent } from '../../pages/app/ai/schedules/schedules.component';
+import { WaitingComponent } from '../../pages/app/ai/waiting/waiting.component';
 import { WebhooksComponent } from '../../pages/app/ai/webhooks/webhooks.component';
 import { permissionGuard } from '../../guards/permission.guard';
 
@@ -26,6 +27,15 @@ export const AIRoutes: Routes = [
     component: ChatDetailComponent,
     canActivate: [permissionGuard],
     data: { requiredAction: 'ai:chat:open' },
+  },
+  // Waiting for you: every card open across the person's chats, answered
+  // in one place.
+  {
+    path: 'waiting',
+    title: 'Waiting for you',
+    component: WaitingComponent,
+    canActivate: [permissionGuard],
+    data: { requiredAction: 'ai:activity:list' },
   },
   // Memory is the person's own configuration of the assistant; it
   // lives under Settings. Bookmarks follow.

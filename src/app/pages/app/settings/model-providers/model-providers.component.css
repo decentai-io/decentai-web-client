@@ -83,7 +83,30 @@
   margin-top: 8px;
 }
 
-/* Step two. */
+/* Step two: the provider chosen, on one line, with the way back to the
+   list while adding. */
+.provider-picked {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 12px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+
+.provider-picked-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: var(--t-sm);
+  font-weight: 500;
+  line-height: var(--lh-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .provider-servers {
   display: flex;
   flex-wrap: wrap;
@@ -91,31 +114,34 @@
   gap: 4px;
 }
 
+/* Where the key is made: a link under the key's field. */
+.provider-key-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
+}
+
 .provider-more {
   align-self: flex-start;
   margin-left: -8px;
 }
 
-/* Whose chats may use it: the groups, Everyone first. */
+/* The groups, once "Some groups" is chosen. */
 .provider-groups {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
+  margin-top: 4px;
 }
 
-.provider-groups-title {
-  margin-bottom: 2px;
-  color: var(--ink);
-  font-size: var(--t-sm);
-  font-weight: 500;
-  line-height: var(--lh-sm);
-}
-
-.provider-back {
+/* The test, at the left of the dialog's buttons, and what it found. */
+.provider-test {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   margin-right: auto;
 }
 

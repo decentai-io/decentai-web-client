@@ -29,6 +29,10 @@ export interface Schedule {
   paused: boolean;
   /** Who made it: the person, or the assistant through its runtime. */
   by: 'person' | 'assistant';
+  /** The trust its runs act at, nobody watching: a call above it waits for
+   *  the person's approval. The chat's when made; its person may set
+   *  another, above the chat's too. Null for one older than trusts. */
+  trust: number | null;
   /** The last 20 runs' outcomes, oldest first. */
   runs: ScheduleRun[];
 }
@@ -46,6 +50,8 @@ export interface SchedulableFunction {
 export interface Activity {
   cards: Card[];
   schedules: Schedule[];
+  /** The titles of the chats the cards are in, by chat id. */
+  chats?: Record<string, string>;
   error?: string;
 }
 
@@ -60,7 +66,7 @@ export class ActivityService {
 
   async list(): Promise<Activity> {
     const r = await this.request.gateway('AI:Activity:list');
-    return { cards: r.cards ?? [], schedules: r.schedules ?? [], error: r.error };
+    return { cards: r.cards ?? [], schedules: r.schedules ?? [], chats: r.chats ?? {}, error: r.error };
   }
 
   /** Every schedule of the person's, paused ones too, soonest first; one
@@ -74,8 +80,8 @@ export class ActivityService {
     return this.request.gateway<{ schedule: Schedule }>('AI:Schedule:create', { chat_id: chatId, what, when });
   }
 
-  /** Pause, resume, run now, or change when it runs. */
-  update(scheduleId: string, changes: { when?: ScheduleWhen; paused?: boolean; run_now?: boolean }) {
+  /** Pause, resume, run now, or change when it runs and the trust it runs at. */
+  update(scheduleId: string, changes: { when?: ScheduleWhen; paused?: boolean; run_now?: boolean; trust?: number }) {
     return this.request.gateway<{ schedule: Schedule }>('AI:Schedule:update', { schedule_id: scheduleId, ...changes });
   }
 

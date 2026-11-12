@@ -91,6 +91,44 @@ code.approval-value {
   font-size: var(--t-xs);
 }
 
+/* ── An approval's items: the calls of one step, each ticked or not ── */
+.approval-why {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
+  font-style: italic;
+  overflow-wrap: anywhere;
+}
+
+.approval-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.approval-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.approval-item + .approval-item {
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+code.approval-inputs {
+  white-space: pre-wrap;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
 .approval-more {
   align-self: flex-start;
 }

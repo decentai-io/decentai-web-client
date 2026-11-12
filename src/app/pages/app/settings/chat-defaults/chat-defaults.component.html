@@ -11,7 +11,7 @@
 <ng-container *ngIf="!loading && !loadError">
   <div class="form-section">
     <app-field *ngIf="canChooseModel" label="Model" help="Remembered from the model you last picked in a chat.">
-      <app-select [choices]="modelChoices" [(ngModel)]="draft.value.model"></app-select>
+      <app-select [choices]="modelChoices" [(ngModel)]="model"></app-select>
     </app-field>
 
     <app-field label="Effort" help="How hard the model is asked to think.">

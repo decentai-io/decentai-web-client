@@ -3,7 +3,7 @@ import * as Prism from 'prismjs';
 import 'prismjs/components/prism-python';
 
 import { ChartInput } from 'src/app/components/chart-viewer/chart-viewer.component';
-import { Card, CardAnswer, FormRequest } from 'src/app/models/chat-protocol';
+import { ApprovalItem, Card, CardAnswer, FormRequest } from 'src/app/models/chat-protocol';
 import { levelLabel } from 'src/app/pages/app/agents/agent-shared';
 
 /** What the person decided on a card. A file question's file is uploaded
@@ -32,11 +32,11 @@ interface Asked {
 /**
  * A card: what a chat asks its person, and only them, answered here.
  *
- * - approval: to let an agent's call through, its level above the chat's
- *   trust or a policy that says ask; the answer may be remembered for the
- *   agent, its function and the record. Or a person's MCP tool, its level
- *   above the chat's trust: shown with its inputs, and never remembered,
- *   since the tool's own level says whether it asks.
+ * - approval: the calls one step of the assistant needs the person for,
+ *   each an item: an agent's call above its run's trust, or one a policy
+ *   says to ask, or a person's MCP tool above its trust. The person allows
+ *   all, none, or each as ticked; the answers may be remembered for each
+ *   agent, function and record.
  * - network: the code an agent wants to run, what it is for, and the
  *   hosts it would reach.
  * - question: what an agent's `chat` expects: words, a choice, or a file.
@@ -63,8 +63,10 @@ export class ChatApprovalCardComponent {
 
   /** The person's own words, for a question. */
   reply = '';
-  /** An approval's answer is to be remembered. */
+  /** An approval's answers are to be remembered. */
   remember = false;
+  /** Each item of an approval as ticked, by its id; unset, it is ticked. */
+  ticked: Record<string, boolean> = {};
   /** A form's answers, by `Asked.key`. */
   typed: Record<string, string> = {};
   /** Whether the code or the skill is open; unset, it is open. */
@@ -78,26 +80,53 @@ export class ChatApprovalCardComponent {
   }
 
   get who(): string {
-    return this.request.server ? `${this.request.server}, an MCP server,`
-      : this.agentName || this.card?.agent || 'The assistant';
+    return this.agentName || (this.card?.agent?.startsWith('mcp:') ? 'An MCP tool' : this.card?.agent)
+      || 'The assistant';
   }
 
   // ── Approval ─────────────────────────────────────────────────────────
 
-  /** The function as a person reads it: its id's words. */
-  get functionLabel(): string {
-    return String(this.request.function || 'an action').replace(/[_-]+/g, ' ');
+  get items(): ApprovalItem[] {
+    return this.request.items || [];
   }
 
-  /** What the call reaches through the runtime, where it reaches a record. */
-  get callLabel(): string {
-    const call = String(this.request.call || '');
+  /** What the card asks, in a few words. */
+  get approvalTitle(): string {
+    const items = this.items;
+    return items.length === 1 ? `${this.who} asks to run “${this.itemName(items[0])}”`
+      : `${this.who} asks to run ${items.length} calls`;
+  }
+
+  get tickedCount(): number {
+    return this.items.filter((item) => this.ticked[item.id] !== false).length;
+  }
+
+  /** Answers may be remembered for agents' calls; an MCP tool's own level
+   *  says whether it asks. */
+  get rememberable(): boolean {
+    return this.items.some((item) => !item.agent.startsWith('mcp:'));
+  }
+
+  itemName(item: ApprovalItem): string {
+    return item.name || String(item.function || 'an action').replace(/[_-]+/g, ' ');
+  }
+
+  /** What a program's call reaches through the runtime, where it reaches a record. */
+  callLabel(item: ApprovalItem): string {
+    const call = String(item.call || '');
     const [operation, resource] = call.split(':');
-    return call ? `${operation.replace('record.', '')} a record of ${resource || 'its own'}` : '';
+    if (!call) return '';
+    return resource ? `${operation.replace('record.', '')} a record of ${resource}` : operation;
   }
 
-  get levelLabel(): string {
-    return levelLabel(this.request.level) || '';
+  levelLabel(item: ApprovalItem): string {
+    return levelLabel(item.level) || '';
+  }
+
+  /** Every item allowed (true), none (false), or each as ticked (null). */
+  decide(all: boolean | null): void {
+    const items = Object.fromEntries(this.items.map((item) => [item.id, all ?? this.ticked[item.id] !== false]));
+    this.emit({ items, remember: this.remember });
   }
 
   // ── Network ──────────────────────────────────────────────────────────
@@ -195,8 +224,9 @@ export class ChatApprovalCardComponent {
 
   // ── Answering ────────────────────────────────────────────────────────
 
+  /** A network card's yes or no. */
   allow(allowed: boolean): void {
-    this.emit(this.card.kind === 'approval' ? { allowed, remember: this.remember } : { allowed });
+    this.emit({ allowed });
   }
 
   save(save: boolean): void {

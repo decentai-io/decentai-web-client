@@ -57,7 +57,7 @@ export class ChatHomeComponent implements OnInit {
   staged: FileChoice[] | null = null;
   /** What the next chat thinks with, named under the composer and
    *  changed there: what this person last picked. */
-  llm: ChatModel = { model: '', effort: '' };
+  llm: ChatModel = { model: '', model_id: '', effort: '' };
 
   constructor(
     private router: Router,
@@ -76,7 +76,9 @@ export class ChatHomeComponent implements OnInit {
     // Refreshed in the background: a new conversation never waits for
     // the list.
     void this.loadChats();
-    void this.defaults().then((kept) => (this.llm = { model: kept.model || '', effort: kept.effort || '' }));
+    void this.defaults().then((kept) => (this.llm = {
+      model: kept.model || '', model_id: kept.model_id || '', effort: kept.effort || '',
+    }));
     const handed = history.state?.stagedFiles;
     if (Array.isArray(handed) && handed.length) {
       // The Files page hands over its records.
@@ -182,14 +184,15 @@ export class ChatHomeComponent implements OnInit {
     this.isLoading = true;
     try {
       const kept = await this.defaults();
-      if (kept.model !== this.llm.model || (kept.effort || '') !== this.llm.effort) {
+      const picked = { model: this.llm.model, model_id: this.llm.model_id, effort: this.llm.effort };
+      if (kept.model !== picked.model || (kept.model_id || '') !== picked.model_id
+          || (kept.effort || '') !== picked.effort) {
         // The model picked here is what the person's next chat starts
         // with too.
-        await this.profileService.savePreferences({ chat: { ...kept, model: this.llm.model, effort: this.llm.effort } });
+        await this.profileService.savePreferences({ chat: { ...kept, ...picked } });
       }
       // First words become the title; the chat's page sends them.
-      const res = await this.aiSession.createChat(message.query.substring(0, 80),
-        { model: this.llm.model, effort: this.llm.effort });
+      const res = await this.aiSession.createChat(message.query.substring(0, 80), picked);
       if (res.data?.chat) {
         this.openChat(res.data.chat.chat_id, message);
       } else {

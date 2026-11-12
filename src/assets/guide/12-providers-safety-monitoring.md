@@ -4,9 +4,9 @@ What the organization is set up with, and what it can see of its agents: the mod
 
 ## Model providers
 
-**Settings → Model providers** holds the organization's model connections: a provider, its address, its key and the models it offers, shared with groups. The key is encrypted and never shown again; changing the address asks for it again. A runtime checks a connection and lists its models, since runtimes are what call them: **Check** in the form asks before the connection is saved.
+**Settings → Model providers** holds the organization's model connections: a provider, its address, its key, and the models people may pick from it, shared with groups. Adding one is picking the provider and pasting its key; its newest model is chosen as the default, and others are added with a click. The key is encrypted and never shown again; changing the address asks for it again. **Test connection** asks a runtime, which is what calls models, whether the connection answers, before it is saved.
 
-One connection is the organization's default: a chat that chose none uses it. A person's chats may use any connection shared with a group of theirs.
+One connection is the organization's default: a chat that chose none uses it, with that connection's default model. A person's chats may use any model of a connection shared with a group of theirs.
 
 ## Speech
 

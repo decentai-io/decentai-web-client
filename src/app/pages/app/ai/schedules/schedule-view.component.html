@@ -33,6 +33,17 @@
   <button class="btn ghost danger sm" type="button" *ngIf="canDelete" [disabled]="busy" (click)="remove.emit()">Delete</button>
 </div>
 
+<section aria-labelledby="schedule-trust-title">
+  <h3 class="schedule-section" id="schedule-trust-title">Trust</h3>
+  <p class="schedule-note">
+    Its runs act at this trust with nobody watching: a call above it waits for your approval, however long you take.
+    It may differ from its chat's.
+  </p>
+  <app-select *ngIf="canUpdate; else trustWords" name="schedule-trust" [choices]="trustChoices"
+              [ngModel]="schedule.trust ?? 1" (ngModelChange)="setTrust.emit($event)"></app-select>
+  <ng-template #trustWords><p class="schedule-upcoming">{{ trustName }}</p></ng-template>
+</section>
+
 <section aria-labelledby="schedule-next-title" *ngIf="state !== 'done'">
   <h3 class="schedule-section" id="schedule-next-title">Next</h3>
   <p class="schedule-upcoming" *ngIf="nextAt">

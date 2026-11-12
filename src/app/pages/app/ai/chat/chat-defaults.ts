@@ -3,7 +3,9 @@
  * show it (a chat's menu, Chat defaults, a webhook's chat) read it from
  * here.
  */
+import { Choice } from 'src/app/components/ui/radio-keys';
 import { ChatSettings, DEFAULT_CHAT_SETTINGS } from 'src/app/models/chat-protocol';
+import { LlmConnection } from 'src/app/services/settings-llm.service';
 
 /** A chat's trust levels, as a choice: a function runs without asking
  *  when its level is at or below the chat's; each hint says what that
@@ -31,6 +33,41 @@ export const EFFORT_CHOICES: { value: ChatSettings['effort']; name: string }[] =
   { value: 'medium', name: 'Medium' },
   { value: 'high', name: 'High' },
 ];
+
+/** The model a chat thinks with, as two of its settings: a connection
+ *  ('' for the organization's default) and one of its models ('' for
+ *  the connection's first). */
+export type ModelPick = Pick<ChatSettings, 'model' | 'model_id'>;
+
+/** The model a pick means on a connection: the one named while the
+ *  connection still offers it, else its first. */
+export function modelOf(pick: ModelPick, connection: LlmConnection | undefined): string {
+  const models = connection?.models ?? [];
+  return models.includes(pick.model_id) ? pick.model_id : models[0] ?? '';
+}
+
+/** Every model of these connections as one choice, its value
+ *  `<connection>|<model>`, the organization's default first (`|`). A
+ *  connection that names no model can't be thought with, so is not one. */
+export function modelChoices(connections: LlmConnection[]): Choice<string>[] {
+  return [{ value: '|', name: "The organization's default" },
+    ...connections.flatMap((connection) => connection.models.map((model) => ({
+      value: `${connection.connection_id}|${model}`,
+      name: connection.models.length > 1 ? `${connection.name} · ${model}` : connection.name,
+    })))];
+}
+
+/** A pick as one of those choices' values. */
+export function modelValue(pick: ModelPick, connections: LlmConnection[]): string {
+  if (!pick.model) return '|';
+  return `${pick.model}|${modelOf(pick, connections.find((c) => c.connection_id === pick.model))}`;
+}
+
+/** One of those choices' values as a pick. */
+export function modelPick(value: string): ModelPick {
+  const at = value.indexOf('|');
+  return at < 0 ? { model: value, model_id: '' } : { model: value.slice(0, at), model_id: value.slice(at + 1) };
+}
 
 /** The settings a person's new chat starts with, from what they kept
  *  (`preferences.chat`): only what is one of a chat's settings, and of

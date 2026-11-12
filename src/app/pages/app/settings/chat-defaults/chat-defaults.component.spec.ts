@@ -13,7 +13,7 @@ describe('ChatDefaultsComponent', () => {
           return {};
         },
       } as any,
-      { list: async () => [{ connection_id: 'cn1', name: 'Anthropic' }] } as any,
+      { list: async () => [{ connection_id: 'cn1', name: 'Anthropic', models: ['sonnet', 'opus'] }] } as any,
       { can: () => true } as any,
       { available: false, automatic: false, refresh: async () => false } as any,
       { hearing: async () => 'none', dictation: async () => null, voice: async () => null,
@@ -29,9 +29,12 @@ describe('ChatDefaultsComponent', () => {
     await component.load();
 
     expect(component.draft.value).toEqual({
-      model: '', effort: '', trust: 1, turn_budget: 0, agents: null, skills: null, mcp_servers: null,
+      model: '', model_id: '', effort: '', trust: 1, turn_budget: 0, agents: null, skills: null, mcp_servers: null,
     });
-    expect(component.modelChoices.map((choice) => choice.value)).toEqual(['', 'cn1']);
+    expect(component.modelChoices.map((choice) => choice.value)).toEqual(['|', 'cn1|sonnet', 'cn1|opus']);
+    expect(component.modelChoices.map((choice) => choice.name)).toEqual(
+      ['The organization\'s default', 'Anthropic · sonnet', 'Anthropic · opus']);
+    expect(component.model).toBe('|');
     expect(component.draft.dirty).toBeFalse();
     expect(component.unsavedChangesTo()).toBe('');
   });
@@ -41,13 +44,16 @@ describe('ChatDefaultsComponent', () => {
     const component = create({ model: 'cn1', trust: 2, agents: ['mail'] }, calls);
     await component.load();
     expect(component.draft.value.model).toBe('cn1');
+    expect(component.model).toBe('cn1|sonnet');
 
     component.draft.value.effort = 'high';
+    component.model = 'cn1|opus';
     expect(component.unsavedChangesTo()).toBe('Chat defaults');
     await component.save();
 
     expect(calls['preferences']).toEqual({ chat: {
-      model: 'cn1', effort: 'high', trust: 2, turn_budget: 0, agents: ['mail'], skills: null, mcp_servers: null,
+      model: 'cn1', model_id: 'opus', effort: 'high', trust: 2, turn_budget: 0, agents: ['mail'], skills: null,
+      mcp_servers: null,
     } });
     expect(component.draft.dirty).toBeFalse();
   });
