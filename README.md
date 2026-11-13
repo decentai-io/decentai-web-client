@@ -1,6 +1,6 @@
 # DecentAI web client
 
-The web app for [DecentAI](https://github.com/decentai-io/decentai): an
+The web app for [DecentAI](https://github.com/decentai-io/decentai-engine): an
 Angular single-page application, one of the platform's clients. It speaks
 only to the DecentAI engine's Data Core — sign-in, the app gateway, file
 storage and the chat's WebSocket — at whatever address that engine has.

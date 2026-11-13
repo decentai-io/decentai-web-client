@@ -59,7 +59,7 @@ On one computer the engine's defaults already name the container
 them itself, from its own origins (`http://tauri.localhost` on Windows,
 `tauri://localhost` on macOS), which are added to `AI_API_ORIGINS` where it is used. On a server,
 `https://` and the app's domain
-([deploying](https://github.com/decentai-io/decentai/blob/main/documentation/operating.md#3-on-a-server)
+([deploying](https://github.com/decentai-io/decentai-engine/blob/main/documentation/operating.md#3-on-a-server)
 in the engine's repository).
 
 ## The session
