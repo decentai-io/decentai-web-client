@@ -1,4 +1,4 @@
-import { Card, ChatEvent } from 'src/app/models/chat-protocol';
+import { Card, ChatEvent, DEFAULT_CHAT_SETTINGS } from 'src/app/models/chat-protocol';
 import { ChatStateService } from 'src/app/services/chat-state.service';
 import { TopBarService } from 'src/app/services/top-bar.service';
 import { ChatDetailComponent } from './chat-detail.component';
@@ -11,6 +11,8 @@ describe('ChatDetailComponent', () => {
 
   function componentWith(session: Record<string, any> = {}, files: Record<string, any> = {}) {
     const state = new ChatStateService();
+    // The watch on chats left working: what the page tells it.
+    const chatDone = jasmine.createSpyObj('ChatDoneService', ['began', 'working', 'idle', 'opened', 'closed']);
     const component = new ChatDetailComponent(
       session as any,
       {} as any, {} as any, {} as any, {} as any,
@@ -26,6 +28,7 @@ describe('ChatDetailComponent', () => {
       { get: async () => null } as any,
       files as any,
       {} as any, {} as any, {} as any,
+      chatDone,
     );
     component.chat_id = 'c1';
     state.state$.subscribe((value) => {
@@ -35,7 +38,7 @@ describe('ChatDetailComponent', () => {
       component.working = value.working;
       component.inlineErrors = value.errors;
     });
-    return { component, state };
+    return { component, state, chatDone };
   }
 
   function deferred<T>() {
@@ -140,5 +143,75 @@ describe('ChatDetailComponent', () => {
     } finally {
       jasmine.clock().uninstall();
     }
+  });
+
+  describe('the live browser', () => {
+    const frame = (call: string): ChatEvent => ({ seq: 0, at: '', event: 'screen',
+      data: { agent: 'browser', call, screen: { image: 'iVBORw0', width: 1280, height: 800, tabs: [] } } });
+
+    function browsing(call: jasmine.Spy) {
+      const made = componentWith({ call });
+      (made.component as any).agents = [{ agent_id: 'browser', name: 'Browser' }, { agent_id: 'mail', name: 'Mail' }];
+      return made;
+    }
+
+    it('opens the browser agent\'s browser when no screen shows, and shows it with its first picture', async () => {
+      const call = jasmine.createSpy('call').and.resolveTo({ data: {} });
+      const { component } = browsing(call);
+      expect(component.canBrowse).toBeTrue();
+      expect(component.liveViewLabel).toBe('Open the live browser');
+
+      await component.toggleLiveView();
+      expect(call).toHaveBeenCalledOnceWith('c1', 'browser', 'browse_watch', { action: 'open' });
+      expect(component.screenOpening).toBeTrue();
+      expect(component.liveViewLabel).toBe('Opening the browser…');
+
+      (component as any).onEvent(frame('k9'));
+      expect(component.screenOpening).toBeFalse();
+      expect(component.screen?.call).toBe('k9');
+      expect(component.screenHidden).toBeFalse();
+
+      // With a screen, the same control hides it and shows it again, asking nothing.
+      await component.toggleLiveView();
+      expect(component.screenHidden).toBeTrue();
+      await component.toggleLiveView();
+      expect(component.screenHidden).toBeFalse();
+      expect(call).toHaveBeenCalledTimes(1);
+    });
+
+    it('says quietly why the browser could not be opened', async () => {
+      const call = jasmine.createSpy('call').and.resolveTo({ error: 'That agent is not one this chat may use.' });
+      const { component } = browsing(call);
+      await component.toggleLiveView();
+      expect(component.screenOpening).toBeFalse();
+      expect(component.inlineErrors[0].message).toContain('That agent is not one this chat may use.');
+    });
+
+    it('is not offered where the chat cannot use the browser agent', () => {
+      const { component } = browsing(jasmine.createSpy('call'));
+      component.chat = { settings: { ...DEFAULT_CHAT_SETTINGS, agents: ['mail'] } } as any;
+      expect(component.canBrowse).toBeFalse();
+    });
+  });
+
+  it('opens the inspector on the chat\'s schedules from the clock, and closes it from there', () => {
+    const { component } = componentWith();
+    component.togglePanel('schedules');
+    expect([component.panelOpen, component.panelTab]).toEqual([true, 'schedules']);
+    component.togglePanel('schedules');
+    expect(component.panelOpen).toBeFalse();
+  });
+
+  it('tells the watch on chats left working when the person sets this one going, and when it goes quiet', async () => {
+    const input = jasmine.createSpy('input').and.resolveTo({ data: { message: { message_id: 'm1', seq: 1,
+      actor: 'person', parts: [], files: [], client_id: '', at: '' } } });
+    const { component, chatDone } = componentWith({ input });
+    await component.onPrompt({ query: 'plan the trip', uploads: [] });
+    expect(chatDone.began).toHaveBeenCalledWith('c1', '', false);
+
+    (component as any).onEvent({ seq: 1, at: '', event: 'working', data: {} });
+    (component as any).onEvent({ seq: 2, at: '', event: 'idle', data: {} });
+    expect(chatDone.working).toHaveBeenCalledWith('c1');
+    expect(chatDone.idle).toHaveBeenCalledWith('c1', '');
   });
 });

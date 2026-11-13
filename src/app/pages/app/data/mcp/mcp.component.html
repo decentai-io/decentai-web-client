@@ -1,8 +1,6 @@
 <app-page guide="mcp"
   title="Tools"
   sentence="MCP servers you add for your chats: services whose tools the assistant can call. You decide which of a server's tools are on."
-  icon="square-terminal"
-  [hue]="214"
   [wide]="true"
 >
   <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
@@ -24,11 +22,11 @@
     </app-row>
   </app-list>
 
-  <!-- The servers in numbers, each a tile. -->
-  <ul class="ui-tiles data-tiles" *ngIf="servers.length" aria-label="Your tools in numbers">
-    <li class="ui-tile" *ngFor="let tile of tiles; trackBy: byIcon">
-      <span class="ui-tile-icon" [class.is-warn]="tile.warn">
-        <lucide-icon [name]="tile.icon" [size]="20" aria-hidden="true"></lucide-icon>
+  <!-- The servers in numbers, as one line. -->
+  <ul class="ui-tiles" *ngIf="servers.length" aria-label="Your tools in numbers">
+    <li class="ui-tile" [class.is-warn]="tile.warn" *ngFor="let tile of tiles; trackBy: byIcon">
+      <span class="ui-tile-icon is-warn" *ngIf="tile.warn">
+        <lucide-icon [name]="tile.icon" [size]="16" aria-hidden="true"></lucide-icon>
       </span>
       <span class="ui-tile-words">
         <span class="ui-tile-value">{{ tile.value }}</span>
@@ -87,20 +85,11 @@
     >
       <ng-container *ngTemplateOutlet="addButton"></ng-container>
     </app-empty>
-    <!-- How a server comes to be used, as three small cards. -->
+    <!-- How a server comes to be used, in three short lines. -->
     <ul class="data-hints" *ngIf="!loading && !loadProblem && !servers.length" aria-label="How a server is used">
-      <li class="data-hint">
-        <span class="ui-panel-icon is-hued"><lucide-icon name="plus" [size]="16" aria-hidden="true"></lucide-icon></span>
-        <span><strong>Add</strong> its address</span>
-      </li>
-      <li class="data-hint">
-        <span class="ui-panel-icon is-hued"><lucide-icon name="eye" [size]="16" aria-hidden="true"></lucide-icon></span>
-        <span><strong>Look over</strong> the tools it offers</span>
-      </li>
-      <li class="data-hint">
-        <span class="ui-panel-icon is-hued"><lucide-icon name="zap" [size]="16" aria-hidden="true"></lucide-icon></span>
-        <span><strong>Switch on</strong> the ones chats may call</span>
-      </li>
+      <li><strong>Add</strong> its address</li>
+      <li><strong>Look over</strong> the tools it offers</li>
+      <li><strong>Switch on</strong> the ones chats may call</li>
     </ul>
     <app-empty *ngIf="servers.length && !shownServers.length" icon="search-x" title="No server matches" line="Try another search.">
       <button class="btn" type="button" (click)="query = ''">Clear the search</button>

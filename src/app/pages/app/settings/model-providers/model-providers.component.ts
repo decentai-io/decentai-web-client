@@ -85,7 +85,7 @@ export class ModelProvidersComponent extends DataPageBase {
     return `${count} provider${count === 1 ? '' : 's'}`;
   }
 
-  /** The tiles over the list: the default's name, the models people may
+  /** The numbers over the list: the default's name, the models people may
    *  pick in all, and how many connections name none yet. */
   get defaultName(): string {
     return this.connections.find((connection) => connection.default)?.name ?? 'None';

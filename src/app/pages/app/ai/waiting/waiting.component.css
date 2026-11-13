@@ -1,7 +1,7 @@
-/* Approvals: the numbers by kind, then each chat's cards in a panel
-   under its title, oldest first. The band, the tiles, the pills, the
-   empty state and the cards themselves (chat-approval-card) are the
-   shared ones; here is the frame each card stands in. */
+/* Approvals: the numbers by kind, then each chat's cards under its
+   title, oldest first, a chat a section. The numbers line, the pills,
+   the empty state and the cards themselves (chat-approval-card) are
+   the shared ones; here is what stands over each card. */
 
 .waiting-loading {
   display: flex;
@@ -14,24 +14,14 @@
   border-radius: var(--r-lg);
 }
 
-/* ── A chat's panel ────────────────────────────────────────────────── */
+/* ── A chat: its title, and its cards under it ─────────────────────── */
 .waiting-chat {
   min-width: 0;
-  padding: 20px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
-  background:
-    linear-gradient(180deg, hsl(var(--hue, 186) 60% 97%) 0, var(--surface) 72px);
-  box-shadow: var(--shadow-1);
-}
-
-:host-context(.dark) .waiting-chat {
-  background:
-    linear-gradient(180deg, hsl(var(--hue, 186) 30% 15%) 0, var(--surface) 72px);
+  max-width: 880px;
 }
 
 .waiting-chat + .waiting-chat {
-  margin-top: 20px;
+  margin-top: 40px;
 }
 
 .waiting-head {
@@ -107,31 +97,23 @@
   display: flex;
 }
 
-/* The kind leads, in the hue; an approval in the warning's colours, as
-   it is the one that holds work back. */
+/* The kind leads; an approval in the warning's colours, as it is the
+   one that holds work back. */
 .waiting-kind {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 10px;
+  padding: 1px 10px;
   border-radius: var(--r-full);
-  background: hsl(var(--hue, 186) 62% 93%);
-  color: hsl(var(--hue, 186) 58% 24%);
-  font-size: var(--t-xs);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: var(--t-sm);
   font-weight: 600;
-  letter-spacing: 0.02em;
-  line-height: var(--lh-xs);
-}
-
-:host-context(.dark) .waiting-kind {
-  background: hsl(var(--hue, 186) 34% 20%);
-  color: hsl(var(--hue, 186) 62% 80%);
+  line-height: var(--lh-sm);
 }
 
 .waiting-kind[data-kind='approval'],
-.waiting-kind[data-kind='network'],
-:host-context(.dark) .waiting-kind[data-kind='approval'],
-:host-context(.dark) .waiting-kind[data-kind='network'] {
+.waiting-kind[data-kind='network'] {
   background: var(--warn-soft);
   color: var(--warn-ink);
 }
@@ -144,24 +126,18 @@
   justify-content: space-between;
   gap: 10px 16px;
   padding: 14px 16px;
-  border: 1px dashed var(--line-strong);
+  border: 1px solid var(--line);
   border-radius: var(--r-md);
   background: var(--surface);
   color: var(--ink);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
 }
 
 .waiting-elsewhere p {
   flex: 1 1 240px;
   min-width: 0;
   margin: 0;
-}
-
-@media (max-width: 560px) {
-  .waiting-chat {
-    padding: 14px;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

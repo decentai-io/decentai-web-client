@@ -52,14 +52,19 @@
 
     <div class="chat-bar-actions">
       @if (!isNarrow) {
-        @if (screen && screenHidden) {
-          <button type="button" class="icon-btn is-live" (click)="showHiddenScreen()"
-                  matTooltip="Show the live view" aria-label="Show the live view">
-            <lucide-icon name="monitor" [size]="18" aria-hidden="true"></lucide-icon>
+        <!-- The live browser, always at hand where the chat can use one:
+             shown or hidden, or opened as it was left. -->
+        @if (screen || canBrowse) {
+          <button type="button" class="icon-btn" [class.is-live]="screen && !screenHidden"
+                  [attr.aria-pressed]="!!screen && !screenHidden" [attr.aria-busy]="screenOpening"
+                  [disabled]="screenOpening" (click)="toggleLiveView()"
+                  [matTooltip]="liveViewLabel" [attr.aria-label]="liveViewLabel">
+            <lucide-icon [name]="screenOpening ? 'loader-circle' : 'monitor'" [class.chat-spin]="screenOpening"
+                         [size]="18" aria-hidden="true"></lucide-icon>
           </button>
         }
         <!-- Everything about this chat, beside the conversation. -->
-        <button type="button" class="icon-btn" [class.is-on]="panelOpen" (click)="panelOpen = !panelOpen"
+        <button type="button" class="icon-btn" [class.is-on]="panelOpen" (click)="togglePanel(panelOpen ? panelTab : 'overview')"
                 [attr.aria-pressed]="panelOpen" matTooltip="Inspect this chat" aria-label="Inspect this chat">
           <lucide-icon name="info" [size]="18" aria-hidden="true"></lucide-icon>
         </button>
@@ -71,14 +76,15 @@
                 matTooltip="Refresh and reconnect" aria-label="Refresh and reconnect">
           <lucide-icon name="refresh-cw" [size]="18" aria-hidden="true"></lucide-icon>
         </button>
-        <!-- The chat's clock: how many schedules it keeps, and the way
-             to them. -->
+        <!-- The chat's clock: how many schedules it keeps; it opens them
+             in the inspector, beside the conversation. -->
         @if (scheduleCount) {
-          <a class="icon-btn chat-clock" routerLink="/ai/schedules" [queryParams]="{ chat: chat_id }"
-             [matTooltip]="schedulesLabel" [attr.aria-label]="schedulesLabel">
+          <button type="button" class="icon-btn chat-clock" (click)="togglePanel('schedules')"
+                  [attr.aria-pressed]="panelOpen && panelTab === 'schedules'"
+                  [matTooltip]="schedulesLabel" [attr.aria-label]="schedulesLabel">
             <lucide-icon name="calendar-clock" [size]="18" aria-hidden="true"></lucide-icon>
             <span class="chat-clock-count" aria-hidden="true">{{ scheduleCount }}</span>
-          </a>
+          </button>
         }
         <!-- The trust level says itself: it decides what the chat may do
              without asking, so it is read, not hovered for. -->
@@ -119,7 +125,7 @@
 
 <mat-menu #chatMenu="matMenu" xPosition="before">
   @if (isNarrow) {
-    <button mat-menu-item (click)="panelOpen = true">
+    <button mat-menu-item (click)="togglePanel('overview')">
       <lucide-icon name="info" [size]="16" aria-hidden="true"></lucide-icon>
       <span>Inspect this chat</span>
     </button>
@@ -131,10 +137,10 @@
       <lucide-icon name="refresh-cw" [size]="16" aria-hidden="true"></lucide-icon>
       <span>Refresh and reconnect</span>
     </button>
-    @if (screen && screenHidden) {
-      <button mat-menu-item (click)="showHiddenScreen()">
+    @if (screen || canBrowse) {
+      <button mat-menu-item [disabled]="screenOpening" (click)="toggleLiveView()">
         <lucide-icon name="monitor" [size]="16" aria-hidden="true"></lucide-icon>
-        <span>Show the live view</span>
+        <span>{{ liveViewLabel }}</span>
       </button>
     }
     <button mat-menu-item [matMenuTriggerFor]="trustMenu">
@@ -142,10 +148,10 @@
       <span>Trust level: {{ trustLabel(settings.trust) }}</span>
     </button>
     @if (scheduleCount) {
-      <a mat-menu-item routerLink="/ai/schedules" [queryParams]="{ chat: chat_id }">
+      <button mat-menu-item (click)="togglePanel('schedules')">
         <lucide-icon name="calendar-clock" [size]="16" aria-hidden="true"></lucide-icon>
         <span>{{ schedulesLabel }}</span>
-      </a>
+      </button>
     }
   }
   <button mat-menu-item (click)="startTitleEdit()">
@@ -315,7 +321,7 @@
        ran it, what it touched, its schedules and its setup. -->
   @if (panelOpen) {
     <aside class="chat-panel" [class.is-sheet]="isNarrow" [class.is-expanded]="panelExpanded && !isNarrow">
-      <app-chat-inspector [chatId]="chat_id" [settings]="settings" [working]="working" [work]="work"
+      <app-chat-inspector [chatId]="chat_id" [(tab)]="panelTab" [settings]="settings" [working]="working" [work]="work"
                           [waiting]="cards.length" [agents]="chatAgents" [names]="names" [model]="modelLabel"
                           [files]="files" [stopping]="stoppingWork" [stoppingAll]="killing" [sheet]="isNarrow"
                           [(expanded)]="panelExpanded" (closed)="panelOpen = false" (stopWork)="stopWork($event)"

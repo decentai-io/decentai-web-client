@@ -1,10 +1,11 @@
-/* The Memory page: tiles of how full it is, the panel a memory is
+/* The Memory page: how full it is as one line, the section a memory is
    written in (styles/controls.scss `.ui-panel`) with its counter and
    button under the field; the same foot under a row being edited; and
    the line under the list. The field, the list, the rows and the
    buttons are the shared ones. */
 .memory-add {
-  margin-bottom: 28px;
+  max-width: 880px;
+  margin-bottom: 40px;
 }
 
 .memory-add-foot {
@@ -43,8 +44,8 @@
 
 .memory-error {
   color: var(--danger-ink);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
 }
 
 /* A memory is a sentence, not a name: it reads at the regular weight,

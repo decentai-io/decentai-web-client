@@ -10,7 +10,7 @@ import { AuthService } from 'src/app/services/auth.service';
 import { SettingsLlmService } from 'src/app/services/settings-llm.service';
 import { SettingsPage, settingsPageOpen, settingsPages } from 'src/app/website/config/config';
 
-/** Each page's icon, by its path: in the nav, the menu and its band. */
+/** Each page's icon, by its path: in the nav and the menu. */
 const pageIcons: Record<string, string> = {
   chat: 'message-square-text',
   notifications: 'bell',
@@ -54,8 +54,6 @@ export class SettingsShellComponent implements OnDestroy {
   readonly groups: NavGroup[];
   /** The page that is open. */
   current: SettingsPage | undefined;
-  /** The section's hue: violet, for every page of Settings. */
-  readonly hue = 262;
 
   private readonly navigation: Subscription;
 

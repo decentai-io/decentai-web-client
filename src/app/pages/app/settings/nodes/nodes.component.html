@@ -7,7 +7,6 @@
   <dl class="nodes-tiles" *ngIf="canListNodes" aria-label="At a glance">
     <div class="nodes-tile">
       <dt>
-        <span class="nodes-tile-icon" aria-hidden="true"><lucide-icon name="server" [size]="20"></lucide-icon></span>
         <span class="nodes-tile-label">Nodes connected</span>
       </dt>
       <dd>
@@ -17,7 +16,6 @@
     </div>
     <div class="nodes-tile">
       <dt>
-        <span class="nodes-tile-icon" [class.is-warn]="counts.draining" aria-hidden="true"><lucide-icon name="package" [size]="20"></lucide-icon></span>
         <span class="nodes-tile-label">Sandboxes</span>
       </dt>
       <dd>
@@ -27,7 +25,6 @@
     </div>
     <div class="nodes-tile">
       <dt>
-        <span class="nodes-tile-icon" aria-hidden="true"><lucide-icon name="message-square-text" [size]="20"></lucide-icon></span>
         <span class="nodes-tile-label">Chats running</span>
       </dt>
       <dd>
@@ -37,7 +34,6 @@
     </div>
     <div class="nodes-tile" *ngIf="canListTokens">
       <dt>
-        <span class="nodes-tile-icon" aria-hidden="true"><lucide-icon name="key-round" [size]="20"></lucide-icon></span>
         <span class="nodes-tile-label">Enrollment tokens</span>
       </dt>
       <dd>
@@ -130,9 +126,8 @@
 
       <section class="nodes-group" *ngFor="let group of groups; trackBy: byGroup" [attr.aria-label]="group.name">
         <h3 class="nodes-group-head">
-          <span class="nodes-group-icon" aria-hidden="true"><lucide-icon name="network" [size]="14"></lucide-icon></span>
           <span class="nodes-group-name">{{ group.name }}</span>
-          <span class="ui-pill nodes-group-count" [class.is-accent]="group.connected > 0">{{ group.connected }} of {{ plural(group.nodes.length, "node") }} connected</span>
+          <span class="ui-pill nodes-group-count">{{ group.connected }} of {{ plural(group.nodes.length, "node") }} connected</span>
         </h3>
         <div class="nodes-group-rows" role="list" [attr.aria-label]="'Nodes of ' + group.name">
           <app-row
@@ -181,8 +176,7 @@
   <!-- ── What lets a node join ──────────────────────────────────────── -->
   <section class="nodes-view" *ngIf="view === 'tokens' && canListTokens" aria-label="Enrollment tokens">
     <p class="nodes-view-note">
-      <span class="nodes-view-icon" aria-hidden="true"><lucide-icon name="key-round" [size]="16"></lucide-icon></span>
-      <span>A node joins by enrolling with one of these: it is given the token, and the issuer certifies it. A token says what its nodes will be, never which node.</span>
+      A node joins by enrolling with one of these: it is given the token, and the issuer certifies it. A token says what its nodes will be, never which node.
     </p>
     <app-list label="Enrollment tokens" [loading]="loading" [foot]="tokensFoot">
       <ng-container listToolbar *ngIf="!loading">
@@ -242,7 +236,6 @@
     <ng-container *ngIf="!loading; else placementLoading">
       <div class="ui-panel">
         <div class="ui-panel-head">
-          <span class="ui-panel-icon is-hued"><lucide-icon name="network" [size]="16" aria-hidden="true"></lucide-icon></span>
           <h2 class="ui-panel-title">Where chats run</h2>
           <span class="ui-pill" *ngIf="!canSetPlacement"><lucide-icon name="lock" [size]="12" aria-hidden="true"></lucide-icon>Administrators</span>
         </div>

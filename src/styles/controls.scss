@@ -883,12 +883,10 @@ div.mat-mdc-select-panel {
 
 .side-label {
   padding: 0 12px 4px;
-  color: var(--ink-3);
-  font-size: var(--t-xs);
-  font-weight: 500;
-  line-height: var(--lh-xs);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  line-height: var(--lh-sm);
 }
 
 .side-item {
@@ -1361,56 +1359,39 @@ div.mat-mdc-select-panel {
   font-family: var(--font-mono);
 }
 
-/* ── Panels, number tiles and pills: the pages' shared vocabulary ─────
-   The same language as an agent's page (pages/app/agents/agent-shared.css):
-   a panel is a card with an icon tile, a title and what is beside it; a
-   tile is a big number with an icon and a word; a pill is a small fact
-   with its icon. A page may set --hue (a number, 0 to 360) on an
-   ancestor: its tiles' and hued icons' colour. */
+/* ── Sections, numbers and pills: the pages' shared vocabulary ─────
+   Calm by rule, so a page is read before it is looked at:
+   - A box (a border, a surface, a shadow) is for an object: a card that
+     opens, a form, a dialog, a list's frame. A section of a page is a
+     heading and the space around it (`ui-panel`), never a box.
+   - Colour is meaning: the accent for on, chosen or primary, amber for
+     what needs a person, red for what failed. Surfaces and icons are
+     neutral; an agent's hue is on its mark and nowhere else.
+   - Numbers: the two to four that matter, as one quiet line
+     (`ui-tiles`), and never a count the list under it shows anyway.
+   - An icon sits beside words only when it says what they don't (a
+     warning, a kind of file). What is read is --t-base or --t-read in
+     --ink or --ink-2; --ink-3 is for times and counts; labels are in
+     sentence case.
+   - A page of details is one column (`ui-panels`, 880px at most): what
+     it is, what can be done with it, then the rest, folded when long. */
+.ui-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  max-width: 880px;
+}
+
 .ui-panel {
   min-width: 0;
-  padding: 22px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-1);
 }
 
 .ui-panel-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 18px;
-}
-
-.ui-panel-icon {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  background: var(--surface-2);
-  color: var(--ink-2);
-}
-
-.ui-panel-icon.is-hued,
-.ui-tile-icon {
-  background: hsl(var(--hue, 160) 62% 93%);
-  color: hsl(var(--hue, 160) 58% 28%);
-}
-
-.dark .ui-panel-icon.is-hued,
-.dark .ui-tile-icon {
-  background: hsl(var(--hue, 160) 34% 20%);
-  color: hsl(var(--hue, 160) 62% 78%);
-}
-
-.ui-panel-icon lucide-icon,
-.ui-tile-icon lucide-icon,
-.ui-pill lucide-icon {
-  display: flex;
+  gap: 4px 12px;
+  margin-bottom: 12px;
 }
 
 .ui-panel-title {
@@ -1424,46 +1405,39 @@ div.mat-mdc-select-panel {
 
 .ui-panel-aside {
   flex: none;
-  color: var(--ink-3);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
-}
-
-.ui-panel-note {
-  max-width: 72ch;
-  margin-top: 12px;
   color: var(--ink-2);
   font-size: var(--t-sm);
   line-height: var(--lh-sm);
 }
 
-/* Panels side by side: as many columns as fit, each at least 340px. */
-.ui-panels {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  align-items: start;
-  gap: 20px;
+.ui-panel-note {
+  max-width: 68ch;
+  margin-top: 10px;
+  color: var(--ink-2);
+  font-size: var(--t-base);
+  line-height: 22px;
 }
 
-/* A row of numbers that matter, each a tile. */
+/* The numbers that matter, as one line: "12 secrets  3 shared". A
+   number that filters the list is a button, pressed when it does. */
 .ui-tiles {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 12px;
-  margin-bottom: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+  margin: 0 0 20px -8px;
   list-style: none;
 }
 
 .ui-tile {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 14px;
+  gap: 8px;
   min-width: 0;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  background: var(--surface);
-  box-shadow: var(--shadow-1);
+  padding: 4px 8px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
   color: inherit;
   font: inherit;
   text-align: left;
@@ -1473,95 +1447,79 @@ button.ui-tile,
 a.ui-tile {
   cursor: pointer;
   text-decoration: none;
-  transition: border-color var(--dur-1) var(--ease), box-shadow var(--dur-2) var(--ease), transform var(--dur-2) var(--ease);
+  transition: background var(--dur-1) var(--ease);
 }
 
 button.ui-tile:hover,
 a.ui-tile:hover {
-  border-color: color-mix(in srgb, hsl(var(--hue, 160) 50% 45%) 45%, var(--line));
-  box-shadow: var(--shadow-2);
-  transform: translateY(-1px);
+  background: var(--surface-2);
 }
 
-.ui-tile.is-on {
-  border-color: hsl(var(--hue, 160) 50% 45%);
-  box-shadow: 0 0 0 1px hsl(var(--hue, 160) 50% 45%), var(--shadow-1);
+button.ui-tile:focus-visible,
+a.ui-tile:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
 }
 
-.ui-tile-icon {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+.ui-tile.is-on,
+.ui-tile.is-on:hover {
+  background: var(--accent-soft);
 }
 
-.ui-tile-icon.is-warn,
-.dark .ui-tile-icon.is-warn {
-  background: var(--warn-soft);
+.ui-tile.is-on :is(.ui-tile-value, .ui-tile-label) {
+  color: var(--accent-ink);
+}
+
+/* A number worth a second look (an outside action, a failure) says so
+   in its colour, and only it. */
+.ui-tile.is-warn .ui-tile-value {
   color: var(--warn-ink);
 }
 
-.ui-tile-icon.is-danger,
-.dark .ui-tile-icon.is-danger {
-  background: var(--danger-soft);
+/* An icon only where it means something: what needs a person, what
+   failed. */
+.ui-tile-icon {
+  display: flex;
+  flex: none;
+  color: var(--ink-3);
+}
+
+.ui-tile-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.ui-tile-icon.is-warn {
+  color: var(--warn-ink);
+}
+
+.ui-tile-icon.is-danger {
   color: var(--danger-ink);
 }
 
 .ui-tile-words {
-  display: flex;
-  flex-direction: column;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
   min-width: 0;
 }
 
 .ui-tile-value {
-  overflow: hidden;
   color: var(--ink);
-  font-size: var(--t-lg);
-  font-weight: 650;
+  font-size: var(--t-md);
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
-  line-height: var(--lh-lg);
-  text-overflow: ellipsis;
+  line-height: var(--lh-md);
   white-space: nowrap;
 }
 
 .ui-tile-label {
   color: var(--ink-2);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
 }
 
-@media (max-width: 560px) {
-  .ui-tiles {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-  }
-
-  .ui-tile {
-    gap: 10px;
-    padding: 10px 12px;
-  }
-
-  .ui-tile-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 10px;
-  }
-
-  .ui-tile-value {
-    font-size: var(--t-md);
-    line-height: var(--lh-md);
-  }
-
-  .ui-tile-label {
-    font-size: var(--t-xs);
-    line-height: var(--lh-xs);
-  }
-}
-
-/* A small fact with its icon. */
+/* A small fact, with an icon when the icon says something. */
 .ui-pills {
   display: flex;
   flex-wrap: wrap;
@@ -1573,15 +1531,19 @@ a.ui-tile:hover {
   align-items: center;
   gap: 5px;
   max-width: 100%;
-  padding: 3px 9px;
+  padding: 1px 8px;
   overflow: hidden;
   border-radius: var(--r-full);
   background: var(--surface-2);
   color: var(--ink-2);
-  font-size: var(--t-xs);
-  line-height: var(--lh-xs);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.ui-pill lucide-icon {
+  display: flex;
 }
 
 .ui-pill.is-accent {
@@ -1599,30 +1561,27 @@ a.ui-tile:hover {
   color: var(--danger-ink);
 }
 
-/* A card in a grid of things (files, skills, schedules…): the same
-   surface and lift as an agent's card. */
+/* A card in a grid of things that open (files, skills, places): the
+   one box here, neutral, lifted only when pointed at. */
 .ui-card {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
   padding: 18px;
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
   background: var(--surface);
-  box-shadow: var(--shadow-1);
   color: inherit;
   text-decoration: none;
-  transition: border-color var(--dur-1) var(--ease), box-shadow var(--dur-2) var(--ease), transform var(--dur-2) var(--ease);
+  transition: border-color var(--dur-1) var(--ease), box-shadow var(--dur-2) var(--ease);
 }
 
 a.ui-card:hover,
-button.ui-card:hover,
-.ui-card.is-link:hover {
-  border-color: color-mix(in srgb, hsl(var(--hue, 160) 50% 45%) 40%, var(--line));
+button.ui-card:hover {
+  border-color: var(--line-strong);
   box-shadow: var(--shadow-2);
-  transform: translateY(-2px);
   text-decoration: none;
 }
 
@@ -1630,14 +1589,4 @@ button.ui-card:hover,
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 16px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  button.ui-tile:hover,
-  a.ui-tile:hover,
-  a.ui-card:hover,
-  button.ui-card:hover,
-  .ui-card.is-link:hover {
-    transform: none;
-  }
 }

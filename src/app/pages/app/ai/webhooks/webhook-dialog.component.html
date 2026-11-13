@@ -1,12 +1,7 @@
 <ng-container *ngIf="!made">
-  <h2 mat-dialog-title class="dialog-band">
-    <span class="opened-mark" aria-hidden="true">
-      <lucide-icon [name]="editing ? 'pencil' : 'webhook'" [size]="20" [strokeWidth]="1.75"></lucide-icon>
-    </span>
-    <span class="dialog-band-words">
-      <span class="dialog-band-title">{{ editing ? 'Edit ' + editing.name : 'Make a webhook' }}</span>
-      <span class="dialog-band-line">An address, and what your assistant does with what arrives.</span>
-    </span>
+  <h2 mat-dialog-title class="dialog-head">
+    <span class="dialog-head-title">{{ editing ? 'Edit ' + editing.name : 'Make a webhook' }}</span>
+    <span class="dialog-head-line">An address, and what your assistant does with what arrives.</span>
   </h2>
   <form (ngSubmit)="save()">
     <mat-dialog-content>
@@ -27,10 +22,7 @@
         </app-field>
 
         <fieldset class="hook-fields">
-          <legend class="hook-legend">
-            <span class="hook-legend-icon" aria-hidden="true"><lucide-icon name="file-braces" [size]="14"></lucide-icon></span>
-            Fields
-          </legend>
+          <legend class="hook-legend">Fields</legend>
           <p class="hook-help">What a caller posts, as one JSON object. A body with anything else, or without a required field, is refused.</p>
           <div class="hook-field" *ngFor="let field of fields; let i = index">
             <div class="hook-field-line">
@@ -78,14 +70,9 @@
 </ng-container>
 
 <ng-container *ngIf="made">
-  <h2 mat-dialog-title class="dialog-band">
-    <span class="opened-mark" aria-hidden="true">
-      <lucide-icon name="key-round" [size]="20" [strokeWidth]="1.75"></lucide-icon>
-    </span>
-    <span class="dialog-band-words">
-      <span class="dialog-band-title">{{ made.name }}</span>
-      <span class="dialog-band-line">Its address and its secret, ready to copy.</span>
-    </span>
+  <h2 mat-dialog-title class="dialog-head">
+    <span class="dialog-head-title">{{ made.name }}</span>
+    <span class="dialog-head-line">Its address and its secret, ready to copy.</span>
   </h2>
   <mat-dialog-content>
     <div class="form">

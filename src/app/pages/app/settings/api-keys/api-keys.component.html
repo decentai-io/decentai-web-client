@@ -7,21 +7,18 @@
        made, and how many no script has called with yet. -->
   <ul class="ui-tiles" aria-label="API keys in numbers" *ngIf="!loading && keys.length">
     <li class="ui-tile">
-      <span class="ui-tile-icon"><lucide-icon name="key-round" [size]="20" aria-hidden="true"></lucide-icon></span>
       <span class="ui-tile-words">
         <span class="ui-tile-value">{{ keys.length }}</span>
         <span class="ui-tile-label">{{ keys.length === 1 ? "Active key" : "Active keys" }}</span>
       </span>
     </li>
-    <li class="ui-tile">
-      <span class="ui-tile-icon" [class.is-warn]="atLimit"><lucide-icon name="plus" [size]="20" aria-hidden="true"></lucide-icon></span>
+    <li class="ui-tile" [class.is-warn]="atLimit">
       <span class="ui-tile-words">
         <span class="ui-tile-value">{{ available }}</span>
         <span class="ui-tile-label">Still available, of {{ limit }}</span>
       </span>
     </li>
     <li class="ui-tile">
-      <span class="ui-tile-icon"><lucide-icon name="activity" [size]="20" aria-hidden="true"></lucide-icon></span>
       <span class="ui-tile-words">
         <span class="ui-tile-value">{{ usedCount }}</span>
         <span class="ui-tile-label">Used by a script</span>
@@ -33,7 +30,6 @@
     <ng-container listToolbar *ngIf="!loading">
       <!-- What a key is, beside the way to make one. -->
       <p class="keys-lead">
-        <lucide-icon name="shield-check" [size]="16" aria-hidden="true"></lucide-icon>
         Each key acts as you, with your permissions. It is shown once, when it is made.
       </p>
       <!-- The plus alone, at the list's top right, whether or not there
@@ -51,11 +47,11 @@
     <app-row *ngFor="let key of keys" [name]="key.name" [title]="datesInFull(key)">
       <lucide-icon rowMark name="key-round" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
       <code rowChips class="keys-prefix">{{ key.shown }}</code>
-      <!-- Its dates, each a pill with its icon; one ending within two
-           weeks is in the warning colour. -->
+      <!-- Its dates, each a pill; one ending within two weeks is in the
+           warning colour. -->
       <span rowMeta class="ui-pills keys-pills">
         <span class="ui-pill"><lucide-icon name="calendar" [size]="12" aria-hidden="true"></lucide-icon>{{ created(key) }}</span>
-        <span class="ui-pill" [class.is-accent]="!!key.last_used_at">
+        <span class="ui-pill">
           <lucide-icon [name]="key.last_used_at ? 'activity' : 'circle-dashed'" [size]="12" aria-hidden="true"></lucide-icon>{{ used(key) }}
         </span>
         <span class="ui-pill" [class.is-warn]="endsSoon(key)"><lucide-icon name="hourglass" [size]="12" aria-hidden="true"></lucide-icon>{{ expires(key) }}</span>

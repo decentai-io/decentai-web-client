@@ -5,7 +5,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 
-import { AgentMarkComponent, hueOf } from 'src/app/components/ui/agent-mark.component';
+import { AgentMarkComponent } from 'src/app/components/ui/agent-mark.component';
 import { AgentStat } from './agent-shared';
 
 /** The chip at a card's top right: a word, and the chip's variant
@@ -34,11 +34,10 @@ export interface CardLevel {
  *     <app-switch cardFoot label="In new chats" …></app-switch>
  *   </app-agent-card>
  *
- * The card wears the hue the agent's name gives its mark: a wash at its
- * head, so a grid of agents reads as so many different things rather than
- * one tile repeated. Under the words, what it counts (`stats`, as small
- * pills with their icons, or `facts` as a line), and a thin bar of how far
- * its functions may go (`levels`). What is marked `cardFoot` is the
+ * The card is neutral; the agent's mark carries its hue, which is what
+ * tells one agent from the next in a grid. Under the words, what it
+ * counts (`stats`, as one quiet line with their icons, or `facts` as
+ * words), and a thin bar of how far its functions may go (`levels`). What is marked `cardFoot` is the
  * card's own controls, under a hairline. With `selectable`, a tick box
  * sits at the top left: seen when the card is pointed at or holds the
  * focus, and always once something is ticked (`selecting`) or under a
@@ -53,7 +52,6 @@ export interface CardLevel {
     '[class.is-selectable]': 'selectable',
     '[class.is-selected]': 'selected',
     '[class.is-selecting]': 'selecting',
-    '[style.--hue]': 'hue',
   },
   template: `
     <mat-checkbox
@@ -104,7 +102,7 @@ export class AgentCardComponent implements OnChanges {
   @Input() version = '';
   @Input() chip: CardChip | null = null;
   @Input() description = '';
-  /** What a person compares, as pills: how many functions, what it
+  /** What a person compares, as one line: how many functions, what it
    *  needs, where it connects. */
   @Input() stats: AgentStat[] = [];
   /** The same as a line of words, where no stats are given. */
@@ -121,11 +119,9 @@ export class AgentCardComponent implements OnChanges {
   @Input() selecting = false;
   @Output() selectedChange = new EventEmitter<boolean>();
 
-  hue = hueOf('');
   levelWords = '';
 
   ngOnChanges(): void {
-    this.hue = hueOf(this.name);
     this.levelWords = this.levels.map((level) => `${level.count} ${level.name.toLowerCase()}`).join(' · ');
   }
 }

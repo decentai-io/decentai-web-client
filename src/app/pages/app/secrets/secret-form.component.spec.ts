@@ -102,4 +102,54 @@ describe('SecretFormComponent', () => {
     expect(component.aboutOf(account)).toBe('Sign in with Google');
     expect(component.firstSentenceOf({ ...shape, description: 'An account. A note for tests only.' })).toBe('An account.');
   });
+
+  describe('the agents of a new secret, in the same form', () => {
+    const sync = {
+      agent: 'sync', agent_name: 'Sync', id: 'token', label: 'Token',
+      fields: [{ name: 'api_token', type: 'secret', storage: 'values', required: true }],
+    } as any;
+
+    function filled(component: SecretFormComponent): void {
+      component.fields['service_url'] = 'https://sync.example.com';
+      component.fields['api_token'] = 's3cret';
+    }
+
+    it('offers the other agents that take it, and gives it to those ticked once it is made', async () => {
+      const { component, calls, closed } = create({ shapes: [shape, account, sync] });
+      component.choose(shape);
+      expect(component.offersAgents).toBeTrue();
+      expect(component.agentChoices.map((choice) => choice.key)).toEqual(['jira/connection', 'sync/token']);
+
+      filled(component);
+      component.chosenAgents = ['sync/token'];
+      await component.save();
+      expect(calls.updated).toEqual({
+        kind: 'secret', id: 'sec_new',
+        changes: { agents: [{ agent: 'jira', resource: 'connection' }, { agent: 'sync', resource: 'token' }] },
+      });
+      expect(closed[0]).toEqual({ notice: 'Secret created.', id: 'sec_new' });
+    });
+
+    it('sends one call when nothing else is ticked, and says what was refused once it is made', async () => {
+      const quiet = create({ shapes: [shape, account, sync] });
+      quiet.component.choose(shape);
+      filled(quiet.component);
+      await quiet.component.save();
+      expect(quiet.calls.updated).toBeUndefined();
+
+      const refused = create({ shapes: [shape, account, sync] }, { update: async () => ({ error: 'Not that one.' }) });
+      refused.component.choose(shape);
+      filled(refused.component);
+      refused.component.chosenAgents = ['sync/token'];
+      await refused.component.save();
+      expect(refused.closed[0]).toEqual({ notice: 'Secret created. Its other agents were not added: Not that one.', id: 'sec_new' });
+    });
+
+    it('goes straight to the form when there is one thing it can be for, and offers no agents when changing', () => {
+      expect(create({ shapes: [shape] }).component.step).toBe('form');
+      expect(create({ shapes: [shape] }).component.canGoBack).toBeFalse();
+      const { component } = create({ shapes: [shape, account, sync], secret: secret() });
+      expect(component.offersAgents).toBeFalse();
+    });
+  });
 });

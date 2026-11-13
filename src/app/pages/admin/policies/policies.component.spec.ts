@@ -30,27 +30,36 @@ describe('PoliciesComponent', () => {
     return (component as any).buildStatements();
   }
 
-  it('offers the endpoints by service in the server\'s words, and each agent by its functions', async () => {
+  it('offers the endpoints by service, named in plain words, and leaves agents to their own pages', async () => {
     const component = await createComponent();
-    expect(component.catalog.map((group) => group.key)).toEqual(['iam:user', 'iam:group', 'agent:mail']);
+    expect(component.catalog.map((group) => group.key)).toEqual(['iam:user', 'iam:group']);
+    expect(component.catalog.map((group) => group.label)).toEqual(['People', 'Groups']);
     expect(component.catalog[0].actions.map((a) => a.name)).toEqual(['See the organization\'s people', 'Remove a person']);
-    expect(component.catalog[2].actions.map((a) => a.action)).toEqual(['agent:mail:send', 'agent:mail:read']);
   });
 
   it('writes the ticked actions as one allow', async () => {
     const component = await createComponent();
     component.startCreate();
     component.selected.add('iam:user:list');
-    component.selected.add('agent:mail:send');
-    expect(build(component)).toEqual([{ effect: 'allow', actions: ['agent:mail:send', 'iam:user:list'] }]);
+    component.selected.add('iam:group:list');
+    expect(build(component)).toEqual([{ effect: 'allow', actions: ['iam:group:list', 'iam:user:list'] }]);
   });
 
-  it('reads a plain allow back into the grid, a whole agent as its wildcard', async () => {
+  it('reads a plain allow back into the grid, a whole service as its wildcard', async () => {
     const component = await createComponent();
-    component.startEdit(policy([{ effect: 'allow', actions: ['iam:user:list', 'agent:mail:*'] }]));
+    component.startEdit(policy([{ effect: 'allow', actions: ['iam:user:*'] }]));
     expect(component.advanced).toBeFalse();
-    expect(component.isActionOn(component.catalog[2], 'agent:mail:read')).toBeTrue();
+    expect(component.isActionOn(component.catalog[0], 'iam:user:delete')).toBeTrue();
     expect(component.isActionOn(component.catalog[1], 'iam:group:list')).toBeFalse();
+  });
+
+  it('keeps a policy naming an agent editable, as its document', async () => {
+    const component = await createComponent();
+    const statements = [{ effect: 'allow', actions: ['iam:user:list', 'agent:mail:*'] }];
+    component.startEdit(policy(statements));
+    expect(component.advanced).toBeTrue();
+    expect(JSON.parse(component.advancedText)).toEqual(statements);
+    expect(build(component)).toEqual(statements);
   });
 
   it('falls back to the document for a deny, an ask or scopes', async () => {
@@ -100,11 +109,35 @@ describe('PoliciesComponent', () => {
     expect(calls).toEqual(['update p1']);
   });
 
-  it('names what a policy allows by its services and agents', async () => {
+  it('says each statement in words, cut when long, and points to the agents it names', async () => {
     const component = await createComponent();
-    expect(component.summarise(policy([{ effect: 'allow', actions: ['iam:user:list', 'agent:mail:*'] }])))
-      .toBe('iam:user, Mail');
-    expect(component.summarise(policy([{ effect: 'allow', actions: ['*'] }, { effect: 'deny', actions: ['iam:*'] }])))
-      .toBe('Everything · and asks or denies some');
+    const named = policy([
+      { effect: 'allow', actions: ['iam:user:list', 'iam:group:*', '*'] },
+      { effect: 'ask', actions: ['agent:mail:send'], scopes: { mailbox: ['work', 'home'] } },
+      { effect: 'deny', actions: ['agent:gone:*'] },
+    ]);
+    expect(component.statementsOf(named)).toEqual([
+      { effect: 'Allows', asks: false, items: ['See the organization\'s people', 'Everything in Groups', 'Everything'], scopes: '' },
+      { effect: 'Asks first for', asks: true, items: ['Mail: Send a mail'], scopes: 'only where mailbox is work or home' },
+      { effect: 'Doesn\'t allow', asks: false, items: ['All of Gone'], scopes: '' },
+    ]);
+    expect(component.agentsNamed(named)).toEqual([{ agent_id: 'mail', name: 'Mail' }]);
+
+    const long = policy([{ effect: 'allow', actions: Array.from({ length: 9 }, (_, i) => `iam:user:a${i}`) }]);
+    expect(component.statementsOf(long)[0].items.length).toBe(6);
+    expect(component.hiddenCount(long)).toBe(3);
+    component.toggleWhole(long);
+    expect(component.statementsOf(long)[0].items.length).toBe(9);
+    expect(component.hiddenCount(long)).toBe(0);
+  });
+
+  it('finds a policy by what it says, in words', async () => {
+    const component = await createComponent({
+      list: async () => [policy([{ effect: 'allow', actions: ['iam:user:delete'] }])],
+    });
+    component.query = 'remove a person';
+    expect(component.shown.length).toBe(1);
+    component.query = 'webhooks';
+    expect(component.shown.length).toBe(0);
   });
 });

@@ -1,7 +1,5 @@
 <app-page guide="webhooks"
   title="Webhooks"
-  icon="webhook"
-  [hue]="186"
   sentence="Addresses other services post events to. Each event wakes a chat of its own, which acts on it with your permissions."
   [wide]="true"
 >
@@ -13,31 +11,27 @@
     <button class="btn" type="button" (click)="reload()">Try again</button>
   </app-empty>
 
-  <!-- The numbers that matter, each a tile. -->
+  <!-- The numbers that matter, on one line. -->
   <ul class="ui-tiles" *ngIf="!loading && !opened && (webhooks.length || shared.length || handed.length)" aria-label="Webhooks in numbers">
     <li class="ui-tile">
-      <span class="ui-tile-icon"><lucide-icon name="webhook" [size]="20" aria-hidden="true"></lucide-icon></span>
       <span class="ui-tile-words">
         <span class="ui-tile-value">{{ webhooks.length }}<ng-container *ngIf="limit"> of {{ limit }}</ng-container></span>
         <span class="ui-tile-label">Yours</span>
       </span>
     </li>
     <li class="ui-tile">
-      <span class="ui-tile-icon"><lucide-icon name="circle-check" [size]="20" aria-hidden="true"></lucide-icon></span>
       <span class="ui-tile-words">
         <span class="ui-tile-value">{{ onCount }}</span>
         <span class="ui-tile-label">On, taking calls</span>
       </span>
     </li>
     <li class="ui-tile">
-      <span class="ui-tile-icon"><lucide-icon name="lock" [size]="20" aria-hidden="true"></lucide-icon></span>
       <span class="ui-tile-words">
         <span class="ui-tile-value">{{ signedCount }}</span>
         <span class="ui-tile-label">Signed</span>
       </span>
     </li>
     <li class="ui-tile" *ngIf="shared.length">
-      <span class="ui-tile-icon"><lucide-icon name="users" [size]="20" aria-hidden="true"></lucide-icon></span>
       <span class="ui-tile-words">
         <span class="ui-tile-value">{{ shared.length }}</span>
         <span class="ui-tile-label">Shared with you</span>
@@ -57,7 +51,6 @@
       <!-- Webhooks another member is handing over: theirs until accepted. -->
       <app-list label="Handed to you" *ngIf="!loading && handed.length">
         <ng-container listToolbar>
-          <span class="ui-panel-icon is-warn-icon"><lucide-icon name="handshake" [size]="16" aria-hidden="true"></lucide-icon></span>
           <h2 class="webhook-list-title">Handed to you</h2>
         </ng-container>
         <app-row *ngFor="let hook of handed" [class.is-current]="hook.webhook_id === openId">
@@ -81,7 +74,6 @@
 
       <app-list label="Your webhooks" [loading]="loading" [foot]="foot">
         <ng-container listToolbar>
-          <span class="ui-panel-icon is-hued"><lucide-icon name="webhook" [size]="16" aria-hidden="true"></lucide-icon></span>
           <h2 class="webhook-list-title">Your webhooks</h2>
           <ng-container *ngIf="!loading"><ng-container *ngTemplateOutlet="addButton"></ng-container></ng-container>
         </ng-container>
@@ -134,7 +126,6 @@
 
       <app-list label="Shared with you" *ngIf="!loading && shared.length">
         <ng-container listToolbar>
-          <span class="ui-panel-icon"><lucide-icon name="users" [size]="16" aria-hidden="true"></lucide-icon></span>
           <h2 class="webhook-list-title">Shared with you</h2>
         </ng-container>
         <app-row *ngFor="let hook of shared" [class.is-current]="hook.webhook_id === openId" [class.is-resting]="!hook.enabled">

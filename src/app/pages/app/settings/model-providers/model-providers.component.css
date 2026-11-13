@@ -59,27 +59,17 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease), transform var(--dur-2) var(--ease);
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
 }
 
 .provider-choice:hover {
-  border-color: color-mix(in srgb, hsl(var(--hue, 262) 50% 45%) 40%, var(--line));
-  background: color-mix(in srgb, hsl(var(--hue, 262) 60% 55%) 7%, var(--surface));
-  transform: translateY(-1px);
+  border-color: var(--line-strong);
+  background: var(--surface-2);
 }
 
-/* A server of the person's own: washed in the hue, set apart. The
-   dialog sits outside the page, so its colours are mixed with the
-   theme's own surface rather than chosen per theme. */
+/* A server of the person's own: set apart by its dashed edge. */
 .provider-own {
   border-style: dashed;
-  background: linear-gradient(160deg, color-mix(in srgb, hsl(var(--hue, 262) 60% 55%) 10%, var(--surface)), var(--surface) 70%);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .provider-choice:hover {
-    transform: none;
-  }
 }
 
 .provider-choice:focus-visible {
@@ -103,17 +93,20 @@
 
 .provider-note {
   margin-top: 8px;
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
 }
 
-/* Step two: the provider chosen, on one line, with the way back to the
-   list while adding. */
+/* Step two: the provider chosen, on one line, in the accent as a
+   chosen choice is, with the way back to the list while adding. */
 .provider-picked {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px 8px 8px 12px;
+  border: 1px solid var(--accent);
   border-radius: var(--r-md);
-  background: color-mix(in srgb, hsl(var(--hue, 262) 60% 55%) 12%, var(--surface));
+  background: var(--accent-soft);
   color: var(--ink-2);
 }
 
@@ -122,9 +115,9 @@
   min-width: 0;
   overflow: hidden;
   color: var(--ink);
-  font-size: var(--t-sm);
+  font-size: var(--t-base);
   font-weight: 500;
-  line-height: var(--lh-sm);
+  line-height: var(--lh-base);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

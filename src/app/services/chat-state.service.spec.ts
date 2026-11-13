@@ -158,4 +158,46 @@ describe('ChatStateService', () => {
     expect(state.value.messages.map((one) => one.message_id)).toEqual(['m2', 'm5', 'm6']);
     expect(state.value.latestEventSeq).toBe(9);
   });
+
+  it('puts each card answered between the assistant\'s messages, where it closed, as the person\'s turn', () => {
+    const state = new ChatStateService();
+    const question: Card = { ...card('d1'), at: '2026-11-13T10:01:00Z', kind: 'question',
+      request: { text: 'Which day?', expects: 'choice', choices: ['Friday'] } };
+    state.load(snapshot({ cards: [question], messages: [
+      message(1, 'person', 'book a table', '', '2026-11-13T10:00:00Z'),
+      message(2, 'assistant', 'Looking.', '', '2026-11-13T10:00:30Z'),
+      message(3, 'assistant', 'Friday it is.', '', '2026-11-13T10:03:00Z'),
+      message(4, 'assistant', 'Booked.', '', '2026-11-13T10:04:00Z'),
+    ] }));
+    // Open, it waits with the cards, not in the thread.
+    expect(state.value.turns.length).toBe(1);
+
+    const events: any[] = [
+      { seq: 5, at: '2026-11-13T10:01:00Z', event: 'card_opened', data: question },
+      { seq: 6, at: '2026-11-13T10:02:00Z', event: 'card_closed',
+        data: { card_id: 'd1', kind: 'question', answer: { choice: 'Friday' }, at: '2026-11-13T10:02:00Z' } },
+    ];
+    state.replay(events);
+    state.replay(events);
+    state.closeCard('d1');
+    expect(state.value.turns.map((turn) => [turn.key, turn.answer?.label ?? null,
+      turn.assistantMessages.map((one) => one.message_id)])).toEqual([
+      ['m1', null, ['m2']],
+      ['card:d1', 'You answered: Friday', ['m3', 'm4']],
+    ]);
+    expect(state.value.turns[1].answer?.asked).toBe('Which day?');
+  });
+
+  it('says only "Answered" for a card an older server closed, and leaves out those older than the messages shown', () => {
+    const state = new ChatStateService();
+    state.load(snapshot({ messages: [message(9, 'person', 'go on', '', '2026-11-13T10:00:00Z'),
+      message(10, 'assistant', 'Done.', '', '2026-11-13T10:02:00Z')] }));
+    state.replay([
+      { seq: 1, at: '2026-11-13T09:00:00Z', event: 'card_closed', data: { card_id: 'old' } },
+      { seq: 2, at: '2026-11-13T10:01:00Z', event: 'card_closed', data: { card_id: 'd2' } },
+    ] as any[]);
+    expect(state.value.turns.map((turn) => [turn.key, turn.answer?.label ?? null])).toEqual([
+      ['m9', null], ['card:d2', 'Answered'],
+    ]);
+  });
 });

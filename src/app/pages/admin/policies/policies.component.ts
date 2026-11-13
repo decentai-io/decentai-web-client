@@ -7,26 +7,44 @@ import { AuthService, CatalogAction } from 'src/app/services/auth.service';
 import { Policy, PolicyService, PolicyStatement } from 'src/app/services/policy.service';
 import { ConfirmService } from 'src/app/services/confirm.service';
 import { DataPageBase } from '../../app/data-page-base';
+import { NamedAgent, PolicyWords, serviceName } from './policy-words';
 
-/** The actions of one service, or of one agent, as the grid draws them. */
+/** The actions of one service, as the grid draws them. */
 export interface ActionGroup {
-  /** `iam:user`, or `agent:<agent id>`. */
+  /** `iam:user`. */
   key: string;
   label: string;
   actions: { action: string; name: string }[];
 }
 
+/** One statement of a policy, as the list says it. */
+export interface StatementLine {
+  effect: string;
+  /** The statement asks the chat's person: amber, for what needs a person. */
+  asks: boolean;
+  items: string[];
+  scopes: string;
+}
+
+/** How many of a statement's actions are named before "and N more". */
+const SHOWN_ITEMS = 6;
+
 /**
- * Admin → Policies: where permissions are written.
+ * Admin → Policies: what groups may do in the platform itself.
  *
  * A group gives its people its policies; a policy is a list of
- * statements, each allowing, denying or asking for actions. Written here,
- * the common shape, "allow these", is a grid: the endpoints the API
- * server knows (the catalog it validates against, so the editor cannot
- * offer an action that does not exist), and each installed agent's
- * functions, which is how using an agent is granted. A whole service or
- * agent is stored as its wildcard (`secrets:secret:*`, `agent:mail:*`),
- * so a policy keeps meaning "all of it" as actions are added.
+ * statements, each allowing, denying or asking for actions. The list
+ * says each statement in words. Written here, the common shape, "allow
+ * these", is a grid of the endpoints the API server knows (the catalog
+ * it validates against, so the editor cannot offer an action that does
+ * not exist). A whole service is stored as its wildcard
+ * (`secrets:secret:*`), so a policy keeps meaning "all of it" as actions
+ * are added.
+ *
+ * Who may use an agent is chosen on the agent's own page (its Access
+ * tab), where it goes with the agent. A policy may still name agents'
+ * actions (`agent:<agent>:<function>`) in its document; the list points
+ * to the agent's page for them.
  *
  * A deny, an ask, scopes, or a pattern no box stands for cannot be drawn
  * as checkboxes without lying about them: such a policy is edited as its
@@ -39,14 +57,20 @@ export interface ActionGroup {
   selector: 'app-policies',
   standalone: false,
   templateUrl: './policies.component.html',
-  styleUrl: '../admin-shared.css',
+  styleUrls: ['../admin-shared.css', './policies.component.css'],
 })
 export class PoliciesComponent extends DataPageBase implements OnInit {
   loading = true;
 
   policies: Policy[] = [];
-  /** The endpoints' actions, by service, then each agent's functions. */
+  /** The endpoints' actions, by service. */
   catalog: ActionGroup[] = [];
+  /** Says actions in words. */
+  words = new PolicyWords([], []);
+  /** The installed agents, to name their actions and link to them. */
+  private agentIds = new Set<string>();
+  /** The policies whose every action is shown, by id. */
+  expanded = new Set<string>();
 
   /** null = the editor is closed; '' = creating; otherwise the policy id. */
   editingId: string | null = null;
@@ -57,8 +81,8 @@ export class PoliciesComponent extends DataPageBase implements OnInit {
   advanced = false;
   advancedText = '';
   readonly documentHelp = 'A list of {"effect": "allow" | "deny" | "ask", "actions": [...], "scopes": {...}}. '
-    + 'A deny wins, then an ask, then an allow. Ask and scopes are for agents\' actions alone: '
-    + 'agent:<agent>:<function>, and agent:<agent>:<function>:<call> for what it calls.';
+    + 'A deny wins, then an ask, then an allow. Ask and scopes are for agents\' actions alone, '
+    + 'which are better chosen on the agent\'s page, under Access.';
 
   saving = false;
   busy = new Set<string>();
@@ -89,14 +113,12 @@ export class PoliciesComponent extends DataPageBase implements OnInit {
         this.agents.installed().catch(() => []),
       ]);
       this.policies = policies;
-      this.catalog = [
-        ...PoliciesComponent.services(this.auth.catalog),
-        ...agents.map((agent) => ({
-          key: `agent:${agent.agent_id}`,
-          label: agent.name,
-          actions: agent.manifest.functions.map((fn) => ({ action: `agent:${agent.agent_id}:${fn.id}`, name: fn.name })),
-        })),
-      ];
+      this.catalog = PoliciesComponent.services(this.auth.catalog);
+      const named: NamedAgent[] = agents.map((agent) => ({
+        agent_id: agent.agent_id, name: agent.name, functions: agent.manifest.functions,
+      }));
+      this.words = new PolicyWords(this.auth.catalog, named);
+      this.agentIds = new Set(named.map((agent) => agent.agent_id));
     } catch (failed) {
       this.fail(Refused.words(failed));
     } finally {
@@ -111,7 +133,7 @@ export class PoliciesComponent extends DataPageBase implements OnInit {
     for (const { action, words } of actions) {
       const parts = action.split(':');
       const key = parts.slice(0, 2).join(':');
-      if (!groups.has(key)) groups.set(key, { key, label: key, actions: [] });
+      if (!groups.has(key)) groups.set(key, { key, label: serviceName(key), actions: [] });
       groups.get(key)!.actions.push({ action, name: words || parts.slice(2).join(':').replace(/_/g, ' ') });
     }
     return [...groups.values()];
@@ -141,26 +163,46 @@ export class PoliciesComponent extends DataPageBase implements OnInit {
 
   // ── Reading a policy ────────────────────────────────────────────────
 
-  /** A short summary of what a policy allows, for the list. */
-  /** How many are the platform's own: a tile over the list. */
-  get builtInCount(): number {
-    return this.policies.filter((policy) => policy.built_in).length;
+  /** Each statement of a policy in words: what it does, to what, and
+   *  where it is narrowed. A long list of actions is cut at a few, unless
+   *  the policy is opened whole. */
+  statementsOf(policy: Policy): StatementLine[] {
+    const whole = this.expanded.has(policy.policy_id);
+    return policy.statements.map((statement) => {
+      const items = statement.actions.map((action) => this.words.action(action));
+      return {
+        effect: this.words.effect(statement),
+        asks: statement.effect === 'ask',
+        items: whole ? items : items.slice(0, SHOWN_ITEMS),
+        scopes: this.words.scopes(statement),
+      };
+    });
   }
 
-  /** Whether a policy denies something, or asks first: a chip on its row. */
-  asksOrDenies(policy: Policy): boolean {
-    return policy.statements.some((s) => s.effect !== 'allow');
+  /** How many actions are not shown, cut from the policy's statements. */
+  hiddenCount(policy: Policy): number {
+    if (this.expanded.has(policy.policy_id)) return 0;
+    return policy.statements.reduce((sum, statement) => sum + Math.max(0, statement.actions.length - SHOWN_ITEMS), 0);
   }
 
-  summarise(policy: Policy): string {
-    const allowed = policy.statements.filter((s) => s.effect === 'allow').flatMap((s) => s.actions);
-    const more = policy.statements.some((s) => s.effect !== 'allow') ? ' · and asks or denies some' : '';
-    if (allowed.includes('*')) return `Everything${more}`;
-    if (!allowed.length) return more ? 'Asks or denies some' : 'Nothing';
-    const labels = [...new Set(allowed.map((action) => this.groupOf(action)?.label
-      ?? action.split(':').slice(0, 2).join(':')))];
-    const shown = labels.slice(0, 3).join(', ');
-    return (labels.length > 3 ? `${shown} +${labels.length - 3} more` : shown) + more;
+  toggleWhole(policy: Policy): void {
+    if (!this.expanded.delete(policy.policy_id)) this.expanded.add(policy.policy_id);
+  }
+
+  /** The installed agents a policy names: who may use them is better
+   *  chosen on their own page. */
+  agentsNamed(policy: Policy): { agent_id: string; name: string }[] {
+    return PolicyWords.agentsOf(policy.statements)
+      .filter((id) => this.agentIds.has(id))
+      .map((id) => ({ agent_id: id, name: this.words.agentName(id) }));
+  }
+
+  /** What the search reads of a policy: its name and its words. */
+  private searchable(policy: Policy): string {
+    const words = policy.statements.flatMap((statement) => [
+      this.words.effect(statement), ...statement.actions.map((action) => this.words.action(action)), ...statement.actions,
+    ]);
+    return `${policy.name} ${words.join(' ')}`.toLowerCase();
   }
 
   private groupOf(action: string): ActionGroup | undefined {
@@ -311,8 +353,7 @@ export class PoliciesComponent extends DataPageBase implements OnInit {
   /** The policies the search leaves. */
   get shown(): Policy[] {
     const query = this.query.trim().toLowerCase();
-    return this.policies.filter((policy) => !query
-      || `${policy.name} ${this.summarise(policy)}`.toLowerCase().includes(query));
+    return this.policies.filter((policy) => !query || this.searchable(policy).includes(query));
   }
 
   /** The groups that open unfolded: the ones the policy already allows

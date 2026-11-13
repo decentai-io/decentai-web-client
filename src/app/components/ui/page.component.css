@@ -1,6 +1,8 @@
 /* The page frame: the title row, then the page. A page of fields is a
    column 720px wide at most, which is as wide as a form reads well; a
-   page that is a list or a table (wide) takes the width it is given. */
+   page that is a list or a table (wide) takes the width it is given.
+   The title row is plain: the serif title is what speaks up, and the
+   page under it is the colour. */
 :host {
   display: block;
   max-width: 720px;
@@ -26,7 +28,7 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 12px 16px;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 
 .page-words {
@@ -34,65 +36,12 @@
   min-width: 0;
 }
 
-/* With an icon, the title sits in a band: a wash of the page's hue, the
-   icon in a tile lifted off it, the actions at the right. */
-.page-head.is-banner {
-  align-items: center;
-  padding: 22px 24px;
-  border: 1px solid color-mix(in srgb, hsl(var(--hue, 160) 50% 50%) 16%, var(--line));
-  border-radius: var(--r-lg);
-  background:
-    radial-gradient(80% 160% at 0% 0%, hsl(var(--hue, 160) 70% 91% / 0.85), transparent 60%),
-    radial-gradient(50% 140% at 100% 100%, hsl(calc(var(--hue, 160) + 40) 70% 94% / 0.7), transparent 60%),
-    var(--surface);
-  box-shadow: var(--shadow-1);
-}
-
-:host-context(.dark) .page-head.is-banner {
-  border-color: color-mix(in srgb, hsl(var(--hue, 160) 40% 50%) 20%, var(--line));
-  background:
-    radial-gradient(80% 160% at 0% 0%, hsl(var(--hue, 160) 45% 21% / 0.9), transparent 60%),
-    radial-gradient(50% 140% at 100% 100%, hsl(calc(var(--hue, 160) + 40) 40% 17% / 0.7), transparent 60%),
-    var(--surface);
-}
-
-.page-icon {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 52px;
-  height: 52px;
-  border-radius: 15px;
-  background: hsl(var(--hue, 160) 62% 93%);
-  color: hsl(var(--hue, 160) 58% 26%);
-  box-shadow: 0 6px 16px -8px hsl(var(--hue, 160) 50% 30% / 0.45), inset 0 0 0 1px rgb(255 255 255 / 0.5);
-}
-
-:host-context(.dark) .page-icon {
-  background: hsl(var(--hue, 160) 34% 20%);
-  color: hsl(var(--hue, 160) 62% 80%);
-  box-shadow: 0 8px 18px -8px rgb(0 0 0 / 0.6), inset 0 0 0 1px rgb(255 255 255 / 0.06);
-}
-
-.page-icon lucide-icon {
-  display: flex;
-}
-
-@media (max-width: 560px) {
-  .page-head.is-banner {
-    padding: 16px;
-  }
-
-  .page-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 13px;
-  }
-}
-
-/* The title is in the brand's serif: the one place a page speaks up. */
+/* The title is in the brand's serif: the one place a page speaks up.
+   Beside it, the way to read about the page without leaving it. */
 .page-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   color: var(--ink);
   font-family: var(--font-serif);
   font-size: var(--t-xl);
@@ -101,22 +50,16 @@
   line-height: var(--lh-xl);
 }
 
-/* The way to read about the page without leaving it. */
-.page-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .page-help {
   color: var(--ink-3);
 }
 
 .page-sentence {
-  margin-top: 4px;
+  max-width: 68ch;
+  margin-top: 6px;
   color: var(--ink-2);
   font-size: var(--t-base);
-  line-height: var(--lh-base);
+  line-height: 22px;
 }
 
 /* The way to the Guide's chapter on this page. */

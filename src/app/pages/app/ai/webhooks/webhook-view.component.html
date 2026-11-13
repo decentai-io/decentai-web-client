@@ -1,10 +1,7 @@
-<!-- Its band: the mark, whose it is, its name, how it stands. -->
-<header class="opened-band">
-  <span class="opened-mark" aria-hidden="true">
-    <lucide-icon name="webhook" [size]="22" [strokeWidth]="1.75"></lucide-icon>
-  </span>
+<!-- Its head: whose it is, its name, how it stands. -->
+<header class="opened-head">
   <div class="opened-words">
-    <p class="opened-eyebrow">
+    <p class="opened-kind">
       {{ webhook.role === "viewer" ? "Shared with you" : webhook.role === "handed" ? "Handed to you" : "Your webhook" }}
     </p>
     <h2 class="opened-title">{{ webhook.name }}</h2>
@@ -69,11 +66,10 @@
 <app-segmented *ngIf="isOwner" label="What to show" [choices]="tabs" [(ngModel)]="tab"></app-segmented>
 
 <!-- ── Calls ───────────────────────────────────────────────────── -->
-<section class="opened-block" aria-labelledby="webhook-runs-title" *ngIf="tab === 'executions'">
-  <div class="opened-block-head">
-    <span class="opened-block-icon"><lucide-icon name="history" [size]="14" aria-hidden="true"></lucide-icon></span>
-    <h3 class="opened-block-title" id="webhook-runs-title">Calls</h3>
-    <span class="opened-block-aside">
+<section class="ui-panel" aria-labelledby="webhook-runs-title" *ngIf="tab === 'executions'">
+  <div class="ui-panel-head">
+    <h3 class="ui-panel-title" id="webhook-runs-title">Calls</h3>
+    <span class="ui-panel-aside">
       <a class="btn ghost sm" *ngIf="isOwner && webhook.chat_id" [routerLink]="['/ai/chats', webhook.chat_id]">
         <lucide-icon name="message-square-text" [size]="14" aria-hidden="true"></lucide-icon>
         Open the chat
@@ -85,19 +81,26 @@
     </span>
   </div>
 
-  <!-- The calls read, added up by how each was answered. -->
-  <ul class="webhook-counts" *ngIf="executions.length" aria-label="The calls shown, by how they were answered">
-    <li class="webhook-count">
-      <span class="webhook-count-value">{{ count("accepted") }}</span>
-      <span class="webhook-count-label"><lucide-icon name="circle-check" [size]="12" aria-hidden="true"></lucide-icon>Accepted</span>
+  <!-- The calls read, added up by how each was answered, on one line. -->
+  <ul class="ui-tiles webhook-counts" *ngIf="executions.length" aria-label="The calls shown, by how they were answered">
+    <li class="ui-tile">
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ count("accepted") }}</span>
+        <span class="ui-tile-label">Accepted</span>
+      </span>
     </li>
-    <li class="webhook-count" [class.is-bad]="count('refused')">
-      <span class="webhook-count-value">{{ count("refused") }}</span>
-      <span class="webhook-count-label"><lucide-icon name="circle-x" [size]="12" aria-hidden="true"></lucide-icon>Refused</span>
+    <li class="ui-tile">
+      <span class="ui-tile-icon is-danger" *ngIf="count('refused')"><lucide-icon name="circle-x" [size]="16" aria-hidden="true"></lucide-icon></span>
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ count("refused") }}</span>
+        <span class="ui-tile-label">Refused</span>
+      </span>
     </li>
-    <li class="webhook-count">
-      <span class="webhook-count-value">{{ count("test") }}</span>
-      <span class="webhook-count-label"><lucide-icon name="circle-dot" [size]="12" aria-hidden="true"></lucide-icon>Tests</span>
+    <li class="ui-tile">
+      <span class="ui-tile-words">
+        <span class="ui-tile-value">{{ count("test") }}</span>
+        <span class="ui-tile-label">Tests</span>
+      </span>
     </li>
   </ul>
 
@@ -132,10 +135,9 @@
 </section>
 
 <!-- ── Settings: the owner's ───────────────────────────────────── -->
-<section class="opened-block" aria-labelledby="webhook-settings-title" *ngIf="tab === 'settings' && isOwner">
-  <div class="opened-block-head">
-    <span class="opened-block-icon"><lucide-icon name="settings" [size]="14" aria-hidden="true"></lucide-icon></span>
-    <h3 class="opened-block-title" id="webhook-settings-title">Settings</h3>
+<section class="ui-panel" aria-labelledby="webhook-settings-title" *ngIf="tab === 'settings' && isOwner">
+  <div class="ui-panel-head">
+    <h3 class="ui-panel-title" id="webhook-settings-title">Settings</h3>
     <button class="btn sm" type="button" *ngIf="mayUpdate" [disabled]="busy" (click)="edit.emit()">
       <lucide-icon name="pencil" [size]="14" aria-hidden="true"></lucide-icon>
       Edit
@@ -144,7 +146,7 @@
 
   <dl class="webhook-facts">
     <div class="webhook-fact">
-      <dt><lucide-icon name="link" [size]="14" aria-hidden="true"></lucide-icon>Address</dt>
+      <dt>Address</dt>
       <dd class="webhook-copy">
         <code class="webhook-code webhook-well">{{ url }}</code>
         <button class="btn sm" type="button" (click)="copy('url')">
@@ -155,7 +157,7 @@
     </div>
 
     <div class="webhook-fact">
-      <dt><lucide-icon name="terminal" [size]="14" aria-hidden="true"></lucide-icon>Example call</dt>
+      <dt>Example call</dt>
       <dd>
         <div class="webhook-copy">
           <pre class="webhook-code webhook-curl">{{ curl }}</pre>
@@ -172,17 +174,17 @@
     </div>
 
     <div class="webhook-fact">
-      <dt><lucide-icon name="lock" [size]="14" aria-hidden="true"></lucide-icon>Signature</dt>
+      <dt>Signature</dt>
       <dd>{{ webhook.require_signature ? "Required: each call is signed with the secret (HMAC-SHA256)." : "Not required." }}</dd>
     </div>
 
     <div class="webhook-fact">
-      <dt><lucide-icon name="message-square-text" [size]="14" aria-hidden="true"></lucide-icon>Instruction</dt>
+      <dt>Instruction</dt>
       <dd class="webhook-prompt">{{ webhook.instruction }}</dd>
     </div>
 
     <div class="webhook-fact">
-      <dt><lucide-icon name="file-braces" [size]="14" aria-hidden="true"></lucide-icon>Fields</dt>
+      <dt>Fields</dt>
       <dd>
         <span *ngIf="!fields.length">None: a caller posts an empty object.</span>
         <ul class="webhook-fields" *ngIf="fields.length">
@@ -199,12 +201,12 @@
     </div>
 
     <div class="webhook-fact">
-      <dt><lucide-icon name="shield-check" [size]="14" aria-hidden="true"></lucide-icon>Trust level</dt>
+      <dt>Trust level</dt>
       <dd>{{ trustWord }}</dd>
     </div>
 
     <div class="webhook-fact">
-      <dt><lucide-icon name="message-square" [size]="14" aria-hidden="true"></lucide-icon>Chat</dt>
+      <dt>Chat</dt>
       <dd>
         <a class="webhook-link" [routerLink]="['/ai/chats', webhook.chat_id]">Open the chat</a>
         <span class="webhook-aside">Its model and agents are the chat's own settings.</span>

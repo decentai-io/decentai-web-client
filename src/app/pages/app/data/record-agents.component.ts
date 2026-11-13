@@ -64,7 +64,7 @@ import { agentLabel } from './record-page';
     .agents-listed li { display: flex; align-items: center; gap: 8px; }
     .agents-words { display: grid; flex: 1; min-width: 0; }
     .agents-name { color: var(--ink); font-weight: 500; }
-    .agents-hint { color: var(--ink-3); font-size: var(--t-sm); }
+    .agents-hint { color: var(--ink-2); font-size: var(--t-sm); }
   `],
 })
 export class RecordAgentsComponent implements OnInit, OnChanges, OnDestroy {

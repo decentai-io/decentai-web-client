@@ -10,14 +10,12 @@
        agents are still waiting on. -->
   <ul class="ui-tiles" aria-label="Connected apps in numbers" *ngIf="!loading && (apps.length || missing.length)">
     <li class="ui-tile">
-      <span class="ui-tile-icon"><lucide-icon name="link" [size]="20" aria-hidden="true"></lucide-icon></span>
       <span class="ui-tile-words">
         <span class="ui-tile-value">{{ apps.length }}</span>
         <span class="ui-tile-label">Connected</span>
       </span>
     </li>
-    <li class="ui-tile">
-      <span class="ui-tile-icon" [class.is-warn]="missing.length > 0"><lucide-icon name="circle-dashed" [size]="20" aria-hidden="true"></lucide-icon></span>
+    <li class="ui-tile" [class.is-warn]="missing.length > 0">
       <span class="ui-tile-words">
         <span class="ui-tile-value">{{ missing.length }}</span>
         <span class="ui-tile-label">Waiting to connect</span>
@@ -29,7 +27,6 @@
        in the provider's console before they can connect anything here. -->
   <section class="ui-panel apps-redirect" *ngIf="redirectUri" aria-labelledby="apps-redirect-title">
     <div class="ui-panel-head">
-      <span class="ui-panel-icon is-hued"><lucide-icon name="external-link" [size]="16" aria-hidden="true"></lucide-icon></span>
       <h2 class="ui-panel-title" id="apps-redirect-title">First, in each provider's console</h2>
     </div>
     <app-field
@@ -64,7 +61,7 @@
       <span rowMeta class="ui-pills apps-facts">
         <span class="ui-pill"><lucide-icon name="key-round" [size]="12" aria-hidden="true"></lucide-icon>Client id <code class="apps-code">{{ app.client_id }}</code></span>
         <span class="ui-pill" *ngIf="app.endpoints.token_url"><lucide-icon name="globe" [size]="12" aria-hidden="true"></lucide-icon>tokens at <code class="apps-code">{{ hostOf(app.endpoints.token_url) }}</code></span>
-        <span class="ui-pill is-accent" *ngIf="neededBy(app.provider)"><lucide-icon name="bot" [size]="12" aria-hidden="true"></lucide-icon>used by {{ neededBy(app.provider) }}</span>
+        <span class="ui-pill" *ngIf="neededBy(app.provider)"><lucide-icon name="bot" [size]="12" aria-hidden="true"></lucide-icon>used by {{ neededBy(app.provider) }}</span>
       </span>
       <button
         rowActions
@@ -96,7 +93,7 @@
       <lucide-icon rowMark class="apps-waiting-mark" name="circle-dashed" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
       <span rowChips class="chip warn">Not connected</span>
       <span rowMeta class="ui-pills apps-facts">
-        <span class="ui-pill is-warn"><lucide-icon name="bot" [size]="12" aria-hidden="true"></lucide-icon>Needed by {{ need.needed_by.join(", ") }}</span>
+        <span class="ui-pill"><lucide-icon name="bot" [size]="12" aria-hidden="true"></lucide-icon>Needed by {{ need.needed_by.join(", ") }}</span>
       </span>
       <button rowActions class="btn sm primary" type="button" *ngIf="canCreate" (click)="startCreate(need.provider)"
               [attr.aria-label]="'Connect ' + labelFor(need.provider)">

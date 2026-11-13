@@ -1,57 +1,45 @@
 <!-- One filter row above everything it scopes. -->
 <div class="ov-bar">
   <app-segmented label="Time window" [choices]="windows" [ngModel]="days" (ngModelChange)="choose($event)"></app-segmented>
-  <span class="ov-window">
-    <lucide-icon name="calendar-days" [size]="14" aria-hidden="true"></lucide-icon>
-    As runtimes reported every model call {{ inWindow }}. Costs are estimates.
-  </span>
+  <span class="ov-window">As runtimes reported every model call {{ inWindow }}. Costs are estimates.</span>
 </div>
 
 <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
 
-<div class="ov-tiles ov-loading" *ngIf="loading && !rows.length" aria-busy="true" aria-label="Adding up the tokens">
-  <span class="sk ov-tile-sk" *ngFor="let n of [1, 2, 3, 4]"></span>
+<div class="ov-stats" *ngIf="loading && !rows.length" aria-busy="true" aria-label="Adding up the tokens">
+  <span class="sk ov-stat-sk" *ngFor="let n of [1, 2, 3, 4]"></span>
 </div>
 
 <!-- Held at reduced opacity while a new window is read: no jump. -->
 <div class="ov" *ngIf="!loading || rows.length" [class.is-stale]="loading">
-  <!-- ── The numbers ─────────────────────────────────────────────── -->
-  <dl class="ov-tiles">
-    <div class="ov-tile">
-      <dt>
-        Tokens in
-        <span class="ov-tile-icon" aria-hidden="true"><lucide-icon name="log-in" [size]="18"></lucide-icon></span>
-      </dt>
+  <!-- ── The numbers, on one quiet line ──────────────────────────── -->
+  <dl class="ov-stats">
+    <div class="ov-stat">
+      <dt>Tokens in</dt>
       <dd class="ov-value">{{ number(total.input) }}</dd>
       <dd class="ov-sub">
         What the models were shown{{ total.cached ? ", and " + number(total.cached) + " more through the cache" : "" }}
       </dd>
     </div>
-    <div class="ov-tile">
-      <dt>
-        Tokens out
-        <span class="ov-tile-icon" aria-hidden="true"><lucide-icon name="log-out" [size]="18"></lucide-icon></span>
-      </dt>
+    <div class="ov-stat">
+      <dt>Tokens out</dt>
       <dd class="ov-value">{{ number(total.output) }}</dd>
       <dd class="ov-sub">Written by the models</dd>
     </div>
-    <div class="ov-tile" [class.is-warn]="partlyPriced">
+    <div class="ov-stat" [class.is-warn]="partlyPriced">
       <dt>
-        Estimated cost
-        <span class="ov-tile-icon" aria-hidden="true">
-          <lucide-icon [name]="partlyPriced ? 'triangle-alert' : 'receipt-text'" [size]="18"></lucide-icon>
+        <span class="ov-stat-icon" aria-hidden="true" *ngIf="partlyPriced">
+          <lucide-icon name="triangle-alert" [size]="16"></lucide-icon>
         </span>
+        Estimated cost
       </dt>
       <dd class="ov-value">{{ money(total.cost) }}</dd>
       <dd class="ov-sub">
         {{ partlyPriced ? number(total.unpriced) + " tokens have no known price" : "At the model catalog's prices" }}
       </dd>
     </div>
-    <div class="ov-tile">
-      <dt>
-        Model calls
-        <span class="ov-tile-icon" aria-hidden="true"><lucide-icon name="brain-circuit" [size]="18"></lucide-icon></span>
-      </dt>
+    <div class="ov-stat">
+      <dt>Model calls</dt>
       <dd class="ov-value">{{ number(total.calls) }}</dd>
       <dd class="ov-sub">Each one counted</dd>
     </div>
@@ -68,7 +56,6 @@
     <!-- ── Tokens over the days ─────────────────────────────────── -->
     <section class="ov-card" aria-labelledby="tk-series-title">
       <header class="ov-card-head">
-        <span class="ov-card-icon" aria-hidden="true"><lucide-icon name="chart-column" [size]="16"></lucide-icon></span>
         <div class="ov-card-words">
           <h2 class="ov-card-title" id="tk-series-title">Tokens by day</h2>
           <p class="ov-card-note">Each day, in and out.</p>
@@ -130,7 +117,6 @@
     <!-- ── By model ──────────────────────────────────────────────── -->
     <section class="ov-card" aria-labelledby="tk-models-title">
       <header class="ov-card-head">
-        <span class="ov-card-icon" aria-hidden="true"><lucide-icon name="brain-circuit" [size]="16"></lucide-icon></span>
         <div class="ov-card-words">
           <h2 class="ov-card-title" id="tk-models-title">By model</h2>
           <p class="ov-card-note">
@@ -174,7 +160,6 @@
       <!-- ── By agent ─────────────────────────────────────────────── -->
       <section class="ov-card" aria-labelledby="tk-agents-title">
         <header class="ov-card-head">
-          <span class="ov-card-icon" aria-hidden="true"><lucide-icon name="bot" [size]="16"></lucide-icon></span>
           <div class="ov-card-words">
             <h2 class="ov-card-title" id="tk-agents-title">By agent</h2>
             <p class="ov-card-note">The model calls agents' functions made themselves.</p>
@@ -211,7 +196,6 @@
       <!-- ── By person ─────────────────────────────────────────────── -->
       <section class="ov-card" aria-labelledby="tk-people-title">
         <header class="ov-card-head">
-          <span class="ov-card-icon" aria-hidden="true"><lucide-icon name="users" [size]="16"></lucide-icon></span>
           <div class="ov-card-words">
             <h2 class="ov-card-title" id="tk-people-title">By person</h2>
             <p class="ov-card-note">Whose chats the calls were made in, the most first.</p>

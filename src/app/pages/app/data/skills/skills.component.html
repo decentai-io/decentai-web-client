@@ -1,8 +1,6 @@
 <app-page
   title="Skills"
   sentence="Instructions you write for the assistant, which it reads when they apply to a conversation."
-  icon="sparkles"
-  [hue]="214"
   [wide]="true"
 >
   <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
@@ -24,8 +22,8 @@
     </app-row>
   </app-list>
 
-  <!-- The skills in numbers, each a tile; whose they are narrows the list. -->
-  <ul class="ui-tiles data-tiles" *ngIf="skills.length" aria-label="Your skills in numbers">
+  <!-- The skills in numbers, as one line; whose they are narrows the list. -->
+  <ul class="ui-tiles" *ngIf="skills.length" aria-label="Your skills in numbers">
     <li *ngFor="let tile of tiles; trackBy: byIcon">
       <button class="ui-tile" type="button" *ngIf="tile.show; else plainTile"
               [class.is-on]="show === tile.show" [attr.aria-pressed]="show === tile.show"
@@ -33,14 +31,14 @@
         <ng-container *ngTemplateOutlet="tileInside; context: { $implicit: tile }"></ng-container>
       </button>
       <ng-template #plainTile>
-        <span class="ui-tile"><ng-container *ngTemplateOutlet="tileInside; context: { $implicit: tile }"></ng-container></span>
+        <span class="ui-tile" [class.is-warn]="tile.warn"><ng-container *ngTemplateOutlet="tileInside; context: { $implicit: tile }"></ng-container></span>
       </ng-template>
     </li>
   </ul>
 
   <ng-template #tileInside let-tile>
-    <span class="ui-tile-icon" [class.is-warn]="tile.warn">
-      <lucide-icon [name]="tile.icon" [size]="20" aria-hidden="true"></lucide-icon>
+    <span class="ui-tile-icon is-warn" *ngIf="tile.warn">
+      <lucide-icon [name]="tile.icon" [size]="16" aria-hidden="true"></lucide-icon>
     </span>
     <span class="ui-tile-words">
       <span class="ui-tile-value">{{ tile.value }}</span>
@@ -133,20 +131,11 @@
           </button>
         </ng-container>
       </app-empty>
-      <!-- What a skill can be, as three small cards. -->
+      <!-- What a skill can be, in three short lines. -->
       <ul class="data-hints" *ngIf="!loading && !skills.length" aria-label="What a skill can teach">
-        <li class="data-hint">
-          <span class="ui-panel-icon is-hued"><lucide-icon name="file-text" [size]="16" aria-hidden="true"></lucide-icon></span>
-          <span><strong>A format</strong> your reports follow</span>
-        </li>
-        <li class="data-hint">
-          <span class="ui-panel-icon is-hued"><lucide-icon name="gavel" [size]="16" aria-hidden="true"></lucide-icon></span>
-          <span><strong>A rule</strong> it should never break</span>
-        </li>
-        <li class="data-hint">
-          <span class="ui-panel-icon is-hued"><lucide-icon name="list-checks" [size]="16" aria-hidden="true"></lucide-icon></span>
-          <span><strong>A method</strong> it follows step by step</span>
-        </li>
+        <li><strong>A format</strong> your reports follow</li>
+        <li><strong>A rule</strong> it should never break</li>
+        <li><strong>A method</strong> it follows step by step</li>
       </ul>
       <app-empty
         *ngIf="skills.length && !shownSkills.length"

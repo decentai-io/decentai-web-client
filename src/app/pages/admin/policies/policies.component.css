@@ -1,0 +1,60 @@
+/* Policies: one column, each policy a row that says its statements in
+   words. The list, the rows and the pills are the shared ones. */
+.policies-column {
+  max-width: 880px;
+}
+
+.policies-lead {
+  max-width: 68ch;
+  margin: -12px 0 20px;
+  color: var(--ink-2);
+  font-size: var(--t-base);
+  line-height: 22px;
+}
+
+.policies-lead a,
+.pol-agents a {
+  color: var(--accent-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* A statement: what it does, then to what, as one sentence. */
+.pol-statements {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  list-style: none;
+}
+
+.pol-statement {
+  max-width: 76ch;
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
+  overflow-wrap: anywhere;
+}
+
+.pol-effect {
+  margin-right: 6px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* Asking first needs a person: amber, and only it. */
+.pol-effect.is-ask {
+  color: var(--warn-ink);
+}
+
+.pol-more {
+  margin: 4px 0 0 -8px;
+}
+
+.pol-agents {
+  max-width: 76ch;
+  margin-top: 6px;
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
+}

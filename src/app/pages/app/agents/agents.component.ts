@@ -14,7 +14,7 @@ import { CardLevel } from './agent-card.component';
 import { AgentStat, Standing, agentFacts, agentStats, iconOf, levelBar, standingOf } from './agent-shared';
 
 /** The tabs an address may name. */
-const TABS: DetailTab[] = ['overview', 'functions'];
+const TABS: DetailTab[] = ['overview', 'functions', 'access'];
 
 /**
  * Installed agents: the ones this person may use, and for an

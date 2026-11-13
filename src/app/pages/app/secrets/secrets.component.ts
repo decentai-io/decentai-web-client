@@ -106,6 +106,9 @@ export class SecretsComponent extends RecordPage implements OnInit, OnDestroy {
 
   private readOpened(): void {
     this.openId = this.route.snapshot.firstChild?.paramMap.get('ref') || '';
+    // Choosing agents is done in the secret's view: another one opened
+    // ends it.
+    if (this.agentsTarget && this.agentsTarget.record_id !== this.openId && !this.agentsSaving) this.agentsTarget = null;
     if (this.openId && !this.loading && !this.opened) {
       this.fail('That secret is not one you can see any more.');
       this.closeOpened();
@@ -118,6 +121,14 @@ export class SecretsComponent extends RecordPage implements OnInit, OnDestroy {
 
   closeOpened(): void {
     void this.router.navigate(['/secrets'], { queryParamsHandling: 'preserve' });
+  }
+
+  /** Its agents are chosen in its own view, in place: it is opened. */
+  override openAgents(secret: AppRecord): void {
+    super.openAgents(secret);
+    if (secret.record_id !== this.openId) {
+      void this.router.navigate(['/secrets', secret.record_id], { queryParamsHandling: 'preserve' });
+    }
   }
 
   protected override deleted(secret: AppRecord): void {

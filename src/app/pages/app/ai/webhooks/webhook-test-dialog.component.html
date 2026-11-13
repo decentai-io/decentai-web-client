@@ -1,11 +1,6 @@
-<h2 mat-dialog-title class="dialog-band">
-  <span class="opened-mark" aria-hidden="true">
-    <lucide-icon name="send" [size]="20" [strokeWidth]="1.75"></lucide-icon>
-  </span>
-  <span class="dialog-band-words">
-    <span class="dialog-band-title">Send a test to {{ webhook.name }}</span>
-    <span class="dialog-band-line">A body of your own, acted on as a call is.</span>
-  </span>
+<h2 mat-dialog-title class="dialog-head">
+  <span class="dialog-head-title">Send a test to {{ webhook.name }}</span>
+  <span class="dialog-head-line">A body of your own, acted on as a call is.</span>
 </h2>
 <form (ngSubmit)="send()">
   <mat-dialog-content>

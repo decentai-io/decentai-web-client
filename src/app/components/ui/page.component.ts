@@ -27,10 +27,7 @@ import { GuidePanelService } from 'src/app/pages/app/guide/guide-panel.service';
   imports: [NgIf, RouterLink, LucideAngularModule],
   styleUrl: './page.component.css',
   template: `
-    <header class="page-head" [class.is-banner]="!!icon">
-      <span class="page-icon" *ngIf="icon" aria-hidden="true">
-        <lucide-icon [name]="icon" [size]="22" [strokeWidth]="1.75"></lucide-icon>
-      </span>
+    <header class="page-head">
       <div class="page-words">
         <h1 class="page-title">
           {{ title }}
@@ -48,19 +45,12 @@ import { GuidePanelService } from 'src/app/pages/app/guide/guide-panel.service';
     </header>
     <ng-content></ng-content>
   `,
-  host: { '[class.is-wide]': 'wide', '[style.--hue]': 'hue' },
+  host: { '[class.is-wide]': 'wide' },
 })
 export class PageComponent {
   @Input({ required: true }) title = '';
   @Input() sentence = '';
   @Input() wide = false;
-  /** A Lucide icon for the page: with one, the title sits in a band with
-   *  the icon in a tile, washed in `hue`. */
-  @Input() icon = '';
-  /** The page's hue, 0 to 360: its band's wash, and the colour its tiles
-   *  and hued icons take (styles/controls.scss `.ui-*`). Its section's,
-   *  so pages of one section look of a piece. */
-  @Input() hue: number | null = null;
   /** The Guide's chapter for this page, with a heading after a #. */
   @Input() guide = '';
 

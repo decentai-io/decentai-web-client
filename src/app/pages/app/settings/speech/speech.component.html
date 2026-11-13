@@ -16,7 +16,6 @@
   <!-- Who writes recordings down and says replies aloud. -->
   <section class="ui-panel" aria-labelledby="speech-source-title">
     <div class="ui-panel-head">
-      <span class="ui-panel-icon is-hued"><lucide-icon name="mic" [size]="16" aria-hidden="true"></lucide-icon></span>
       <h2 class="ui-panel-title" id="speech-source-title">Who handles speech</h2>
       <span class="ui-pill" [class.is-accent]="draft.value.speech !== 'none'">
         <lucide-icon [name]="draft.value.speech === 'none' ? 'circle-x' : 'volume-2'" [size]="12" aria-hidden="true"></lucide-icon>
@@ -32,7 +31,6 @@
   <div class="ui-panels" *ngIf="draft.value.speech === 'model'">
     <section class="ui-panel" aria-labelledby="speech-connection-title">
       <div class="ui-panel-head">
-        <span class="ui-panel-icon is-hued"><lucide-icon name="cloud" [size]="16" aria-hidden="true"></lucide-icon></span>
         <h2 class="ui-panel-title" id="speech-connection-title">Connection</h2>
       </div>
       <div class="form">
@@ -61,7 +59,6 @@
 
     <section class="ui-panel" aria-labelledby="speech-voice-title">
       <div class="ui-panel-head">
-        <span class="ui-panel-icon is-hued"><lucide-icon name="volume-2" [size]="16" aria-hidden="true"></lucide-icon></span>
         <h2 class="ui-panel-title" id="speech-voice-title">Replies said aloud</h2>
       </div>
       <div class="form">

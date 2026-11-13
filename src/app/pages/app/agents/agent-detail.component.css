@@ -1,9 +1,11 @@
-/* One agent's page: its header band, its numbers as tiles, its sections
-   as a segmented row, and the Overview as panels. The header band, the
-   tiles, the panels, the prompts, the level bar and the chips are the
-   agents' own (agent-shared.css); --hue is the agent's, set on the host. */
+/* One agent's page: its title row, its numbers as one line, its
+   sections as a segmented row, and the Overview as one column of
+   sections. The title row, the prompts, the level bar and the chips
+   are the agents' own (agent-shared.css); sections and numbers are the
+   shared ones (styles/controls.scss `.ui-*`). */
 :host {
   display: block;
+  max-width: 960px;
   padding: 8px 0 32px;
 }
 
@@ -11,195 +13,111 @@
   margin-bottom: 16px;
 }
 
-.agent-tiles li {
-  display: flex;
-  min-width: 0;
-}
-
-.agent-tiles .agent-tile {
-  flex: 1;
-}
-
 .agent-tabs {
   display: block;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
 }
 
-/* ── Overview ──────────────────────────────────────────────────────── */
-.agent-overview {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+/* What a section says, read as text. */
+.agent-text {
+  max-width: 68ch;
+  color: var(--ink);
+  font-size: var(--t-base);
+  line-height: 22px;
 }
 
-/* The panels in two columns, each a stack: how it behaves on the left,
-   what it holds of the person's on the right; one column when narrow. */
-.agent-panels {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: start;
-  gap: 20px;
+.agent-text code,
+.ui-panel-note code,
+.agent-facts code {
+  font-family: var(--font-mono);
+  font-size: var(--t-sm);
 }
 
-.agent-panels-col {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  min-width: 0;
+.agent-subhead {
+  margin-top: 20px;
+  margin-bottom: 8px;
+  color: var(--ink);
+  font-size: var(--t-base);
+  font-weight: 600;
+  line-height: var(--lh-base);
 }
 
-@media (max-width: 980px) {
-  .agent-panels {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-.agent-panel-icon.is-hued {
-  background: hsl(var(--hue, 152) 62% 93%);
-  color: hsl(var(--hue, 152) 58% 28%);
-}
-
-:host-context(.dark) .agent-panel-icon.is-hued {
-  background: hsl(var(--hue, 152) 34% 20%);
-  color: hsl(var(--hue, 152) 62% 78%);
-}
-
-.agent-panel-head .btn {
-  flex: none;
-}
-
-.agent-panel-actions {
+.agent-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 14px;
+  margin-top: 16px;
 }
 
-.agent-panel-lead {
-  margin-top: 0;
-}
-
-.agent-panel-note code,
-.agent-fact-list code {
-  font-family: var(--font-mono);
-  font-size: var(--t-xs);
-}
-
-/* ── What it keeps: a row each, its kind as an icon tile ─────────── */
+/* ── What it keeps: a row each, a hairline between ───────────────── */
 .kept-rows {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
   list-style: none;
 }
 
 .kept-row {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.kept-icon {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  background: var(--surface-2);
-  color: var(--ink-2);
-}
-
-.kept-icon[data-kind="secrets"] {
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-}
-
-.kept-words {
-  display: flex;
   flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  gap: 4px;
+  padding: 12px 0;
+}
+
+.kept-row:first-child {
+  padding-top: 0;
+}
+
+.kept-row + .kept-row {
+  border-top: 1px solid var(--line);
 }
 
 .kept-name {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 2px 8px;
+  gap: 2px 10px;
   color: var(--ink);
+  font-size: var(--t-base);
   font-weight: 600;
+  line-height: var(--lh-base);
 }
 
 .kept-kind {
-  color: var(--ink-3);
-  font-size: var(--t-xs);
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  font-weight: 400;
 }
 
+/* A slot's description can be long: two lines of it. */
 .kept-about {
+  display: -webkit-box;
+  max-width: 68ch;
+  overflow: hidden;
   color: var(--ink-2);
+  font-size: var(--t-base);
+  line-height: 22px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .kept-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 3px;
-}
-
-.kept-tags span {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 1px 8px;
-  border-radius: var(--r-full);
-  background: var(--surface-2);
-  color: var(--ink-2);
-  font-size: var(--t-xs);
-  line-height: var(--lh-xs);
-}
-
-.kept-tags lucide-icon {
-  display: flex;
-}
-
-/* ── Sample data: the counts, large ───────────────────────────────── */
-.samples-counts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 20px;
-  color: var(--ink-2);
+  gap: 4px 16px;
+  color: var(--ink-3);
   font-size: var(--t-sm);
   line-height: var(--lh-sm);
 }
 
-.samples-counts strong {
-  margin-right: 4px;
-  color: var(--ink);
-  font-size: var(--t-lg);
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-}
-
 /* ── Approvals remembered: a row each, a mark for its answer ────────── */
 .remembered-rows {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
   list-style: none;
 }
 
 .remembered-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 0;
+  gap: 12px;
+  padding: 8px 0;
 }
 
 .remembered-row + .remembered-row {
@@ -229,8 +147,8 @@
   flex-direction: column;
   min-width: 0;
   color: var(--ink-2);
-  font-size: var(--t-xs);
-  line-height: var(--lh-xs);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
 }
 
 .remembered-words code {
@@ -242,48 +160,51 @@
 }
 
 /* ── Facts as names and values ─────────────────────────────────────── */
-.agent-fact-list {
+.agent-facts {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  width: 100%;
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
 }
 
-.agent-fact-list dt {
+.agent-facts dt {
   margin-top: 8px;
   color: var(--ink);
 }
 
-.agent-fact-list dt:first-child {
+.agent-facts dt:first-child {
   margin-top: 0;
 }
 
-.agent-fact-list dd {
+.agent-facts dd {
   color: var(--ink-2);
   overflow-wrap: anywhere;
 }
 
 /* A name, then the fact, side by side. */
-.agent-fact-list.is-pairs {
+.agent-facts.is-pairs {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
-  gap: 8px 18px;
+  gap: 8px 24px;
 }
 
-.agent-fact-list.is-pairs dt {
+.agent-facts.is-pairs dt {
   margin-top: 0;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
-.agent-fact-list.is-pairs dd {
+.agent-facts.is-pairs dd {
   color: var(--ink);
+}
+
+.agent-instructions {
+  margin-top: 16px;
 }
 
 /* ── The README, read as an article, folded to its first screen ────── */
 .agent-readme {
-  max-width: 78ch;
+  max-width: 72ch;
   overflow-wrap: anywhere;
   font-size: var(--t-read);
   line-height: var(--lh-read);
@@ -300,7 +221,7 @@
 }
 
 .agent-readme.is-folded {
-  max-height: 340px;
+  max-height: 320px;
   overflow: hidden;
   -webkit-mask-image: linear-gradient(#000 70%, transparent);
   mask-image: linear-gradient(#000 70%, transparent);
@@ -309,8 +230,3 @@
 .agent-readme-more {
   margin-top: 8px;
 }
-
-.agent-instructions .agent-panel-note {
-  margin-top: 8px;
-}
-

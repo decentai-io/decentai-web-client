@@ -11,7 +11,7 @@
 <ng-container *ngIf="!loading && !loadError">
   <!-- What a new chat starts with, at a glance: each a pill. -->
   <p class="ui-pills defaults-summary" aria-label="A new chat starts with">
-    <span class="ui-pill is-accent"><lucide-icon name="gauge" [size]="12" aria-hidden="true"></lucide-icon>Effort: {{ nameOf(effortChoices, draft.value.effort) }}</span>
+    <span class="ui-pill"><lucide-icon name="gauge" [size]="12" aria-hidden="true"></lucide-icon>Effort: {{ nameOf(effortChoices, draft.value.effort) }}</span>
     <span class="ui-pill"><lucide-icon name="shield-check" [size]="12" aria-hidden="true"></lucide-icon>Trust: {{ nameOf(trustChoices, draft.value.trust) }}</span>
     <span class="ui-pill"><lucide-icon name="timer" [size]="12" aria-hidden="true"></lucide-icon>Turns: {{ nameOf(turnChoices, draft.value.turn_budget) }}</span>
   </p>
@@ -20,7 +20,6 @@
     <!-- The model and how hard it thinks. -->
     <section class="ui-panel" aria-labelledby="defaults-model-title">
       <div class="ui-panel-head">
-        <span class="ui-panel-icon is-hued"><lucide-icon name="brain-circuit" [size]="16" aria-hidden="true"></lucide-icon></span>
         <h2 class="ui-panel-title" id="defaults-model-title">Thinking</h2>
       </div>
       <div class="form">
@@ -37,7 +36,6 @@
     <!-- How far a chat goes on its own. -->
     <section class="ui-panel" aria-labelledby="defaults-trust-title">
       <div class="ui-panel-head">
-        <span class="ui-panel-icon is-hued"><lucide-icon name="shield-check" [size]="16" aria-hidden="true"></lucide-icon></span>
         <h2 class="ui-panel-title" id="defaults-trust-title">How far it goes</h2>
       </div>
       <div class="form">
@@ -58,7 +56,6 @@
     <!-- What a new chat may reach. -->
     <section class="ui-panel" aria-labelledby="defaults-reach-title">
       <div class="ui-panel-head">
-        <span class="ui-panel-icon is-hued"><lucide-icon name="package" [size]="16" aria-hidden="true"></lucide-icon></span>
         <h2 class="ui-panel-title" id="defaults-reach-title">What it reaches</h2>
       </div>
       <div class="form">
@@ -82,7 +79,6 @@
     <!-- Not one of the saved defaults: this device's own, kept as it is set. -->
     <section class="ui-panel" *ngIf="dictationChoices.length || readingChoices.length || readAloud.available" aria-labelledby="defaults-speech-title">
       <div class="ui-panel-head">
-        <span class="ui-panel-icon"><lucide-icon name="mic" [size]="16" aria-hidden="true"></lucide-icon></span>
         <h2 class="ui-panel-title" id="defaults-speech-title">Speech on this device</h2>
         <span class="ui-pill"><lucide-icon name="monitor" [size]="12" aria-hidden="true"></lucide-icon>This browser</span>
       </div>

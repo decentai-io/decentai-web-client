@@ -159,9 +159,15 @@
   text-align: center;
 }
 
-/* The live-view button says when a browser is streaming. */
+/* The live-view button says when a browser is streaming, and turns while
+   one is being opened (still, where motion is reduced: styles.scss). */
 .icon-btn.is-live {
   color: var(--accent-ink);
+}
+
+.chat-spin {
+  display: flex;
+  animation: spin 1s linear infinite;
 }
 
 /* ── Strips under the header ───────────────────────────────────────── */

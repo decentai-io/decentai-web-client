@@ -1,11 +1,6 @@
-<h2 mat-dialog-title class="dialog-band">
-  <span class="opened-mark" aria-hidden="true">
-    <lucide-icon [name]="editing ? 'calendar-clock' : 'calendar-check'" [size]="20" [strokeWidth]="1.75"></lucide-icon>
-  </span>
-  <span class="dialog-band-words">
-    <span class="dialog-band-title">{{ editing ? "Change when it runs" : "New schedule" }}</span>
-    <span class="dialog-band-line">{{ editing ? "What it does stays as it is: only when it runs changes." : "A prompt that wakes the assistant, or an agent's function, on the clock." }}</span>
-  </span>
+<h2 mat-dialog-title class="dialog-head">
+  <span class="dialog-head-title">{{ editing ? "Change when it runs" : "New schedule" }}</span>
+  <span class="dialog-head-line">{{ editing ? "What it does stays as it is: only when it runs changes." : "A prompt that wakes the assistant, or an agent's function, on the clock." }}</span>
 </h2>
 <form (ngSubmit)="save()">
   <mat-dialog-content>
@@ -73,10 +68,7 @@
 
       <!-- ── When ───────────────────────────────────────────────────── -->
       <fieldset class="schedule-when">
-        <legend class="schedule-legend">
-          <span class="schedule-legend-icon" aria-hidden="true"><lucide-icon name="calendar-clock" [size]="14"></lucide-icon></span>
-          When, in {{ zone }}
-        </legend>
+        <legend class="schedule-legend">When, in {{ zone }}</legend>
         <app-segmented name="cadence-kind" label="How it comes round" [choices]="cadenceKinds" [(ngModel)]="cadence.kind"></app-segmented>
 
         <div class="schedule-line" *ngIf="cadence.kind === 'every'">

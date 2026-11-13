@@ -1,7 +1,7 @@
-/* The Webhooks page is made of the shared pieces (the band, the tiles,
+/* The Webhooks page is made of the shared pieces (the numbers line,
    the pills, the list frame, the row, the chips, the switch, the side
-   layout). Here are its lists, one above the other, each with its icon
-   and title, and how a row says a webhook. */
+   layout). Here are its lists, one above the other, each with its
+   title, and how a row says a webhook. */
 
 .webhook-lists {
   display: flex;
@@ -15,13 +15,6 @@
   font-size: var(--t-md);
   font-weight: 600;
   line-height: var(--lh-md);
-}
-
-/* A list handed over waits on the person: its icon in the warning's
-   colours. */
-.ui-panel-icon.is-warn-icon {
-  background: var(--warn-soft);
-  color: var(--warn-ink);
 }
 
 /* The name is the way in to the webhook. */
@@ -53,11 +46,7 @@
 }
 
 app-row.is-current {
-  background: hsl(var(--hue, 186) 60% 96%);
-}
-
-:host-context(.dark) app-row.is-current {
-  background: hsl(var(--hue, 186) 30% 16%);
+  background: var(--surface-2);
 }
 
 /* A webhook that is off reads quieter, and stays readable. */

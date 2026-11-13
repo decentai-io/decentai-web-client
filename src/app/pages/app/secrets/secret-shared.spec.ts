@@ -1,4 +1,6 @@
-import { editableFields, identifier, isConnected, secretTitle, shownFields } from './secret-shared';
+import {
+  agentChoices, editableFields, fits, identifier, isConnected, secretTitle, shownFields,
+} from './secret-shared';
 
 describe('what is read off a secret', () => {
   function secret(overrides: any = {}) {
@@ -46,5 +48,35 @@ describe('what is read off a secret', () => {
     expect(editableFields(shape).map((field) => field.name)).toEqual(['service_url', 'api_token']);
     expect(isConnected(secret({ keys: { account: 'dana' } }))).toBeTrue();
     expect(isConnected(secret())).toBeFalse();
+  });
+
+  describe('the agents a secret may be given to', () => {
+    const sync = {
+      agent: 'sync', agent_name: 'Sync', id: 'token', label: 'Token',
+      fields: [{ name: 'api_token', type: 'secret', storage: 'values', required: true }],
+    } as any;
+    const other = {
+      agent: 'mail', agent_name: 'Mail', id: 'login', label: 'Login',
+      fields: [{ name: 'password', type: 'secret', storage: 'values', required: true }],
+    } as any;
+    const google = { agent: 'drive', agent_name: 'Drive', id: 'account', label: 'Account', fields: [], oauth: { provider: 'google' } } as any;
+
+    it('fits where every required field is there by name and type, and an account only its own provider', () => {
+      expect(fits(shape, sync)).toBeTrue();
+      expect(fits(shape, other)).toBeFalse();
+      expect(fits(shape, google)).toBeFalse();
+      expect(fits({ ...google, agent: 'gmail' }, google)).toBeTrue();
+      expect(fits(null, other)).toBeTrue();
+    });
+
+    it('offers its own first, then the others that fit by name, and keeps any it already serves', () => {
+      const choices = agentChoices({ agent: 'jira', resource: 'connection' }, [other, sync, shape, google],
+        [{ agent: 'old', resource: 'key' }]);
+      expect(choices.map((choice) => [choice.key, choice.name, choice.hint, choice.own])).toEqual([
+        ['jira/connection', 'Jira', 'Made for it', true],
+        ['sync/token', 'Sync', 'Token', false],
+        ['old/key', 'Old', 'key', false],
+      ]);
+    });
   });
 });

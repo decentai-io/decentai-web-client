@@ -1,8 +1,7 @@
-/* Chat defaults: what a new chat starts with as pills, then a panel a
-   concern (styles/controls.scss `.ui-panel`), side by side when there
-   is room. */
+/* Chat defaults: what a new chat starts with as pills, then a section
+   a concern, one under another (styles/controls.scss `.ui-panels`). */
 .defaults-summary {
-  margin-bottom: 20px;
+  margin-bottom: 32px;
 }
 
 /* A count of what is chosen, and the way to choose. */

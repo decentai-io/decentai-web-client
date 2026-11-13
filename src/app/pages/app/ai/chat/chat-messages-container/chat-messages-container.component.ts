@@ -213,7 +213,8 @@ export class ChatMessagesContainerComponent
           requestAnimationFrame(() => el.scrollTop += el.scrollHeight - oldHeight);
           return;
         }
-        const actor = curr[curr.length - 1]?.userMessage ? 'user' : 'ai';
+        const last = curr[curr.length - 1];
+        const actor = last?.userMessage || last?.answer ? 'user' : 'ai';
         if (actor === 'user' || this.userNearBottom) {
           this.deferScrollToBottom(actor !== 'user');
           this.newUpdateCount = 0;
@@ -291,10 +292,10 @@ export class ChatMessagesContainerComponent
     });
   }
 
-  /** How many messages the turns hold between them. */
+  /** How many messages, and cards answered, the turns hold between them. */
   private activityCount(turns: ChatTurn[]): number {
     return turns.reduce((count, turn) =>
-      count + (turn.userMessage ? 1 : 0) + turn.assistantMessages.length, 0);
+      count + (turn.userMessage || turn.answer ? 1 : 0) + turn.assistantMessages.length, 0);
   }
 
   ngOnDestroy() {

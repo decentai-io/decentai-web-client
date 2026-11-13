@@ -39,6 +39,19 @@
                     <time class="run-time" [attr.datetime]="turn.at">{{ turn.at | date: 'shortTime' }}</time>
                   </header>
                 }
+                <!-- A card the person answered: their decision, on their side,
+                     where it was made; the border between what the assistant
+                     said before it and after it. One still open waits above
+                     the composer, not here. -->
+                @if (turn.answer; as answer) {
+                  <div class="turn-answer" [class.is-quiet]="answer.icon !== 'check'">
+                    @if (answer.asked) { <p class="turn-answer-asked">{{ answer.asked }}</p> }
+                    <p class="turn-answer-said">
+                      <lucide-icon [name]="answer.icon" [size]="14" aria-hidden="true"></lucide-icon>
+                      <span>{{ answer.label }}</span>
+                    </p>
+                  </div>
+                }
                 @if (turn.userMessage) {
                   <app-chat-message [message]="turn.userMessage" [files]="files" [agentNames]="names"></app-chat-message>
                 }

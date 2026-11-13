@@ -8,28 +8,28 @@ import { Choice } from 'src/app/components/ui/radio-keys';
 import {
   AgentsService, InstalledAgent, RememberedApproval, SampleSummary,
 } from 'src/app/services/agents.service';
-import { AuthService } from 'src/app/services/auth.service';
 import { ChatMarkdownService } from '../ai/chat/chat-message/chat-markdown.service';
-import { hueOf } from 'src/app/components/ui/agent-mark.component';
 import {
-  AgentNetwork, AgentTile, KeptItem, Standing, agentTiles, credentialHost, iconOf, keptItems, levelBar, levelMeaning,
+  AgentCount, AgentNetwork, KeptItem, Standing, agentCounts, credentialHost, iconOf, keptItems, levelBar, levelMeaning,
   levelTally, networkNote, networkOf, resourcesOf,
 } from './agent-shared';
 
 /** How long a README is shown whole; a longer one is folded. */
 const README_FOLD_CHARS = 900;
 
-export type DetailTab = 'overview' | 'functions';
+export type DetailTab = 'overview' | 'functions' | 'access';
 
 /**
- * One agent's page: the title row, the row of sections, and the
- * Overview. The Overview answers, in order: what it is, what to say to
- * it, what it may do, where it connects, what it keeps, and then the
- * person's own part: its samples, and the approvals they remembered for
- * it. Its functions are a section of their own (agent-functions).
+ * One agent's page: the title row, its few numbers, the row of sections,
+ * and the Overview, one column read top to bottom: what to say to it
+ * and its samples to try it on, what it may do, where it connects, what
+ * it keeps, the approvals the person remembered for it, who may use it,
+ * and then the details. Its functions are a section of their own
+ * (agent-functions).
  *
- * Who may use an agent is the organization's policy, not the agent's:
- * the page points there.
+ * Who may use an agent is kept with it, by group: whoever may install
+ * agents chooses on its Access tab (agent-access), and the Overview
+ * points there.
  */
 @Component({
   selector: 'app-agent-detail',
@@ -39,8 +39,6 @@ export type DetailTab = 'overview' | 'functions';
   // A README is somebody else's markdown: what it would load from
   // elsewhere is taken out, as in a chat.
   providers: [{ provide: MarkdownService, useClass: ChatMarkdownService }],
-  // The page wears the hue the agent's name gives its mark.
-  host: { '[style.--hue]': 'hue' },
 })
 export class AgentDetailComponent implements OnChanges {
   @Input({ required: true }) agent!: InstalledAgent;
@@ -67,14 +65,15 @@ export class AgentDetailComponent implements OnChanges {
   readme = '';
   readmeLong = false;
   readmeOpen = false;
-  hue = hueOf('');
   icon = '';
-  tiles: AgentTile[] = [];
+  counts: AgentCount[] = [];
   kept: KeptItem[] = [];
+  /** The scopes who may use it can be narrowed by. */
+  scopes: { name: string; description: string }[] = [];
   bar: Array<{ name: string; count: number; share: number; index: number }> = [];
   barWords = '';
   /** The host it was installed from, short; the whole address is under
-   *  Identity. */
+   *  Details. */
   sourceHost = '';
   readonly meaningOf = levelMeaning;
 
@@ -92,21 +91,28 @@ export class AgentDetailComponent implements OnChanges {
   constructor(
     private router: Router,
     private agents: AgentsService,
-    private auth: AuthService,
   ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
+    if (changes['agent'] || changes['canInstall']) {
+      const count = this.agent.manifest.functions.length;
+      this.tabs = [
+        { value: 'overview', name: 'Overview' },
+        { value: 'functions', name: `Functions ${count}` },
+        // Who may use it is chosen by whoever may install agents.
+        ...(this.canInstall ? [{ value: 'access' as DetailTab, name: 'Access' }] : []),
+      ];
+    }
     const change = changes['agent'];
     if (!change) return;
-    const count = this.agent.manifest.functions.length;
-    this.tabs = [{ value: 'overview', name: 'Overview' }, { value: 'functions', name: `Functions ${count}` }];
     this.network = networkOf(this.agent.manifest);
     this.readme = headingsDown(this.agent.readme || '', 2);
     this.readmeLong = (this.agent.readme || '').length > README_FOLD_CHARS;
-    this.hue = hueOf(this.agent.name);
     this.icon = iconOf(this.agent.manifest);
-    this.tiles = agentTiles(this.agent.manifest);
+    this.counts = agentCounts(this.agent.manifest);
     this.kept = keptItems(this.agent.manifest);
+    this.scopes = Object.entries(this.agent.manifest.authorization?.scopes || {})
+      .map(([name, scope]) => ({ name, description: scope.description || '' }));
     this.bar = levelBar(this.agent.manifest);
     this.barWords = this.bar.map((level) => `${level.count} ${level.name.toLowerCase()}`).join(', ');
     try {
@@ -120,19 +126,13 @@ export class AgentDetailComponent implements OnChanges {
     void this.readRemembered();
   }
 
-  /** May the person open the Policies page, where using it is granted. */
-  get canReadPolicies(): boolean {
-    return this.auth.can('iam:policy:list');
+  /** The tab shown: Access only for whoever may choose who uses it. */
+  get shownTab(): DetailTab {
+    return this.tab === 'access' && !this.canInstall ? 'overview' : this.tab;
   }
 
   get tally(): Array<{ name: string; count: number }> {
     return levelTally(this.agent.manifest);
-  }
-
-  /** The scopes a policy can narrow its functions by. */
-  get scopes(): { name: string; description: string }[] {
-    return Object.entries(this.agent.manifest.authorization?.scopes || {})
-      .map(([name, scope]) => ({ name, description: scope.description || '' }));
   }
 
   get resources() {

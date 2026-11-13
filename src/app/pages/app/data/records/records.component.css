@@ -8,38 +8,16 @@
   flex-basis: 140px;
 }
 
-/* The shared tiles (styles/controls.scss `.ui-tile`), each filling its
-   cell, so a button and a plain tile stand the same height. */
-.data-tiles > li > .ui-tile {
-  width: 100%;
-  height: 100%;
-}
-
-/* The open kind over its table: an icon tile, its name with whose it
-   is and how many, and what the manifest says it is, on a wash of the
-   section's hue. */
+/* The open kind over its table, as its heading, in line with the
+   cells: its name with whose it is and how many, and what the
+   manifest says it is. */
 .records-kind {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding: 14px 16px;
-  border: 1px solid color-mix(in srgb, hsl(var(--hue, 214) 50% 50%) 16%, var(--line));
-  border-radius: var(--r-md);
-  background: linear-gradient(100deg, hsl(var(--hue, 214) 60% 97%), var(--surface) 70%);
-}
-
-:host-context(.dark) .records-kind {
-  border-color: color-mix(in srgb, hsl(var(--hue, 214) 40% 55%) 20%, var(--line));
-  background: linear-gradient(100deg, hsl(var(--hue, 214) 35% 15%), var(--surface) 70%);
-}
-
-.records-kind-words {
-  display: flex;
-  flex: 1;
   flex-direction: column;
   gap: 4px;
   min-width: 0;
+  margin-bottom: 8px;
+  padding: 12px 10px 0;
 }
 
 .records-kind-title {
@@ -55,10 +33,10 @@
 }
 
 .records-kind-about {
-  max-width: 72ch;
+  max-width: 68ch;
   color: var(--ink-2);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  font-size: var(--t-base);
+  line-height: 22px;
 }
 
 /* A reference reads as one; a cell with nothing in it steps back. */

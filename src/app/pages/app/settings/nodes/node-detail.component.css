@@ -9,80 +9,39 @@
   margin: 0 0 16px -8px;
 }
 
-/* Its head: a band washed in the section's hue (--hue, from the
-   settings shell), the mark large and lifted, the actions at the right. */
+/* Its head: plain, its name and how it stands, the actions at the
+   right. */
 .detail-head {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 16px 20px;
-  margin-bottom: 20px;
-  padding: 24px;
-  border: 1px solid color-mix(in srgb, hsl(var(--hue, 262) 50% 50%) 16%, var(--line));
-  border-radius: var(--r-lg);
-  background:
-    radial-gradient(80% 160% at 0% 0%, hsl(var(--hue, 262) 70% 93% / 0.8), transparent 60%),
-    var(--surface);
-  box-shadow: var(--shadow-1);
+  margin-bottom: 32px;
 }
 
-:host-context(.dark) .detail-head {
-  border-color: color-mix(in srgb, hsl(var(--hue, 262) 40% 50%) 20%, var(--line));
-  background:
-    radial-gradient(80% 160% at 0% 0%, hsl(var(--hue, 262) 40% 19% / 0.9), transparent 60%),
-    var(--surface);
-}
-
-.detail-mark {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  background: var(--surface-2);
-  color: var(--ink-2);
-  box-shadow: 0 6px 16px -8px rgb(0 0 0 / 0.3), inset 0 0 0 1px rgb(255 255 255 / 0.5);
-}
-
-:host-context(.dark) .detail-mark {
-  box-shadow: 0 8px 18px -8px rgb(0 0 0 / 0.6), inset 0 0 0 1px rgb(255 255 255 / 0.06);
-}
-
-.detail-mark lucide-icon,
 .chip lucide-icon {
   display: flex;
 }
 
-/* The panels under the head, one under another. */
+/* The sections under the head, one under another. */
 .detail-panels {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 40px;
+  max-width: 880px;
 }
 
-/* A panel's line of what it is about, under its title. */
+/* A section's line of what it is about, under its title. */
 .detail-lead {
-  max-width: 72ch;
-  margin: -6px 0 16px;
+  max-width: 68ch;
+  margin: -4px 0 16px;
   color: var(--ink-2);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  font-size: var(--t-base);
+  line-height: 22px;
 }
 
 .detail-lead.is-last {
   margin-bottom: 0;
-}
-
-.detail-mark.is-live {
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-}
-
-.detail-mark.is-refused {
-  background: var(--danger-soft);
-  color: var(--danger-ink);
 }
 
 .detail-words {
@@ -121,16 +80,16 @@
 .detail-code {
   color: var(--ink-2);
   font-family: var(--font-mono);
-  font-size: var(--t-xs);
-  line-height: var(--lh-xs);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
   overflow-wrap: anywhere;
 }
 
 .detail-note {
-  max-width: 64ch;
+  max-width: 68ch;
   color: var(--ink-2);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
   white-space: pre-line;
 }
 
@@ -149,36 +108,24 @@
 }
 
 /* The facts: a label over its value, as many to a line as fit. */
-/* Each fact draws the hairlines above and before it, and the frame
-   hides those along its own edge: a last line that is not full leaves
-   paper, not a grey block. */
 .detail-facts {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
-  background: var(--surface);
+  gap: 16px 24px;
 }
 
 .detail-fact {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   min-width: 0;
-  margin: -1px 0 0 -1px;
-  padding: 12px 16px;
-  border-top: 1px solid var(--line);
-  border-left: 1px solid var(--line);
 }
 
 .detail-fact dt {
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  font-size: var(--t-xs);
-  font-weight: 500;
-  line-height: var(--lh-xs);
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  line-height: var(--lh-sm);
 }
 
 .detail-fact dd {
@@ -187,8 +134,8 @@
   align-items: baseline;
   gap: 2px 8px;
   color: var(--ink);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
   overflow-wrap: anywhere;
 }
 
@@ -221,10 +168,10 @@
 
 .detail-sandbox-labels {
   display: block;
-  color: var(--ink-3);
-  font-size: var(--t-xs);
+  color: var(--ink-2);
+  font-size: var(--t-sm);
   font-weight: 400;
-  line-height: var(--lh-xs);
+  line-height: var(--lh-sm);
 }
 
 .detail-memory {
@@ -264,13 +211,9 @@
 }
 
 .detail-empty {
-  padding: 16px;
-  border: 1px dashed var(--line-strong);
-  border-radius: var(--r-lg);
   color: var(--ink-2);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
-  text-align: center;
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
 }
 
 @media (max-width: 700px) {

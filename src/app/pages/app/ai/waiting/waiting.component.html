@@ -1,7 +1,5 @@
 <app-page
   title="Approvals"
-  icon="inbox"
-  [hue]="186"
   sentence="Approvals and questions from your chats that wait for your answer, in one place, each waiting however long you take."
   [wide]="true"
 >
@@ -12,10 +10,10 @@
 
   <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
 
-  <!-- What waits, by kind, each a tile. -->
+  <!-- What waits, by kind, on one line; the icon only where it waits. -->
   <ul class="ui-tiles" *ngIf="groups.length" aria-label="What waits, in numbers">
     <li class="ui-tile" *ngFor="let tile of tiles">
-      <span class="ui-tile-icon" [class.is-warn]="tile.warn">
+      <span class="ui-tile-icon is-warn" *ngIf="tile.warn">
         <lucide-icon [name]="tile.icon" [size]="20" aria-hidden="true"></lucide-icon>
       </span>
       <span class="ui-tile-words">
@@ -24,7 +22,6 @@
       </span>
     </li>
     <li class="ui-tile">
-      <span class="ui-tile-icon"><lucide-icon name="message-square-text" [size]="20" aria-hidden="true"></lucide-icon></span>
       <span class="ui-tile-words">
         <span class="ui-tile-value">{{ groups.length }}</span>
         <span class="ui-tile-label">{{ groups.length === 1 ? "Chat" : "Chats" }} asking</span>
@@ -44,10 +41,9 @@
     line="When a chat asks you to allow a call, or the assistant asks you a question, it waits here until you answer."
   ></app-empty>
 
-  <!-- Each chat's cards in a panel of their own, oldest first. -->
+  <!-- Each chat's cards under its title, oldest first. -->
   <section class="waiting-chat" *ngFor="let group of groups" [attr.aria-label]="group.title">
     <header class="waiting-head">
-      <span class="ui-panel-icon is-hued"><lucide-icon name="message-square-text" [size]="16" aria-hidden="true"></lucide-icon></span>
       <h2 class="waiting-title">
         <a [routerLink]="['/ai/chats', group.chatId]">{{ group.title }}</a>
       </h2>

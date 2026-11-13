@@ -166,8 +166,7 @@
   width: 48px;
   height: 48px;
   margin-left: -12px;
-  border-radius: 14px;
-  box-shadow: 0 0 0 3px var(--surface), 0 6px 14px -8px rgb(0 0 0 / 0.35);
+  box-shadow: 0 0 0 3px var(--bg);
   font-size: var(--t-base);
 }
 
@@ -177,7 +176,6 @@
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
   background: var(--surface);
-  box-shadow: var(--shadow-1);
 }
 
 .review app-install-review.is-one-of-several + app-install-review.is-one-of-several {
@@ -189,20 +187,17 @@
   align-items: flex-start;
   gap: 10px;
   max-width: 880px;
-  margin-top: 28px;
-  padding: 14px 16px;
-  border-radius: var(--r-md);
-  background: var(--surface-2);
+  margin-top: 40px;
   color: var(--ink-2);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  font-size: var(--t-base);
+  line-height: 22px;
 }
 
 .review-foot lucide-icon {
   display: flex;
   flex: none;
-  margin-top: 1px;
-  color: var(--accent-ink);
+  margin-top: 3px;
+  color: var(--ink-3);
 }
 
 /* Stays at the foot of the column as the review scrolls, over what is

@@ -1,8 +1,6 @@
 <app-page guide="agents#installing"
   *ngIf="!review"
   title="Marketplace"
-  icon="store"
-  [hue]="160"
   sentence="Agents from the catalogs this organization saved, reviewed before they are installed."
   [wide]="true"
 >
@@ -171,19 +169,14 @@
     {{ sourceName(open.source) }}
   </a>
 
-  <!-- The agent's header band, in the hue its name gives it: what it is,
-       where it comes from, and the one decision, at the right. -->
-  <header class="agent-hero" [style.--hue]="open.offers.length === 1 ? hueOfOffer(open.offers[0]) : 172">
+  <!-- The agent's title row: what it is, where it comes from, and the
+       one decision, at the right. -->
+  <header class="agent-hero">
     <app-agent-mark size="lg" *ngIf="open.offers.length === 1" [name]="nameOf(open.offers[0])" [icon]="offerIcon(open.offers[0])"></app-agent-mark>
     <span class="review-marks" *ngIf="open.offers.length > 1" aria-hidden="true">
       <app-agent-mark *ngFor="let offer of open.offers.slice(0, 4)" [name]="nameOf(offer)" [icon]="offerIcon(offer)"></app-agent-mark>
     </span>
     <div class="agent-hero-words">
-      <p class="agent-hero-eyebrow">
-        <lucide-icon name="store" [size]="14" aria-hidden="true"></lucide-icon>
-        From {{ sourceName(open.source) }}
-        <ng-container *ngIf="open.offers.length === 1 && open.offers[0].status === 'update_available'"> · an update</ng-container>
-      </p>
       <h1 class="agent-hero-name">
         <ng-container *ngIf="open.offers.length === 1; else several">
           {{ nameOf(open.offers[0]) }}
@@ -200,8 +193,11 @@
       <p class="agent-hero-about" *ngIf="open.offers.length > 1">
         {{ namesOf(open.offers) }}. Each is read below: what it keeps, where it connects, and how far it may go.
       </p>
-      <p class="agent-hero-tags" *ngIf="open.offers.length === 1 && open.offers[0].manifest.agent.tags?.length">
-        <span *ngFor="let tag of open.offers[0].manifest.agent.tags">{{ tag }}</span>
+      <p class="agent-hero-meta">
+        <span>From {{ sourceName(open.source) }}<ng-container *ngIf="open.offers.length === 1 && open.offers[0].status === 'update_available'"> · an update</ng-container></span>
+        <span class="agent-hero-tags" *ngIf="open.offers.length === 1 && open.offers[0].manifest.agent.tags?.length">
+          <span *ngFor="let tag of open.offers[0].manifest.agent.tags">{{ tag }}</span>
+        </span>
       </p>
     </div>
     <div class="agent-hero-actions"><ng-container *ngTemplateOutlet="reviewActions"></ng-container></div>

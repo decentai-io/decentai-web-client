@@ -14,6 +14,7 @@ import { AgentsService, InstalledAgent } from 'src/app/services/agents.service';
 import { AiSessionService } from 'src/app/services/ai-session.service';
 import { AuthService } from 'src/app/services/auth.service';
 import { ChatConnectionService, ChatConnectionState } from 'src/app/services/chat-connection.service';
+import { ChatDoneService } from 'src/app/services/chat-done.service';
 import {
   ChatStateService, ChatTurn, InlineChatError, TimelineItem, WorkEntry,
 } from 'src/app/services/chat-state.service';
@@ -31,12 +32,16 @@ import { CardDecision } from '../chat-approval-card/chat-approval-card.component
 import { ChatAgentsDialogComponent, ChatReach } from '../chat-agents-dialog/chat-agents-dialog.component';
 import { Prompt } from '../chat-composer/chat-composer.component';
 import { TRUST_CHOICES, TURN_BUDGET_CHOICES, chatDefaults } from '../chat-defaults';
+import { InspectorTab } from '../chat-inspector/inspector-words';
 import { KnownFile } from '../chat-message/chat-message.component';
 import { ChatModel } from '../chat-model-picker/chat-model-picker.component';
 import { ChatOutputDialogComponent, OutputDialogData } from '../chat-output-dialog/chat-output-dialog.component';
 import { ScreenInputEvent, ScreenTab, ScreenView, screenLog } from '../chat-screen/chat-screen.component';
 import { ChatSkillsDialogComponent } from '../chat-skills-dialog/chat-skills-dialog.component';
 import { FileChoice } from '../file-picker/file-picker.component';
+
+/** The agent whose live browser the header opens. */
+export const BROWSER_AGENT = 'browser';
 
 @Component({
   selector: 'app-chat-detail',
@@ -73,8 +78,9 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
   /** Every piece of the chat's work, and what its own thread is doing now. */
   work: WorkEntry[] = [];
   doing: Doing | null = null;
-  /** The inspector is open beside the conversation, and widened. */
+  /** The inspector is open beside the conversation, on which tab, and widened. */
   panelOpen = false;
+  panelTab: InspectorTab = 'overview';
   panelExpanded = false;
   cards: Card[] = [];
   /** The reply as it is being written. */
@@ -111,6 +117,12 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
   /** Whether the person holds the browser. Kept here, not in the view:
    *  the view is built again when it moves beside the thread or back. */
   screenTaken = false;
+  /** The live browser was asked to open, and its first picture is awaited. */
+  screenOpening = false;
+  private openingTimer: ReturnType<typeof setTimeout> | null = null;
+  /** How long "Opening…" is shown at most: past it, the call's own work
+   *  in the thread says what became of it. */
+  private static readonly OPENING_MS = 30000;
 
   /** A phone: the header keeps only what a thumb needs, the rest goes
    *  into the menu. */
@@ -130,7 +142,7 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
   answering = new Set<string>();
 
   /** How many schedules this chat keeps: the header's clock shows the
-   *  number and leads to them. */
+   *  number and opens the inspector on them. */
   scheduleCount = 0;
 
   readonly trustOptions = TRUST_CHOICES;
@@ -176,6 +188,7 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
     private oauth: OauthConnectService,
     private llm: SettingsLlmService,
     private confirm: ConfirmService,
+    private chatDone: ChatDoneService,
   ) {}
 
   get title(): string {
@@ -220,6 +233,19 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
   get chatAgents(): InstalledAgent[] {
     const listed = this.settings.agents;
     return this.agents.filter((agent) => !listed || listed.includes(agent.agent_id));
+  }
+
+  /** The header's live view: there while a screen is, or while the chat
+   *  may use the browser agent, which can be asked to open one. */
+  get canBrowse(): boolean {
+    return this.chatAgents.some((agent) => agent.agent_id === BROWSER_AGENT);
+  }
+
+  /** What the live-view control does now, in words. */
+  get liveViewLabel(): string {
+    if (this.screenOpening) return 'Opening the browser…';
+    if (!this.screen) return 'Open the live browser';
+    return this.screenHidden ? 'Show the live view' : 'Hide the live view';
   }
 
   /** The model, as the panel names it. */
@@ -292,6 +318,7 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
     const initial: Prompt | null = initialMessage || null;
     if (initial) history.replaceState(rest, '');
     this.chat_id = this.route.snapshot.paramMap.get('chat_id') || '';
+    this.chatDone.opened(this.chat_id);
     // Another chat opened from this one (the inspector's runs in other
     // chats): the page stays, so it lets go of this chat and opens that.
     this.subscriptions.add(this.route.paramMap.pipe(skip(1)).subscribe((params) => {
@@ -306,8 +333,11 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.destroyed = true;
+    // Left still working, the app tells the person once it is done.
+    this.chatDone.closed(this.chat_id, this.title, this.working);
     this.topBar.content.set(null);
     this.clearKillTimer();
+    this.endOpening();
     // A reply being said belongs to the chat that was left.
     this.readAloud.stop();
     // Leaving with the browser in hand gives it back: the agent would
@@ -325,6 +355,8 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
    *  one goes, and that one is read and connected to. */
   private switchChat(chatId: string): void {
     if (this.screenTaken && this.screen) this.onScreenInput([{ type: 'control', action: 'release' }]);
+    this.chatDone.closed(this.chat_id, this.title, this.working);
+    this.chatDone.opened(chatId);
     this.connection.disconnect();
     this.state.reset();
     this.endScreen();
@@ -469,9 +501,11 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
         return;
       case 'working':
         this.state.setWorking(true);
+        this.chatDone.working(this.chat_id);
         return;
       case 'idle':
         this.state.setWorking(false);
+        this.chatDone.idle(this.chat_id, this.title);
         return;
       case 'work':
         this.state.work(event.data);
@@ -497,7 +531,9 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
         this.state.addCard(event.data);
         return;
       case 'card_closed':
+        // Gone from the cards waiting; its answer takes its place in the thread.
         this.state.closeCard(event.data.card_id);
+        this.state.remember(event);
         return;
       case 'stopped':
         this.clearKillTimer();
@@ -534,6 +570,12 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
     // A PNG's bytes start "\x89PNG", "iVBOR" in base64; anything else is
     // taken for the JPEG the standard allows beside it.
     const mime = screen.image.startsWith('iVBOR') ? 'image/png' : 'image/jpeg';
+    // The browser asked for from the header: its first picture is shown.
+    if (this.screenOpening) {
+      this.endOpening();
+      this.screenHidden = false;
+      this.hiddenCall = '';
+    }
     this.screen = {
       call, src: `data:${mime};base64,${screen.image}`,
       width: Number(screen.width) || 1, height: Number(screen.height) || 1,
@@ -566,6 +608,7 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
 
   /** The live view gone altogether: its call closed it, or the chat was stopped. */
   private endScreen(): void {
+    this.endOpening();
     this.screen = null;
     this.screenTaken = false;
     this.screenHidden = false;
@@ -590,6 +633,36 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
     this.hiddenCall = '';
   }
 
+  /** The header's live view: shown or hidden where there is a screen; with
+   *  none, the browser agent is asked to open its browser, as it was left,
+   *  and the view shows with its first picture. */
+  async toggleLiveView(): Promise<void> {
+    if (this.screen) {
+      if (this.screenHidden) this.showHiddenScreen();
+      else this.onScreenClosed();
+      return;
+    }
+    if (this.screenOpening) return;
+    this.screenOpening = true;
+    const chatId = this.chat_id;
+    const res = await this.aiSession.call(chatId, BROWSER_AGENT, 'browse_watch', { action: 'open' });
+    if (this.destroyed || chatId !== this.chat_id) return;
+    if (res.error) {
+      this.endOpening();
+      this.state.addError('assistant', 'browser_refused', `The browser could not be opened: ${res.error}`);
+      return;
+    }
+    if (this.screenOpening && !this.openingTimer) {
+      this.openingTimer = setTimeout(() => this.endOpening(), ChatDetailComponent.OPENING_MS);
+    }
+  }
+
+  private endOpening(): void {
+    if (this.openingTimer) clearTimeout(this.openingTimer);
+    this.openingTimer = null;
+    this.screenOpening = false;
+  }
+
   // =========================
   // Writing
   // =========================
@@ -604,6 +677,8 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
       }
     }
     const clientId = crypto.randomUUID();
+    // Told before it is sent: the chat can be at work before the send's answer is back.
+    this.chatDone.began(this.chat_id, this.title, this.state.value.working);
     this.state.startSubmission(clientId, message.query, files);
     const res = await this.aiSession.input(this.chat_id, message.query, files, clientId);
     if (this.destroyed) return;
@@ -709,6 +784,8 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
         return;
       }
       this.state.closeCard(card.card_id);
+      // The answer sets the chat going again.
+      this.chatDone.began(this.chat_id, this.title, this.working);
     } finally {
       this.answering.delete(card.card_id);
     }
@@ -807,6 +884,13 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
   // =========================
   // Header actions
   // =========================
+
+  /** The inspector, opened on a tab; asked for the tab it is open on, closed. */
+  togglePanel(tab: InspectorTab): void {
+    const showing = this.panelOpen && this.panelTab === tab;
+    this.panelTab = tab;
+    this.panelOpen = !showing;
+  }
 
   onStatusDotClicked(): void {
     if (!this.isSocketReady) this.connection.reconnectNow();

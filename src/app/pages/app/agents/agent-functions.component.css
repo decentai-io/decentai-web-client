@@ -1,78 +1,52 @@
 /* An agent's functions: how far they may go, as a bar and its legend,
-   then each function a card with its edge in its level's colour. The
-   level chips, the bar and its colours are the agents' own
-   (agent-shared.css); the rest is shared. */
+   then the functions as one list in a frame, a hairline between, each
+   read by its name with its level at the right. The level chips, the bar
+   and its colours are the agents' own (agent-shared.css). */
 :host {
   display: block;
+  max-width: 880px;
 }
 
 .fn-intro {
-  max-width: 72ch;
-  margin-bottom: 16px;
+  max-width: 68ch;
+  margin-bottom: 20px;
 }
 
 .fn-summary {
-  margin-bottom: 24px;
-  padding: 18px 20px;
+  margin-bottom: 32px;
+}
+
+.fn-list {
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
   background: var(--surface);
-  box-shadow: var(--shadow-1);
-}
-
-/* As many columns as the width holds: a function is read by its name
-   first, and twelve of them in one column is a long scroll. */
-.fn-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  align-items: start;
-  gap: 12px;
   list-style: none;
 }
 
-.fn-card {
-  position: relative;
+.fn-row {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
-  padding: 14px 16px 14px 20px;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  background: var(--surface);
-  transition: border-color var(--dur-1) var(--ease), box-shadow var(--dur-2) var(--ease);
+  padding: 16px 20px;
 }
 
-.fn-card:hover {
-  border-color: var(--line-strong);
-  box-shadow: var(--shadow-1);
+.fn-row + .fn-row {
+  border-top: 1px solid var(--line);
 }
 
-/* The edge: its level, in the level's colour. */
-.fn-card::before {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 4px;
-  background: var(--lvl-0);
-  content: "";
-}
-
-.fn-card[data-index="1"]::before { background: var(--lvl-1); }
-.fn-card[data-index="2"]::before { background: var(--lvl-2); }
-.fn-card[data-index="3"]::before { background: var(--lvl-3); }
-
-.fn-card-head {
+.fn-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
 }
 
-.fn-card-titles {
+.fn-titles {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
   min-width: 0;
 }
 
@@ -91,24 +65,25 @@
   overflow-wrap: anywhere;
 }
 
-.fn-card-head .lvl {
+.fn-head .lvl {
   flex: none;
 }
 
-/* Three lines of what it does, so the cards keep an even rhythm; all of
-   it once what it takes and returns is opened. */
+/* Two lines of what it does; all of it once what it takes and returns
+   is opened. */
 .fn-about {
   display: -webkit-box;
+  max-width: 72ch;
   overflow: hidden;
   color: var(--ink-2);
-  font-size: var(--t-sm);
-  line-height: 20px;
+  font-size: var(--t-base);
+  line-height: 22px;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
-.fn-card:has(.fn-more[open]) .fn-about {
+.fn-row:has(.fn-more[open]) .fn-about {
   display: block;
   -webkit-line-clamp: unset;
   line-clamp: none;
@@ -118,10 +93,10 @@
 .fn-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 14px;
+  gap: 4px 16px;
   color: var(--ink-3);
-  font-size: var(--t-xs);
-  line-height: var(--lh-xs);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
 }
 
 .fn-meta-item {
@@ -138,10 +113,6 @@
   color: var(--accent-ink);
 }
 
-.fn-more {
-  margin-top: 2px;
-}
-
 .fn-facts {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
@@ -155,7 +126,7 @@
 }
 
 .fn-facts dt {
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 .fn-facts dd {
@@ -184,8 +155,8 @@
 }
 
 @media (max-width: 700px) {
-  .fn-cards {
-    grid-template-columns: minmax(0, 1fr);
+  .fn-row {
+    padding: 14px 16px;
   }
 
   .fn-facts {

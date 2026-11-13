@@ -75,7 +75,10 @@ export class ChatInspectorComponent implements OnInit, OnChanges, OnDestroy {
   @Output() changeSettings = new EventEmitter<Partial<ChatSettings>>();
 
   readonly tabs = INSPECTOR_TABS;
-  tab: InspectorTab = 'overview';
+  /** The tab shown: the page may open the inspector on one (the header's
+   *  clock opens Schedules), and hears when the person picks another. */
+  @Input() tab: InspectorTab = 'overview';
+  @Output() tabChange = new EventEmitter<InspectorTab>();
   activityFilter: ActivityFilter = 'all';
 
   inspection: ChatInspection | null = null;
@@ -170,7 +173,7 @@ export class ChatInspectorComponent implements OnInit, OnChanges, OnDestroy {
 
   /** A tile, or a "See all", opens the tab that tells the rest. */
   go(target: { tab: InspectorTab; filter?: ActivityFilter }): void {
-    this.tab = target.tab;
+    this.select(target.tab);
     if (target.filter) this.activityFilter = target.filter;
   }
 
@@ -179,8 +182,13 @@ export class ChatInspectorComponent implements OnInit, OnChanges, OnDestroy {
     const target = radioKeyTarget(event.key, index, this.tabs.length);
     if (target === null) return;
     event.preventDefault();
-    this.tab = this.tabs[target].value;
+    this.select(this.tabs[target].value);
     (event.currentTarget as HTMLElement).parentElement?.querySelectorAll<HTMLElement>('[role="tab"]')[target]?.focus();
+  }
+
+  select(tab: InspectorTab): void {
+    this.tab = tab;
+    this.tabChange.emit(tab);
   }
 
   toggleExpanded(): void {

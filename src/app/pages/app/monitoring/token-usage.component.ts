@@ -51,8 +51,8 @@ interface Column {
  * agent and person, or, with `mine`, the person's own (AI:Usage:mine), by
  * model.
  *
- * Laid out as the Overview is, and in its styles: the numbers first, as
- * tiles; then the one chart over the days, with a table view; then the
+ * Laid out as the Overview is, and in its styles: the numbers first, on
+ * one line; then the one chart over the days, with a table view; then the
  * tables. The cost is an estimate everywhere it is said, and says how
  * much of the tokens it could not price.
  */

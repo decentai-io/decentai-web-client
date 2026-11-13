@@ -1,5 +1,4 @@
-<app-page guide="access" title="Groups" sentence="A group gives its people its policies. Everyone holds every person. People are placed in groups on the Users page." [wide]="true"
-          icon="users" [hue]="262">
+<app-page guide="access" title="Groups" sentence="A group gives its people its policies. Everyone holds every person. People are placed in groups on the Users page." [wide]="true">
   <p class="form-notice is-error" role="alert" *ngIf="error && !editorOpen">{{ error }}</p>
   <p class="form-notice" role="status" *ngIf="notice">{{ notice }}</p>
 
@@ -7,21 +6,18 @@
        policies they can give. -->
   <ul class="ui-tiles" aria-label="Groups in numbers" *ngIf="!loading && groups.length">
     <li class="ui-tile">
-      <span class="ui-tile-icon"><lucide-icon name="users" [size]="20" aria-hidden="true"></lucide-icon></span>
       <span class="ui-tile-words">
         <span class="ui-tile-value">{{ groups.length }}</span>
         <span class="ui-tile-label">{{ groups.length === 1 ? "Group" : "Groups" }}</span>
       </span>
     </li>
     <li class="ui-tile">
-      <span class="ui-tile-icon"><lucide-icon name="pencil-line" [size]="20" aria-hidden="true"></lucide-icon></span>
       <span class="ui-tile-words">
         <span class="ui-tile-value">{{ ownCount }}</span>
         <span class="ui-tile-label">Made here</span>
       </span>
     </li>
     <li class="ui-tile">
-      <span class="ui-tile-icon"><lucide-icon name="scroll-text" [size]="20" aria-hidden="true"></lucide-icon></span>
       <span class="ui-tile-words">
         <span class="ui-tile-value">{{ policies.length }}</span>
         <span class="ui-tile-label">{{ policies.length === 1 ? "Policy to give" : "Policies to give" }}</span>
@@ -46,7 +42,7 @@
             matTooltip="Made with the organization: it is neither renamed nor deleted"><lucide-icon name="lock" [size]="12" aria-hidden="true"></lucide-icon>Built in</span>
       <!-- Who is in it and what it gives, as pills. -->
       <span rowMeta class="ui-pills admin-pills">
-        <span class="ui-pill is-accent"><lucide-icon name="user" [size]="12" aria-hidden="true"></lucide-icon>{{ peopleWord(group) }}</span>
+        <span class="ui-pill"><lucide-icon name="user" [size]="12" aria-hidden="true"></lucide-icon>{{ peopleWord(group) }}</span>
         <span class="ui-pill" *ngIf="!group.policies.length">No policies</span>
         <span class="ui-pill" *ngFor="let name of policyNames(group)"><lucide-icon name="scroll-text" [size]="12" aria-hidden="true"></lucide-icon>{{ name }}</span>
         <span class="ui-pill" *ngIf="group.policies.length > 3">+{{ group.policies.length - 3 }} more</span>

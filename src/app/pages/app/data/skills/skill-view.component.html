@@ -1,9 +1,5 @@
-<!-- Its header band: the skill's tile, its name, when it applies, and
-     its facts as pills. -->
+<!-- Its title row: its name, when it applies, and its facts as pills. -->
 <header class="skill-head">
-  <span class="skill-face" aria-hidden="true">
-    <lucide-icon name="sparkles" [size]="22" [strokeWidth]="1.75"></lucide-icon>
-  </span>
   <div class="skill-words">
     <h2 class="skill-title">{{ skill.name }}</h2>
     <p class="skill-summary">{{ skill.description }}</p>
@@ -30,7 +26,6 @@
 
 <section class="skill-body" aria-labelledby="skill-body-title">
   <div class="ui-panel-head skill-body-head">
-    <span class="ui-panel-icon is-hued"><lucide-icon name="book-open" [size]="16" aria-hidden="true"></lucide-icon></span>
     <h3 class="ui-panel-title" id="skill-body-title">The skill itself</h3>
   </div>
   <p class="skill-note">What the assistant reads once it decides this skill applies:</p>

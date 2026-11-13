@@ -4,7 +4,9 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { Choice } from 'src/app/components/ui/radio-keys';
 import { OauthConnectService } from 'src/app/services/oauth.service';
 import { AppRecord, RecordField, RecordShape, RecordsService } from 'src/app/services/records.service';
-import { connects, editableFields, isEncrypted, providerName } from './secret-shared';
+import {
+  AgentChoice, agentChoices, connects, editableFields, isEncrypted, providerName,
+} from './secret-shared';
 
 /** What the page hands the dialog. */
 export interface SecretFormData {
@@ -64,6 +66,9 @@ export class SecretFormComponent implements OnInit {
   problem = '';
   /** The secret made, waiting for its account to be connected. */
   private made: AppRecord | null = null;
+  /** The other agents a new secret may be given to, and those ticked. */
+  agentChoices: AgentChoice[] = [];
+  chosenAgents: string[] = [];
 
   private choicesByField = new WeakMap<RecordField, Choice[]>();
 
@@ -93,7 +98,14 @@ export class SecretFormComponent implements OnInit {
       }
       return;
     }
-    if (this.data.shape) this.choose(this.data.shape);
+    // With one thing it can be for, there is nothing to choose.
+    const only = this.data.shapes.length === 1 ? this.data.shapes[0] : null;
+    if (this.data.shape || only) this.choose((this.data.shape || only)!);
+  }
+
+  /** The step that chose what it is for can be gone back to. */
+  get canGoBack(): boolean {
+    return !this.editing && !this.data.shape && this.data.shapes.length > 1;
   }
 
   // ── Step one: which resource ────────────────────────────────────────
@@ -132,7 +144,17 @@ export class SecretFormComponent implements OnInit {
     this.tried = false;
     this.fields = {};
     for (const field of this.formFields) this.fields[field.name] = '';
+    // The agent it is for always uses it; others that take a secret like
+    // it may be ticked as well.
+    this.agentChoices = agentChoices({ agent: shape.agent, resource: shape.id }, this.data.shapes);
+    this.chosenAgents = [];
     this.step = 'form';
+  }
+
+  /** Other agents may be ticked: only when adding, and only where any
+   *  other agent takes a secret like it. */
+  get offersAgents(): boolean {
+    return !this.editing && this.agentChoices.some((choice) => !choice.own);
   }
 
   backToPick(): void {
@@ -211,14 +233,29 @@ export class SecretFormComponent implements OnInit {
         this.problem = result.error || 'The secret was not saved.';
         return;
       }
-      if (!this.editing && connects(shape)) {
+      const creating = !this.editing;
+      if (creating && this.chosenAgents.length) {
+        // The agents ticked besides its own: a second call, as the API
+        // server gives a secret more agents only once it is made.
+        const agents = this.agentChoices.filter((choice) => choice.own || this.chosenAgents.includes(choice.key))
+          .map((choice) => choice.of);
+        const given = await this.service.update('secret', result.record.record_id, { agents });
+        if (given.error) {
+          // It is made: what is left is its agents, from its page.
+          this.dialogRef.close({
+            notice: `Secret created. Its other agents were not added: ${given.error}`, id: result.record.record_id,
+          });
+          return;
+        }
+      }
+      if (creating && connects(shape)) {
         // The sign-in opens on a click of its own: one that waited for
         // the save would be blocked by the browser.
         this.made = result.record;
         this.step = 'connect';
         return;
       }
-      this.dialogRef.close({ notice: this.editing ? 'Secret updated.' : 'Secret created.', id: result.record.record_id });
+      this.dialogRef.close({ notice: creating ? 'Secret created.' : 'Secret updated.', id: result.record.record_id });
     } finally {
       this.saving = false;
       this.dialogRef.disableClose = false;

@@ -1,7 +1,7 @@
 <app-page guide="admin#people" title="Users"
           [sentence]="adds ? 'You add people here and hand each a temporary password. What a person may do is exactly what their groups give.'
                            : 'Everyone arrives by invitation. What a person may do is exactly what their groups give.'"
-          [wide]="true" icon="users" [hue]="262">
+          [wide]="true">
   <p class="form-notice is-error" role="alert" *ngIf="error && !dialogOpen">{{ error }}</p>
   <p class="form-notice" role="status" *ngIf="notice">{{ notice }}</p>
 
@@ -9,21 +9,18 @@
        invited and not arrived, and those held back. -->
   <ul class="ui-tiles" aria-label="Users in numbers" *ngIf="!loading">
     <li class="ui-tile">
-      <span class="ui-tile-icon"><lucide-icon name="users" [size]="20" aria-hidden="true"></lucide-icon></span>
       <span class="ui-tile-words">
         <span class="ui-tile-value">{{ members.length }}</span>
         <span class="ui-tile-label">{{ members.length === 1 ? "Person" : "People" }}</span>
       </span>
     </li>
     <li class="ui-tile">
-      <span class="ui-tile-icon"><lucide-icon name="shield-check" [size]="20" aria-hidden="true"></lucide-icon></span>
       <span class="ui-tile-words">
         <span class="ui-tile-value">{{ adminCount }}</span>
         <span class="ui-tile-label">{{ adminCount === 1 ? "Administrator" : "Administrators" }}</span>
       </span>
     </li>
     <li class="ui-tile" *ngIf="canReadInvitations">
-      <span class="ui-tile-icon"><lucide-icon name="mail" [size]="20" aria-hidden="true"></lucide-icon></span>
       <span class="ui-tile-words">
         <span class="ui-tile-value">{{ invitations.length }}</span>
         <span class="ui-tile-label">Invited</span>
@@ -84,7 +81,6 @@
   <!-- ── Invitations that nobody has taken up yet ────────────────────── -->
   <section class="admin-section" *ngIf="canReadInvitations && invitations.length" aria-labelledby="invitations-title">
     <h2 class="admin-section-title" id="invitations-title">
-      <span class="ui-panel-icon is-hued"><lucide-icon name="mail-plus" [size]="16" aria-hidden="true"></lucide-icon></span>
       Pending invitations
       <span class="ui-pill">{{ invitations.length }}</span>
     </h2>

@@ -1,5 +1,4 @@
-<app-page title="Profile" sentence="Your account: who you are, the groups your access comes from, and your password."
-          icon="circle-user" [hue]="262">
+<app-page title="Profile" sentence="Your account: who you are, the groups your access comes from, and your password.">
   <div class="form" *ngIf="loading" aria-busy="true" aria-label="Reading your profile">
     <span class="sk sk-field"></span>
     <span class="sk sk-field"></span>
@@ -9,7 +8,6 @@
     <!-- Who you are. -->
     <form class="ui-panel admin-panel" (ngSubmit)="save()" aria-labelledby="profile-you-title">
       <div class="ui-panel-head">
-        <span class="admin-initials is-large" aria-hidden="true">{{ initials(me.name || me.email) }}</span>
         <h2 class="ui-panel-title" id="profile-you-title">{{ me.name || me.email }}</h2>
         <span class="ui-pill" *ngIf="lastSignIn"><lucide-icon name="log-in" [size]="12" aria-hidden="true"></lucide-icon>Last signed in {{ lastSignIn }}</span>
       </div>
@@ -30,7 +28,6 @@
     <!-- Where your access comes from. -->
     <section class="ui-panel" aria-labelledby="profile-groups-title">
       <div class="ui-panel-head">
-        <span class="ui-panel-icon is-hued"><lucide-icon name="users" [size]="16" aria-hidden="true"></lucide-icon></span>
         <h2 class="ui-panel-title" id="profile-groups-title">Your groups</h2>
         <span class="ui-panel-aside">{{ groups.length }}</span>
       </div>
@@ -46,7 +43,6 @@
 
     <form class="ui-panel" *ngIf="canChangePassword" (ngSubmit)="changePassword()" aria-labelledby="profile-password-title">
       <div class="ui-panel-head">
-        <span class="ui-panel-icon is-hued"><lucide-icon name="key-round" [size]="16" aria-hidden="true"></lucide-icon></span>
         <h2 class="ui-panel-title" id="profile-password-title">Password</h2>
       </div>
       <p class="admin-lead">Changing it signs you out everywhere else; here you stay signed in.</p>
