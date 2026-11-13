@@ -38,7 +38,7 @@ import {
 
 /** Where the docs say how a runtime joins. */
 export const NODES_DOCS =
-  'https://github.com/decentai-io/decentai/blob/main/documentation/api-server.md#10-runtimes';
+  'https://github.com/decentai-io/decentai-engine/blob/main/documentation/api-server.md#10-runtimes';
 
 /** How often the page reads the nodes again while it is in view. */
 export const REFRESH_MS = 15_000;
