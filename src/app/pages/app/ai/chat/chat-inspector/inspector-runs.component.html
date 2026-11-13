@@ -17,7 +17,7 @@
       Processes <span class="insp-label-count">{{ inspection.processes.length }}</span>
     </h3>
     <ul class="insp-list">
-      @for (process of inspection.processes; track process.process) {
+      @for (process of processes.of(inspection.processes); track process.process) {
         <li class="insp-row" [title]="process.detail || ''">
           <span class="insp-row-icon" [class.is-live]="!process.ended_at" [class.is-danger]="process.reason === 'failed'">
             <lucide-icon name="square-terminal" [size]="14" aria-hidden="true"></lucide-icon>
@@ -36,6 +36,7 @@
         <li class="insp-note">No agent has run a process for it yet.</li>
       }
     </ul>
+    <app-more [shown]="processes.count(inspection.processes)" [total]="inspection.processes.length" label="Show more" (more)="processes.more()"></app-more>
   </section>
 
   <section class="insp-section" aria-labelledby="runs-network">
@@ -56,7 +57,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (row of inspection.network; track row.agent + row.host + row.port) {
+            @for (row of hosts.of(inspection.network); track row.agent + row.host + row.port) {
               <tr>
                 <td [title]="row.host + ':' + row.port">
                   <span class="runs-host">{{ row.host }}<span class="insp-meta">:{{ row.port }}</span></span>
@@ -82,6 +83,7 @@
           </tfoot>
         </table>
       </div>
+      <app-more [shown]="hosts.count(inspection.network)" [total]="inspection.network.length" label="Show more hosts" (more)="hosts.more()"></app-more>
     } @else {
       <p class="insp-note">Its agents reached no host outside the platform.</p>
     }

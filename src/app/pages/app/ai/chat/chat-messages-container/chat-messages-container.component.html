@@ -22,7 +22,7 @@
               <!-- What happened besides the conversation: a line of its own. -->
               <p class="thread-note">
                 <lucide-icon [name]="item.note.icon" [size]="14" aria-hidden="true"></lucide-icon>
-                <span>{{ item.note.text }}</span>
+                <span class="thread-note-text" [title]="item.note.text">{{ item.note.text }}</span>
                 <time class="thread-note-time" [attr.datetime]="item.note.at">{{ item.note.at | date: 'shortTime' }}</time>
                 @if (item.note.link; as link) { <a [routerLink]="link.to">{{ link.text }}</a> }
               </p>

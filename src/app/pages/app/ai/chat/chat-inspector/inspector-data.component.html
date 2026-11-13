@@ -2,7 +2,7 @@
   <section class="insp-section" aria-labelledby="data-files">
     <h3 class="insp-label" id="data-files">Files <span class="insp-label-count">{{ inspection.files.length }}</span></h3>
     <ul class="insp-list">
-      @for (file of inspection.files; track file.record_id) {
+      @for (file of files.of(inspection.files); track file.record_id) {
         <li>
           <a class="insp-row" [routerLink]="['/data/files', file.record_id]">
             <app-file-icon [name]="file.name" [mime]="file.type"></app-file-icon>
@@ -16,6 +16,7 @@
         <li class="insp-note">No files attached or made yet.</li>
       }
     </ul>
+    <app-more [shown]="files.count(inspection.files)" [total]="inspection.files.length" label="Show more files" (more)="files.more()"></app-more>
   </section>
 
   <section class="insp-section" aria-labelledby="data-records">
@@ -23,7 +24,7 @@
       Records and secrets <span class="insp-label-count">{{ inspection.records.length }}</span>
     </h3>
     <ul class="insp-list">
-      @for (record of inspection.records; track record.kind + record.ref) {
+      @for (record of records.of(inspection.records); track record.kind + record.ref) {
         <li>
           <a class="insp-row" [routerLink]="link(record)">
             <span class="insp-row-icon" [class.is-warn]="record.kind === 'secret'">
@@ -40,6 +41,7 @@
         <li class="insp-note">Its agents have read or written none.</li>
       }
     </ul>
+    <app-more [shown]="records.count(inspection.records)" [total]="inspection.records.length" label="Show more" (more)="records.more()"></app-more>
     @if (inspection.records.length) {
       <p class="insp-meta">Names and counts only: values never leave where they are kept.</p>
     }
@@ -48,7 +50,7 @@
   <section class="insp-section" aria-labelledby="data-skills">
     <h3 class="insp-label" id="data-skills">Skills read <span class="insp-label-count">{{ inspection.skills.length }}</span></h3>
     <ul class="insp-list">
-      @for (skill of inspection.skills; track skill.skill_id) {
+      @for (skill of skills.of(inspection.skills); track skill.skill_id) {
         <li>
           <a class="insp-row" [routerLink]="['/data/skills', skill.skill_id]">
             <span class="insp-row-icon"><lucide-icon name="sparkles" [size]="14" aria-hidden="true"></lucide-icon></span>
@@ -63,12 +65,13 @@
         <li class="insp-note">None read yet.</li>
       }
     </ul>
+    <app-more [shown]="skills.count(inspection.skills)" [total]="inspection.skills.length" label="Show more skills" (more)="skills.more()"></app-more>
   </section>
 
   <section class="insp-section" aria-labelledby="data-mcp">
     <h3 class="insp-label" id="data-mcp">MCP tools <span class="insp-label-count">{{ inspection.mcp.length }}</span></h3>
     <ul class="insp-list">
-      @for (tool of inspection.mcp; track tool.server + tool.tool) {
+      @for (tool of tools.of(inspection.mcp); track tool.server + tool.tool) {
         <li class="insp-row">
           <span class="insp-row-icon"><lucide-icon name="server" [size]="14" aria-hidden="true"></lucide-icon></span>
           <span class="insp-main">
@@ -81,6 +84,7 @@
         <li class="insp-note">None called yet.</li>
       }
     </ul>
+    <app-more [shown]="tools.count(inspection.mcp)" [total]="inspection.mcp.length" label="Show more tools" (more)="tools.more()"></app-more>
   </section>
 
   <section class="insp-section" aria-labelledby="data-memories">

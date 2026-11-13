@@ -89,10 +89,15 @@
 }
 
 /* What it does, at reading size; its facts as pills under it. */
+/* Two lines at most: the whole prompt is read on the schedule opened. */
 .schedule-row-what {
-  display: block;
+  display: -webkit-box;
+  overflow: hidden;
   color: var(--ink);
   overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .schedule-row-facts {

@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 
 import { relativeDate } from 'src/app/components/ui/dates';
+import { Shown } from 'src/app/components/ui/paging';
 import { Card } from 'src/app/models/chat-protocol';
 import { ActivityService } from 'src/app/services/activity.service';
 import { AiSessionService } from 'src/app/services/ai-session.service';
@@ -21,6 +22,11 @@ interface Tile {
   label: string;
   warn?: boolean;
 }
+
+/** The cards a chat shows before "Show all": the oldest few. */
+const CARDS_SHOWN = 3;
+/** The most open cards the API server gives at once, oldest first. */
+const SERVER_MOST = 200;
 
 /** What a card asks, in a word and an icon: the line over the card. */
 const KINDS: Record<Card['kind'], { word: string; icon: string }> = {
@@ -55,6 +61,11 @@ export class WaitingComponent implements OnInit {
   groups: Waiting[] = [];
   /** Cards whose answer is on its way. */
   answering = new Set<string>();
+  /** Ten chats at a time; in each, its oldest cards, the rest on asking. */
+  readonly chats = new Shown(10);
+  private whole = new Set<string>();
+  /** The server gave its most: there may be more behind them. */
+  capped = false;
 
   constructor(private activity: ActivityService, private aiSession: AiSessionService,
               private attention: AttentionService) {}
@@ -75,7 +86,17 @@ export class WaitingComponent implements OnInit {
       groups.set(card.chat_id, group);
     }
     this.groups = [...groups.values()];
+    this.capped = waiting.cards.length >= SERVER_MOST;
     this.loading = false;
+  }
+
+  /** A chat's cards shown: its oldest few, or all once asked. */
+  cardsOf(group: Waiting): Card[] {
+    return this.whole.has(group.chatId) ? group.cards : group.cards.slice(0, CARDS_SHOWN);
+  }
+
+  showAll(group: Waiting): void {
+    this.whole.add(group.chatId);
   }
 
   /** Answered in its chat: a form, or a question that wants a file. */

@@ -3,25 +3,25 @@
   All agents
 </a>
 
-<!-- Who it is and where it stands; the one thing to do now is the only
-     filled button. -->
-<header class="agent-hero">
+<!-- ── The band: who it is, where it stands, and what can be done ───── -->
+<header class="agent-band">
   <app-agent-mark size="lg" [name]="agent.name" [icon]="icon"></app-agent-mark>
-  <div class="agent-hero-words">
-    <h1 class="agent-hero-name">
-      {{ agent.name }}
-      <span class="agent-hero-version">v{{ agent.version }}</span>
+  <div class="agent-band-words">
+    <h1 class="agent-band-name">
+      <span class="agent-band-title">{{ agent.name }}</span>
+      <span class="agent-band-version">v{{ agent.version }}</span>
       <span class="chip" [ngClass]="standing.tone">{{ standing.word }}</span>
     </h1>
-    <p class="agent-hero-about" *ngIf="agent.manifest.agent.description">{{ agent.manifest.agent.description }}</p>
-    <p class="agent-hero-meta">
-      <span>Installed {{ relativeDate(agent.installed_at).toLowerCase() }}<ng-container *ngIf="sourceHost"> from <code>{{ sourceHost }}</code></ng-container></span>
-      <span class="agent-hero-tags" *ngIf="agent.manifest.agent.tags?.length">
-        <span *ngFor="let tag of agent.manifest.agent.tags">{{ tag }}</span>
-      </span>
+    <p class="agent-band-about" *ngIf="agent.manifest.agent.description" [title]="agent.manifest.agent.description">
+      {{ agent.manifest.agent.description }}
     </p>
   </div>
-  <div class="agent-hero-actions">
+  <div class="agent-band-actions">
+    <button class="btn primary" type="button" *ngIf="!(canInstall && standing.kind === 'update')"
+            [disabled]="agent.state !== 'ready'" (click)="startChat()">
+      <lucide-icon name="message-square" [size]="16" aria-hidden="true"></lucide-icon>
+      Start a chat
+    </button>
     <button class="btn primary" type="button" *ngIf="canInstall && standing.kind === 'update'"
             [disabled]="busy" (click)="update.emit()">
       <lucide-icon name="refresh-cw" [size]="16" aria-hidden="true"></lucide-icon>
@@ -31,9 +31,20 @@
       <lucide-icon name="circle-check" [size]="16" aria-hidden="true"></lucide-icon>
       Check again
     </button>
-    <button class="btn ghost danger" type="button" *ngIf="canUninstall" [disabled]="busy" (click)="uninstall.emit()">
-      Uninstall
+    <button class="icon-btn" type="button" [matMenuTriggerFor]="moreMenu" [attr.aria-label]="'More for ' + agent.name"
+            *ngIf="canUninstall || (canInstall && standing.kind === 'update')">
+      <lucide-icon name="ellipsis-vertical" [size]="18" aria-hidden="true"></lucide-icon>
     </button>
+    <mat-menu #moreMenu="matMenu" xPosition="before">
+      <button mat-menu-item *ngIf="canInstall && standing.kind === 'update'" [disabled]="agent.state !== 'ready'" (click)="startChat()">
+        <lucide-icon name="message-square" [size]="16" aria-hidden="true"></lucide-icon>
+        <span>Start a chat</span>
+      </button>
+      <button mat-menu-item *ngIf="canUninstall" [disabled]="busy" (click)="uninstall.emit()">
+        <lucide-icon name="trash-2" [size]="16" aria-hidden="true"></lucide-icon>
+        <span>Uninstall</span>
+      </button>
+    </mat-menu>
   </div>
 </header>
 
@@ -46,234 +57,258 @@
   Until then no chat can use it.<ng-container *ngIf="agent.error"> Not checked yet: {{ agent.error }}</ng-container>
 </p>
 
-<!-- The few numbers that matter, as one line; the count of functions
-     opens them. -->
-<ul class="ui-tiles agent-counts" [attr.aria-label]="agent.name + ' in numbers'">
-  <li *ngFor="let count of counts; let first = first">
-    <button class="ui-tile" type="button" *ngIf="first; else plainCount" (click)="tabChange.emit('functions')">
-      <ng-container *ngTemplateOutlet="countInside; context: { $implicit: count }"></ng-container>
-    </button>
-    <ng-template #plainCount>
-      <span class="ui-tile" [class.is-warn]="count.warn"><ng-container *ngTemplateOutlet="countInside; context: { $implicit: count }"></ng-container></span>
-    </ng-template>
-  </li>
-</ul>
-
-<ng-template #countInside let-count>
-  <span class="ui-tile-words">
-    <span class="ui-tile-value">{{ count.value }}</span>
-    <span class="ui-tile-label">{{ count.label }}</span>
-  </span>
-</ng-template>
-
-<app-segmented
-  class="agent-tabs"
-  label="This agent's sections"
-  [choices]="tabs"
-  [ngModel]="shownTab"
-  (ngModelChange)="tabChange.emit($event)"
-></app-segmented>
-
-<!-- ── Overview: one column, read top to bottom: what to say to it, what
-     it may do, what it holds of yours, then the details ─────────────── -->
-<div class="ui-panels" *ngIf="shownTab === 'overview'">
-  <!-- The agent in its own words, by example: what a person types to
-       get something done with it. It is the reason it is installed. -->
-  <section class="ui-panel" *ngIf="agent.manifest.agent.examples?.length" aria-labelledby="try-title">
-    <div class="ui-panel-head">
-      <h2 class="ui-panel-title" id="try-title">Try asking</h2>
-      <span class="ui-panel-aside">Opens a chat with it written in</span>
-    </div>
-    <ul class="try-list">
-      <li class="try-item" *ngFor="let example of agent.manifest.agent.examples">
-        <span class="try-words">
-          <span class="try-prompt">“{{ example.prompt }}”</span>
-          <span class="try-title">{{ example.title }}</span>
-        </span>
-        <button class="btn sm" type="button" (click)="tryPrompt(example.prompt)">
-          Start a chat
-          <lucide-icon name="arrow-right" [size]="16" aria-hidden="true"></lucide-icon>
-        </button>
-      </li>
-    </ul>
-  </section>
-
-  <!-- Something to try it on: the rows and files the agent ships,
-       loaded as this person's own records and taken back on request. -->
-  <section class="ui-panel" *ngIf="samples" aria-labelledby="samples-title">
-    <div class="ui-panel-head">
-      <h2 class="ui-panel-title" id="samples-title">Sample data</h2>
-      <span class="chip accent" *ngIf="samplesLoaded">Loaded</span>
-    </div>
-    <p class="agent-text">
-      {{ samples.records }} {{ samples.records === 1 ? "record" : "records" }}<ng-container *ngIf="samples.files">
-      and {{ samples.files }} {{ samples.files === 1 ? "file" : "files" }}</ng-container>
-      to try it on.
-      <ng-container *ngIf="samplesStory">{{ samplesStory }} </ng-container>
-    </p>
-    <p class="ui-panel-note">Loaded as your own: private to you, editable, and removed in one step here.</p>
-    <div class="agent-actions">
-      <button class="btn sm primary" type="button" *ngIf="!samplesLoaded" [disabled]="samplesBusy" (click)="loadSamples()">Load sample data</button>
-      <button class="btn sm" type="button" *ngIf="samplesLoaded" [disabled]="samplesBusy" (click)="removeSamples()">Remove what I loaded</button>
-    </div>
-  </section>
-
-  <!-- How far its functions may go, as one bar and its legend. -->
-  <section class="ui-panel" *ngIf="bar.length" aria-labelledby="levels-title">
-    <div class="ui-panel-head">
-      <h2 class="ui-panel-title" id="levels-title">How far it may go</h2>
-      <button class="btn ghost sm" type="button" (click)="tabChange.emit('functions')">
-        All {{ agent.manifest.functions.length }} functions
-        <lucide-icon name="arrow-right" [size]="14" aria-hidden="true"></lucide-icon>
+<div class="agent-layout">
+  <!-- ── The main column: the tabs ──────────────────────────────────── -->
+  <div class="agent-main">
+    <nav class="agent-tabs" [attr.aria-label]="agent.name + ' sections'">
+      <button class="agent-tab" type="button" *ngFor="let choice of tabs"
+              [class.is-current]="choice.value === shownTab" [attr.aria-current]="choice.value === shownTab ? 'page' : null"
+              (click)="openTab(choice.value)">
+        {{ choice.name }}<span class="agent-tab-count" *ngIf="choice.count !== undefined">{{ choice.count }}</span>
       </button>
-    </div>
-    <div class="lvl-bar" role="img" [attr.aria-label]="barWords">
-      <span class="lvl-bar-part" *ngFor="let level of bar" [attr.data-index]="level.index" [style.flex-grow]="level.count"></span>
-    </div>
-    <ul class="lvl-legend">
-      <li *ngFor="let level of bar">
-        <span class="lvl-swatch" [attr.data-index]="level.index"></span>
-        <span class="lvl-legend-name"><em>{{ level.count }}</em>{{ level.name }}</span>
-        <span class="lvl-legend-about">{{ meaningOf(level.name) }}</span>
-      </li>
-    </ul>
-  </section>
+    </nav>
 
-  <section class="ui-panel" aria-labelledby="network-title">
-    <div class="ui-panel-head">
-      <h2 class="ui-panel-title" id="network-title">Where it connects</h2>
-    </div>
-    <div class="host-chips">
-      <code class="is-wide" *ngIf="network.any"><lucide-icon name="globe" [size]="12" aria-hidden="true"></lucide-icon>any public address</code>
-      <code class="is-none" *ngIf="!network.any && !network.hosts.length && !network.from_secrets.length"><lucide-icon name="lock" [size]="12" aria-hidden="true"></lucide-icon>nothing outside the platform</code>
-      <code *ngFor="let host of network.hosts">{{ host }}</code>
-      <code *ngFor="let field of network.from_secrets">
-        <lucide-icon name="key-round" [size]="12" aria-hidden="true"></lucide-icon>
-        {{ credentialHost(field) }}
-      </code>
-    </div>
-    <p class="ui-panel-note">{{ networkNote }}</p>
-  </section>
+    <!-- Overview: what to say to it, something to try it on, what it can
+         do, and its publisher's own account. -->
+    <div class="agent-overview" *ngIf="shownTab === 'overview'">
+      <section class="ui-panel" *ngIf="agent.manifest.agent.examples?.length" aria-labelledby="try-title">
+        <div class="ui-panel-head">
+          <h2 class="ui-panel-title" id="try-title">Try asking</h2>
+          <span class="ui-panel-aside">Opens a chat with it written in, for you to send</span>
+        </div>
+        <ul class="try-grid">
+          <li *ngFor="let example of agent.manifest.agent.examples">
+            <button class="try-card" type="button" (click)="tryPrompt(example.prompt)">
+              <span class="try-card-prompt">“{{ example.prompt }}”</span>
+              <span class="try-card-foot">
+                <span class="try-card-title">{{ example.title }}</span>
+                <lucide-icon name="arrow-right" [size]="16" aria-hidden="true"></lucide-icon>
+              </span>
+            </button>
+          </li>
+        </ul>
+      </section>
 
-  <!-- What it keeps for people: secrets it signs in with, records and
-       files, each as its manifest declares it. -->
-  <section class="ui-panel" *ngIf="kept.length" aria-labelledby="keeps-title">
-    <div class="ui-panel-head">
-      <h2 class="ui-panel-title" id="keeps-title">What it keeps</h2>
-    </div>
-    <ul class="kept-rows">
-      <li class="kept-row" *ngFor="let item of kept">
-        <span class="kept-name">
-          {{ item.label }}
-          <span class="kept-kind">{{ item.word }}<ng-container *ngIf="item.resource.binding?.cardinality === 'one'"> · one</ng-container><ng-container *ngIf="item.resource.binding?.required"> · required</ng-container></span>
-        </span>
-        <span class="kept-about" *ngIf="item.about">{{ item.about }}</span>
-        <span class="kept-tags" *ngIf="item.resource.oauth || item.resource.user_access?.length || item.resource.constraints?.max_size_mb">
-          <span *ngIf="item.resource.oauth">{{ item.resource.oauth.provider }} sign-in</span>
-          <span *ngIf="item.resource.user_access?.length">You may {{ item.resource.user_access!.join(", ") }}</span>
-          <span *ngIf="item.resource.constraints?.max_size_mb">Up to {{ item.resource.constraints!.max_size_mb }} MB</span>
-        </span>
-      </li>
-    </ul>
-    <p class="ui-panel-note">
-      A record lists the agents that may use it. Yours are under Secrets, Records and Files, where you
-      may add an agent to one.
-    </p>
-  </section>
+      <!-- Something to try it on: the rows and files the agent ships,
+           loaded as this person's own records and taken back on request. -->
+      <section class="ui-panel samples" *ngIf="samples" aria-labelledby="samples-title">
+        <div class="samples-words">
+          <h2 class="ui-panel-title" id="samples-title">
+            Sample data
+            <span class="chip accent" *ngIf="samplesLoaded">Loaded</span>
+          </h2>
+          <p class="agent-text">
+            {{ samples.records }} {{ samples.records === 1 ? "record" : "records" }}<ng-container *ngIf="samples.files">
+            and {{ samples.files }} {{ samples.files === 1 ? "file" : "files" }}</ng-container>
+            to try it on.
+            <ng-container *ngIf="samplesStory">{{ samplesStory }} </ng-container>
+            Loaded as your own: private to you, and removed in one step here.
+          </p>
+        </div>
+        <button class="btn sm primary" type="button" *ngIf="!samplesLoaded" [disabled]="samplesBusy" (click)="loadSamples()">Load sample data</button>
+        <button class="btn sm" type="button" *ngIf="samplesLoaded" [disabled]="samplesBusy" (click)="removeSamples()">Remove what I loaded</button>
+      </section>
 
-  <!-- Approvals the person chose to remember on a card: theirs to
-       take back, and the next call asks again. -->
-  <section class="ui-panel" *ngIf="remembered.length" aria-labelledby="remembered-title">
-    <div class="ui-panel-head">
-      <h2 class="ui-panel-title" id="remembered-title">Approvals you remembered</h2>
-      <span class="ui-panel-aside">{{ remembered.length }}</span>
-    </div>
-    <ul class="remembered-rows">
-      <li class="remembered-row" *ngFor="let approval of remembered">
-        <span class="remembered-mark" [class.is-refused]="!approval.allowed">
-          <lucide-icon [name]="approval.allowed ? 'check' : 'x'" [size]="13" aria-hidden="true"></lucide-icon>
-        </span>
-        <span class="remembered-words">
-          <code>{{ approval.function }}</code>
-          <span>{{ approval.allowed ? "Allowed" : "Refused" }}{{ approval.record ? " for one record" : "" }}, {{ relativeDate(approval.at).toLowerCase() }}</span>
-        </span>
-        <button class="btn ghost sm" type="button" [disabled]="!!forgetting" (click)="forget(approval)">Forget</button>
-      </li>
-    </ul>
-  </section>
+      <!-- What it can do, by how far each function may go. -->
+      <section class="ui-panel" *ngIf="levels.length" aria-labelledby="can-title">
+        <div class="ui-panel-head">
+          <h2 class="ui-panel-title" id="can-title">What it can do</h2>
+          <button class="btn ghost sm" type="button" (click)="openTab('functions')">
+            All {{ agent.manifest.functions.length }} functions
+            <lucide-icon name="arrow-right" [size]="14" aria-hidden="true"></lucide-icon>
+          </button>
+        </div>
+        <div class="can-grid">
+          <div class="can-level" *ngFor="let level of levels">
+            <div class="can-head">
+              <span class="lvl" [attr.data-level]="level.name"><span class="lvl-dot"></span>{{ level.name }}</span>
+              <span class="can-count">{{ level.items.length }}</span>
+            </div>
+            <p class="can-meaning">{{ level.meaning }}</p>
+            <ul class="can-names">
+              <li *ngFor="let fn of level.items.slice(0, namesShown)" [title]="fn.description || ''">{{ fn.name || fn.id }}</li>
+            </ul>
+            <button class="can-more" type="button" *ngIf="level.items.length > namesShown" (click)="openTab('functions', level.index)">
+              {{ level.items.length - namesShown }} more
+            </button>
+          </div>
+        </div>
+      </section>
 
-  <!-- Who may use it is kept with the agent, by group: chosen on Access. -->
-  <section class="ui-panel" aria-labelledby="who-title">
-    <div class="ui-panel-head">
-      <h2 class="ui-panel-title" id="who-title">Who may use it</h2>
+      <!-- Approvals the person chose to remember on a card: theirs to
+           take back, and the next call asks again. -->
+      <section class="ui-panel" *ngIf="remembered.length" aria-labelledby="remembered-title">
+        <div class="ui-panel-head">
+          <h2 class="ui-panel-title" id="remembered-title">Approvals you remembered</h2>
+          <span class="ui-panel-aside">{{ remembered.length }}</span>
+        </div>
+        <ul class="remembered-rows">
+          <li class="remembered-row" *ngFor="let approval of remembered">
+            <span class="remembered-mark" [class.is-refused]="!approval.allowed">
+              <lucide-icon [name]="approval.allowed ? 'check' : 'x'" [size]="13" aria-hidden="true"></lucide-icon>
+            </span>
+            <span class="remembered-words">
+              <code>{{ approval.function }}</code>
+              <span>{{ approval.allowed ? "Allowed" : "Refused" }}{{ approval.record ? " for one record" : "" }}, {{ relativeDate(approval.at).toLowerCase() }}</span>
+            </span>
+            <button class="btn ghost sm" type="button" [disabled]="!!forgetting" (click)="forget(approval)">Forget</button>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Its publisher's own account. -->
+      <section class="ui-panel" *ngIf="readme" aria-labelledby="readme-title">
+        <div class="ui-panel-head">
+          <h2 class="ui-panel-title" id="readme-title">About, from its publisher</h2>
+        </div>
+        <div class="agent-readme" [class.is-folded]="readmeLong && !readmeOpen">
+          <markdown [data]="readme"></markdown>
+        </div>
+        <button class="btn ghost sm agent-readme-more" type="button" *ngIf="readmeLong" [attr.aria-expanded]="readmeOpen" (click)="readmeOpen = !readmeOpen">
+          <lucide-icon [name]="readmeOpen ? 'chevron-up' : 'chevron-down'" [size]="16" aria-hidden="true"></lucide-icon>
+          {{ readmeOpen ? "Show less" : "Read all of it" }}
+        </button>
+      </section>
+
+      <details class="fold agent-technical">
+        <summary>Technical details</summary>
+        <dl class="agent-facts is-pairs">
+          <dt>Id</dt><dd><code>{{ agent.agent_id }}</code></dd>
+          <dt>Runs on</dt><dd>{{ agent.machines.join(", ") || "no machine" }}</dd>
+          <ng-container *ngIf="agent.base"><dt>Base</dt><dd><code>{{ agent.base }}</code></dd></ng-container>
+          <ng-container *ngIf="agent.source_url"><dt>Source</dt><dd><code>{{ agent.source_url }}</code></dd></ng-container>
+          <ng-container *ngIf="agent.manifest.agent.instructions">
+            <dt>The assistant is told</dt><dd>{{ agent.manifest.agent.instructions }}</dd>
+          </ng-container>
+        </dl>
+      </details>
     </div>
-    <p class="agent-text" *ngIf="canInstall">
-      Choose which groups may use it, and which of its functions, under Access.
-    </p>
-    <p class="agent-text" *ngIf="!canInstall">
-      Whoever may install agents chooses which groups may use it.
-    </p>
-    <!-- Only for an agent that declares scopes. -->
-    <ng-container *ngIf="scopes.length">
-      <h3 class="agent-subhead">Authorization scopes</h3>
-      <dl class="agent-facts">
+
+    <app-agent-functions *ngIf="shownTab === 'functions'" [manifest]="agent.manifest" [level]="functionsLevel"></app-agent-functions>
+
+    <!-- Access: which groups may use it, for whoever may install agents. -->
+    <app-agent-access *ngIf="shownTab === 'access'"
+                      [agentId]="agent.agent_id"
+                      [agentName]="agent.name"
+                      [declaredScopes]="scopes"
+                      (saved)="accessSaved($event)"
+                      (flashed)="flashed.emit($event)"></app-agent-access>
+  </div>
+
+  <!-- ── At a glance: the facts a person checks first ───────────────── -->
+  <aside class="glance" aria-labelledby="glance-title">
+    <h2 class="glance-title" id="glance-title">At a glance</h2>
+
+    <section class="glance-part" aria-label="Where it came from">
+      <dl class="glance-pairs">
+        <dt>Version</dt><dd>{{ agent.version }}</dd>
+        <dt>Installed</dt><dd [title]="fullDate(agent.installed_at)">{{ relativeDate(agent.installed_at) }}</dd>
+        <ng-container *ngIf="sourceHost"><dt>Source</dt><dd><code [title]="agent.source_url">{{ sourceHost }}</code></dd></ng-container>
+      </dl>
+      <div class="glance-tags" *ngIf="agent.manifest.agent.tags?.length">
+        <span *ngFor="let tag of agent.manifest.agent.tags">{{ tag }}</span>
+      </div>
+    </section>
+
+    <section class="glance-part" *ngIf="levels.length" aria-labelledby="glance-functions">
+      <div class="glance-head">
+        <h3 class="glance-part-title" id="glance-functions">Functions</h3>
+        <button class="glance-link" type="button" (click)="openTab('functions')">All {{ agent.manifest.functions.length }}</button>
+      </div>
+      <div class="lvl-bar" role="img" [attr.aria-label]="barWords">
+        <span class="lvl-bar-part" *ngFor="let level of bar" [attr.data-index]="level.index" [style.flex-grow]="level.count"></span>
+      </div>
+      <ul class="glance-levels">
+        <li *ngFor="let level of levels">
+          <button class="glance-level" type="button" [title]="level.meaning" (click)="openTab('functions', level.index)">
+            <span class="lvl" [attr.data-level]="level.name"><span class="lvl-dot"></span>{{ level.name }}</span>
+            <span class="glance-num">{{ level.items.length }}</span>
+          </button>
+        </li>
+      </ul>
+    </section>
+
+    <section class="glance-part" aria-labelledby="glance-network">
+      <h3 class="glance-part-title" id="glance-network">Network</h3>
+      <div class="host-chips">
+        <code class="is-wide" *ngIf="network.any"><lucide-icon name="globe" [size]="12" aria-hidden="true"></lucide-icon>any public address</code>
+        <code class="is-none" *ngIf="!network.any && !hosts.length"><lucide-icon name="lock" [size]="12" aria-hidden="true"></lucide-icon>nothing outside the platform</code>
+        <code *ngFor="let host of (hostsOpen ? hosts : hosts.slice(0, hostsShown))" [title]="host">{{ host }}</code>
+        <button class="glance-link" type="button" *ngIf="hosts.length > hostsShown" (click)="hostsOpen = !hostsOpen">
+          {{ hostsOpen ? "Fewer" : hosts.length - hostsShown + " more" }}
+        </button>
+      </div>
+      <p class="glance-note">{{ networkNote }}</p>
+    </section>
+
+    <!-- The secrets it signs in with, and whether the person added one. -->
+    <section class="glance-part" *ngIf="secrets.length" aria-labelledby="glance-secrets">
+      <div class="glance-head">
+        <h3 class="glance-part-title" id="glance-secrets">Secrets it needs</h3>
+        <a class="glance-link" *ngIf="canReadSecrets" routerLink="/secrets" [queryParams]="{ agent: agent.agent_id }">Secrets</a>
+      </div>
+      <ul class="glance-rows">
+        <li class="glance-row" *ngFor="let slot of secrets">
+          <span class="glance-row-name" [title]="slot.resource.description || slot.label">{{ slot.label }}</span>
+          <span class="glance-state is-set" *ngIf="slot.set === true">
+            <lucide-icon name="circle-check" [size]="14" aria-hidden="true"></lucide-icon>Set
+          </span>
+          <ng-container *ngIf="slot.set === false">
+            <button class="btn sm" type="button" *ngIf="slot.shape; else notSet" (click)="addSecret(slot)">
+              <lucide-icon name="plus" [size]="14" aria-hidden="true"></lucide-icon>
+              Add
+            </button>
+            <ng-template #notSet><span class="glance-state is-missing">Not set</span></ng-template>
+          </ng-container>
+        </li>
+      </ul>
+      <p class="glance-note" *ngIf="secretsMissing">
+        {{ secretsMissing === 1 ? "One is" : secretsMissing + " are" }} not set: the functions that need {{ secretsMissing === 1 ? "it" : "them" }} can't work for you yet.
+      </p>
+    </section>
+
+    <section class="glance-part" *ngIf="keeps.length" aria-labelledby="glance-keeps">
+      <h3 class="glance-part-title" id="glance-keeps">What it keeps</h3>
+      <ul class="glance-rows">
+        <li class="glance-row" *ngFor="let item of keeps">
+          <span class="glance-row-name" [title]="item.about || item.label">{{ item.label }}</span>
+          <span class="glance-kind">{{ item.word }}</span>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Who may use it, by group; chosen on Access. -->
+    <section class="glance-part" aria-labelledby="glance-access">
+      <div class="glance-head">
+        <h3 class="glance-part-title" id="glance-access">Who may use it</h3>
+        <button class="glance-link" type="button" *ngIf="canInstall" (click)="openTab('access')">Manage</button>
+      </div>
+      <p class="glance-note" *ngIf="access.state === 'refused'">Whoever may install agents chooses which groups may use it.</p>
+      <p class="glance-note" *ngIf="access.state === 'failed'">Could not be read just now.</p>
+      <div class="glance-loading" *ngIf="access.state === 'loading'"><span class="sk"></span></div>
+      <ng-container *ngIf="access.state === 'ready'">
+        <p class="glance-note" *ngIf="!access.lines.length">No group yet: nobody can use it.</p>
+        <ul class="glance-rows">
+          <li class="glance-row is-access" *ngFor="let line of access.lines">
+            <span class="glance-row-words">
+              <span class="glance-row-name">{{ line.group }}</span>
+              <span class="glance-row-sub">{{ line.reach }}<ng-container *ngIf="line.members"> · {{ line.members }}</ng-container></span>
+            </span>
+            <span class="glance-effect" [attr.data-effect]="line.effect">{{ line.word }}</span>
+          </li>
+        </ul>
+      </ng-container>
+    </section>
+
+    <section class="glance-part" *ngIf="scopes.length" aria-labelledby="glance-scopes">
+      <h3 class="glance-part-title" id="glance-scopes">Scopes</h3>
+      <dl class="glance-scopes">
         <ng-container *ngFor="let scope of scopes">
           <dt><code>{{ scope.name }}</code></dt>
           <dd>{{ scope.description }}</dd>
         </ng-container>
       </dl>
-      <p class="ui-panel-note">
-        A group's use of it can be narrowed to particular values of these.
-        Functions shows which input carries each.
-      </p>
-    </ng-container>
-    <div class="agent-actions" *ngIf="canInstall">
-      <button class="btn sm" type="button" (click)="tabChange.emit('access')">
-        Choose who may use it
-        <lucide-icon name="arrow-right" [size]="14" aria-hidden="true"></lucide-icon>
-      </button>
-    </div>
-  </section>
-
-  <!-- What the model is told of it, and its publisher's own account. -->
-  <section class="ui-panel" *ngIf="readme" aria-labelledby="readme-title">
-    <div class="ui-panel-head">
-      <h2 class="ui-panel-title" id="readme-title">About, from its publisher</h2>
-    </div>
-    <div class="agent-readme" [class.is-folded]="readmeLong && !readmeOpen">
-      <markdown [data]="readme"></markdown>
-    </div>
-    <button class="btn ghost sm agent-readme-more" type="button" *ngIf="readmeLong" [attr.aria-expanded]="readmeOpen" (click)="readmeOpen = !readmeOpen">
-      <lucide-icon [name]="readmeOpen ? 'chevron-up' : 'chevron-down'" [size]="16" aria-hidden="true"></lucide-icon>
-      {{ readmeOpen ? "Show less" : "Read all of it" }}
-    </button>
-  </section>
-
-  <section class="ui-panel" aria-labelledby="identity-title">
-    <div class="ui-panel-head">
-      <h2 class="ui-panel-title" id="identity-title">Details</h2>
-    </div>
-    <dl class="agent-facts is-pairs">
-      <dt>Id</dt><dd><code>{{ agent.agent_id }}</code></dd>
-      <dt>Version</dt><dd>{{ agent.version }}</dd>
-      <dt>Runs on</dt><dd>{{ agent.machines.join(", ") || "no machine" }}</dd>
-      <ng-container *ngIf="agent.base"><dt>Base</dt><dd><code>{{ agent.base }}</code></dd></ng-container>
-      <ng-container *ngIf="agent.source_url"><dt>Source</dt><dd><code>{{ agent.source_url }}</code></dd></ng-container>
-    </dl>
-    <details class="fold agent-instructions" *ngIf="agent.manifest.agent.instructions">
-      <summary>What the assistant is told about it</summary>
-      <p class="ui-panel-note">{{ agent.manifest.agent.instructions }}</p>
-    </details>
-  </section>
+      <p class="glance-note">A group's use of it can be narrowed to particular values of these, under Access.</p>
+    </section>
+  </aside>
 </div>
-
-<div class="agent-tab" *ngIf="shownTab === 'functions'">
-  <app-agent-functions [manifest]="agent.manifest"></app-agent-functions>
-</div>
-
-<!-- ── Access: which groups may use it, for whoever may install agents ── -->
-<app-agent-access *ngIf="shownTab === 'access'"
-                  [agentId]="agent.agent_id"
-                  [agentName]="agent.name"
-                  [declaredScopes]="scopes"
-                  (flashed)="flashed.emit($event)"></app-agent-access>

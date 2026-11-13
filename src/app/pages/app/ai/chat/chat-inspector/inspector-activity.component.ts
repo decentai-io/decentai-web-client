@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, OnChanges, Output } from '@angular/core';
 
 import { clockTime, relativeDate } from 'src/app/components/ui/dates';
+import { Shown } from 'src/app/components/ui/paging';
 import { WorkEntry } from 'src/app/services/chat-state.service';
 import { ChatWorkComponent } from '../chat-work/chat-work.component';
 import {
@@ -37,6 +38,8 @@ export class InspectorActivityComponent implements OnChanges {
   readonly filters = ACTIVITY_FILTERS;
   readonly opened = new Set<string>();
   shown: ActivityRow[] = [];
+  /** The newest calls, 25 at a time. */
+  readonly rowsShown = new Shown(25);
 
   readonly duration = duration;
   readonly tokens = tokens;
@@ -51,6 +54,7 @@ export class InspectorActivityComponent implements OnChanges {
   setFilter(filter: ActivityFilter): void {
     this.filter = filter;
     this.filterChange.emit(filter);
+    this.rowsShown.reset();
     this.ngOnChanges();
   }
 

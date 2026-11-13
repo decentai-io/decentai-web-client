@@ -3,6 +3,7 @@ import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { fullDate } from 'src/app/components/ui/dates';
+import { Paging } from 'src/app/components/ui/paging';
 import { AuthService } from 'src/app/services/auth.service';
 import { ConfirmService } from 'src/app/services/confirm.service';
 import { McpServer, McpService, McpTool } from 'src/app/services/mcp.service';
@@ -50,6 +51,8 @@ export class McpServerComponent implements OnInit, OnDestroy {
   busy: '' | 'read' | 'all' = '';
 
   query = '';
+  /** A server may offer many tools: twenty at a time. */
+  readonly paging = new Paging(20);
   /** A tool's level by its index, in the words every page uses. */
   readonly levels = PERMISSION_LEVELS;
   /** How each tool's last save went, by name: on its way, done, or why not. */

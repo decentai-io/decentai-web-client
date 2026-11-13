@@ -7,6 +7,7 @@ import { AuthService, CatalogAction } from 'src/app/services/auth.service';
 import { Policy, PolicyService, PolicyStatement } from 'src/app/services/policy.service';
 import { ConfirmService } from 'src/app/services/confirm.service';
 import { DataPageBase } from '../../app/data-page-base';
+import { Paging } from 'src/app/components/ui/paging';
 import { NamedAgent, PolicyWords, serviceName } from './policy-words';
 
 /** The actions of one service, as the grid draws them. */
@@ -28,6 +29,8 @@ export interface StatementLine {
 
 /** How many of a statement's actions are named before "and N more". */
 const SHOWN_ITEMS = 6;
+/** And the statements a policy shows before it is opened whole. */
+const SHOWN_STATEMENTS = 4;
 
 /**
  * Admin → Policies: what groups may do in the platform itself.
@@ -88,6 +91,8 @@ export class PoliciesComponent extends DataPageBase implements OnInit {
   busy = new Set<string>();
 
   query = '';
+  /** The policies, ten at a time: each says what it allows, in words. */
+  readonly paging = new Paging(10);
   /** Save was pressed: what the name still needs is said under it. */
   tried = false;
   /** The editor, on the dialog shell. */
@@ -168,7 +173,8 @@ export class PoliciesComponent extends DataPageBase implements OnInit {
    *  the policy is opened whole. */
   statementsOf(policy: Policy): StatementLine[] {
     const whole = this.expanded.has(policy.policy_id);
-    return policy.statements.map((statement) => {
+    const statements = whole ? policy.statements : policy.statements.slice(0, SHOWN_STATEMENTS);
+    return statements.map((statement) => {
       const items = statement.actions.map((action) => this.words.action(action));
       return {
         effect: this.words.effect(statement),
@@ -179,10 +185,12 @@ export class PoliciesComponent extends DataPageBase implements OnInit {
     });
   }
 
-  /** How many actions are not shown, cut from the policy's statements. */
+  /** How many actions are not shown: cut from the statements shown,
+   *  and all of those past the first few. */
   hiddenCount(policy: Policy): number {
     if (this.expanded.has(policy.policy_id)) return 0;
-    return policy.statements.reduce((sum, statement) => sum + Math.max(0, statement.actions.length - SHOWN_ITEMS), 0);
+    return policy.statements.reduce((sum, statement, index) => sum + (index < SHOWN_STATEMENTS
+      ? Math.max(0, statement.actions.length - SHOWN_ITEMS) : statement.actions.length), 0);
   }
 
   toggleWhole(policy: Policy): void {

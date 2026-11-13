@@ -224,6 +224,53 @@ export function levelMeaning(name: string): string {
   return (LEVEL_MEANINGS[name] || '').replace(/^Level \d\.\s*/, '');
 }
 
+/** Functions (or anything with a level) of one level: its place in the
+ *  order, its word, what it means, and the items at it. */
+export interface LevelGroup<T> {
+  index: number;
+  name: string;
+  meaning: string;
+  items: T[];
+}
+
+/** Items in groups by level, in the order of the levels; a level with
+ *  nothing at it is left out. */
+export function byLevel<T extends { level: number }>(items: T[]): LevelGroup<T>[] {
+  return PERMISSION_LEVELS
+    .map((name, index) => ({ index, name, meaning: levelMeaning(name), items: items.filter((item) => item.level === index) }))
+    .filter((group) => group.items.length);
+}
+
+/** The host of an address, or the address itself where it is not one. */
+export function hostOf(url: string | null | undefined): string {
+  if (!url) return '';
+  try {
+    return new URL(url).host;
+  } catch {
+    return url;
+  }
+}
+
+/** The tags a set of manifests carries, most used first, as a filter
+ *  offers them: a tag every one of them carries tells none apart, and
+ *  is left out. */
+export function tagCounts(manifests: Array<Manifest | null | undefined>, most = 12): Array<{ tag: string; count: number }> {
+  const counts = new Map<string, number>();
+  for (const manifest of manifests) {
+    for (const tag of new Set(manifest?.agent?.tags || [])) counts.set(tag, (counts.get(tag) || 0) + 1);
+  }
+  return [...counts.entries()]
+    .filter(([, count]) => manifests.length < 2 || count < manifests.length)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, most)
+    .map(([tag, count]) => ({ tag, count }));
+}
+
+/** A tag as a filter names it: "to-do" is "To-do". */
+export function tagName(tag: string): string {
+  return tag ? tag[0].toUpperCase() + tag.slice(1) : tag;
+}
+
 /** The icon an agent is told by, when its name or id says what it is:
  *  mail, a calendar, files. The manifest names none, and initials alone
  *  make a grid of look-alike tiles. Every name here is one the app

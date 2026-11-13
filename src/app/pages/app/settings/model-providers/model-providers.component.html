@@ -45,7 +45,7 @@
     </button>
   </ng-container>
 
-  <app-row *ngFor="let connection of visible" [name]="connection.name">
+  <app-row *ngFor="let connection of paging.of(visible, query)" [name]="connection.name">
     <lucide-icon rowMark name="brain-circuit" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
     <span
       rowChips
@@ -111,6 +111,8 @@
       <lucide-icon name="trash-2" [size]="16" aria-hidden="true"></lucide-icon>
     </button>
   </app-row>
+  <app-pager [page]="paging.page" [pageSize]="paging.size" [total]="visible.length"
+             (pageChange)="paging.page = $event"></app-pager>
 
   <app-empty
     *ngIf="!connections.length"
@@ -324,10 +326,12 @@
             (ngModelChange)="setSharing($event)"
           ></app-segmented>
           <div class="provider-groups" *ngIf="sharing === 'some'">
-            <mat-checkbox class="check-row" *ngFor="let group of someGroups"
-                          [checked]="draft.groups.includes(group.group_id)" (change)="toggleGroup(group.group_id)">
-              <span class="check-name">{{ group.name }}</span>
-            </mat-checkbox>
+            <div class="ui-checks" [class.is-long]="someGroups.length > 6">
+              <mat-checkbox class="check-row" *ngFor="let group of someGroups"
+                            [checked]="draft.groups.includes(group.group_id)" (change)="toggleGroup(group.group_id)">
+                <span class="check-name">{{ group.name }}</span>
+              </mat-checkbox>
+            </div>
             <p class="provider-note" *ngIf="!someGroups.length">This organization has no other groups yet.</p>
             <p class="provider-note" *ngIf="someGroups.length && !draft.groups.length">
               Pick the groups whose chats may use it. With none, nobody's may.

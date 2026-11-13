@@ -13,6 +13,9 @@ import { clockTime, fullDate, relativeDate } from 'src/app/components/ui/dates';
 import { EmptyComponent } from 'src/app/components/ui/empty.component';
 import { FieldComponent } from 'src/app/components/ui/field.component';
 import { ListComponent } from 'src/app/components/ui/list.component';
+import { PagerComponent } from 'src/app/components/ui/pager.component';
+import { Paging } from 'src/app/components/ui/paging';
+import { PillsComponent } from 'src/app/components/ui/pills.component';
 import { Choice } from 'src/app/components/ui/radio-keys';
 import { RowComponent } from 'src/app/components/ui/row.component';
 import { SegmentedComponent } from 'src/app/components/ui/segmented.component';
@@ -94,7 +97,7 @@ interface EditForm {
   imports: [
     NgFor, NgIf, FormsModule, MatDialogModule, MatTooltipModule, LucideAngularModule,
     ChoiceCardsComponent, EmptyComponent, FieldComponent, ListComponent, RowComponent,
-    SegmentedComponent, SelectComponent, SwitchComponent, NodeDetailComponent,
+    SegmentedComponent, SelectComponent, SwitchComponent, NodeDetailComponent, PagerComponent, PillsComponent,
   ],
   templateUrl: './nodes.component.html',
   styleUrl: './nodes.component.css',
@@ -120,6 +123,9 @@ export class NodesComponent extends DataPageBase implements OnInit, OnDestroy {
   enrolled: EnrolledNode[] = [];
   /** Whether tokens that enroll nobody any more are shown too. */
   showSpent = false;
+  /** The nodes twenty to a page; the tokens, taller, ten. */
+  readonly nodePaging = new Paging(20);
+  readonly tokenPaging = new Paging(10);
   /** A token just made: its secret, shown this once. */
   made: { id: string; token: string } | null = null;
 
@@ -407,6 +413,16 @@ export class NodesComponent extends DataPageBase implements OnInit, OnDestroy {
 
   get groups(): NodeGroup[] {
     return groupNodes(this.shownNodes);
+  }
+
+  /** The groups with the nodes of the page shown: the pages run through
+   *  the groups in their order, and a group's head keeps its own counts. */
+  get pagedGroups(): Array<NodeGroup & { shown: ExecutionNode[] }> {
+    const groups = this.groups;
+    const key = `${this.filters.query}|${this.filters.state}|${this.filters.scope}`;
+    const page = new Set(this.nodePaging.of(groups.flatMap((group) => group.nodes), key));
+    return groups.map((group) => ({ ...group, shown: group.nodes.filter((node) => page.has(node)) }))
+      .filter((group) => group.shown.length);
   }
 
   get filtering(): boolean {

@@ -38,6 +38,10 @@ export class ChatHomeComponent implements OnInit {
   chats: ChatRow[] = [];
   filteredChats: ChatRow[] = [];
   chatGroups: Array<{ label: string; chats: ChatRow[] }> = [];
+  /** How many rows are drawn: the latest fifty, then fifty more on asking.
+   *  A search reads them all; it draws the first matches the same way. */
+  shownLimit = ChatHomeComponent.STEP;
+  private static readonly STEP = 50;
   searchQuery = '';
   /** Archived chats are still yours — they are simply out of the way.
    *  Deleting one is the irreversible act, and it stays a separate
@@ -120,7 +124,8 @@ export class ChatHomeComponent implements OnInit {
       dateGroup: this.dateGroup(chat.updated_at),
     }));
     this.chatsLoaded = true;
-    this.applyFilters();
+    // Read again after an archive or a delete: the rows drawn stay drawn.
+    this.applyFilters(true);
   }
 
   /** Stand at the shelf of chats in use, or at the archive. */
@@ -135,14 +140,26 @@ export class ChatHomeComponent implements OnInit {
   }
 
   /** What the list shows: the search within the shelf, grouped by when. */
-  applyFilters() {
+  applyFilters(keepLimit = false) {
+    if (!keepLimit) this.shownLimit = ChatHomeComponent.STEP;
     const query = this.searchQuery.trim().toLowerCase();
     this.filteredChats = this.chats.filter((chat) => !query || chat.title.toLowerCase().includes(query));
     const groups = new Map<string, ChatRow[]>();
-    for (const chat of this.filteredChats) {
+    for (const chat of this.filteredChats.slice(0, this.shownLimit)) {
       groups.set(chat.dateGroup, [...(groups.get(chat.dateGroup) || []), chat]);
     }
     this.chatGroups = [...groups.entries()].map(([label, chats]) => ({ label, chats }));
+  }
+
+  /** Fifty more rows of the list. */
+  showMoreChats(): void {
+    this.shownLimit += ChatHomeComponent.STEP;
+    this.applyFilters(true);
+  }
+
+  /** How many rows are drawn now. */
+  get shownCount(): number {
+    return Math.min(this.filteredChats.length, this.shownLimit);
   }
 
   /** Enter in the search opens the best match — type, Enter, you are

@@ -136,7 +136,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of models">
+            <tr *ngFor="let row of modelsShown.of(models)">
               <td>
                 <span class="tk-model">
                   <code>{{ model(row).model || "(unnamed)" }}</code>
@@ -154,6 +154,7 @@
           </tbody>
         </table>
       </div>
+      <app-more [shown]="modelsShown.count(models)" [total]="models.length" (more)="modelsShown.more()"></app-more>
     </section>
 
     <div class="ov-pair" *ngIf="!mine">
@@ -176,7 +177,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let row of agents">
+              <tr *ngFor="let row of agentsShown.of(agents)">
                 <td>
                   <span class="ov-bar-name">
                     <app-agent-mark size="sm" [name]="name(row)" aria-hidden="true"></app-agent-mark>
@@ -190,6 +191,7 @@
             </tbody>
           </table>
         </div>
+        <app-more [shown]="agentsShown.count(agents)" [total]="agents.length" (more)="agentsShown.more()"></app-more>
         <p class="ov-quiet" *ngIf="!agents.length">No agent asked the model itself {{ inWindow }}.</p>
       </section>
 
@@ -212,7 +214,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let row of people">
+              <tr *ngFor="let row of peopleShown.of(people)">
                 <td>{{ name(row) }}</td>
                 <td class="num">{{ number(row.calls) }}</td>
                 <td class="num">{{ number(row.input + row.output) }}</td>
@@ -221,6 +223,7 @@
             </tbody>
           </table>
         </div>
+        <app-more [shown]="peopleShown.count(people)" [total]="people.length" (more)="peopleShown.more()"></app-more>
       </section>
     </div>
   </ng-container>

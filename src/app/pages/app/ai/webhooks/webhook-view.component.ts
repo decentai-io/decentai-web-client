@@ -55,7 +55,7 @@ export class WebhookViewComponent implements OnChanges {
   copied: '' | 'url' | 'curl' = '';
 
   /** The most calls one read answers with. */
-  private static readonly PAGE = 100;
+  private static readonly PAGE = 25;
 
   constructor(
     private service: WebhooksService,
@@ -81,7 +81,7 @@ export class WebhookViewComponent implements OnChanges {
     this.loading = true;
     this.problem = '';
     const last = older ? this.executions[this.executions.length - 1]?._id ?? '' : '';
-    const page = await this.service.executions(id, last);
+    const page = await this.service.executions(id, last, WebhookViewComponent.PAGE);
     this.loading = false;
     if (id !== this.webhook.webhook_id) return;
     if (page.error) {

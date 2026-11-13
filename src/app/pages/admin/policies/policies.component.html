@@ -17,7 +17,7 @@
         <ng-container *ngTemplateOutlet="addButton"></ng-container>
       </ng-container>
 
-      <app-row *ngFor="let policy of shown">
+      <app-row *ngFor="let policy of paging.of(shown, query)">
         <button rowName class="admin-name" type="button" *ngIf="canUpdate && !policy.built_in; else plainName" (click)="startEdit(policy)">{{ policy.name }}</button>
         <ng-template #plainName><span rowName>{{ policy.name }}</span></ng-template>
         <span rowChips class="ui-pill" *ngIf="policy.built_in"
@@ -47,6 +47,9 @@
           <lucide-icon name="ellipsis-vertical" [size]="16" aria-hidden="true"></lucide-icon>
         </button>
       </app-row>
+
+      <app-pager [page]="paging.page" [pageSize]="paging.size" [total]="shown.length"
+                 (pageChange)="paging.page = $event"></app-pager>
 
       <app-empty *ngIf="!loading && !policies.length" icon="scroll-text" title="No policies yet"
                  line="A policy says what a group may do in the platform. Groups give their people policies.">

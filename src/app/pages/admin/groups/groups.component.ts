@@ -7,6 +7,7 @@ import { Group, GroupService } from 'src/app/services/group.service';
 import { Policy, PolicyService } from 'src/app/services/policy.service';
 import { ConfirmService } from 'src/app/services/confirm.service';
 import { DataPageBase } from '../../app/data-page-base';
+import { Paging, Shown } from 'src/app/components/ui/paging';
 
 /**
  * Admin → Groups: groups of people, each giving them its policies.
@@ -40,6 +41,9 @@ export class GroupsComponent extends DataPageBase implements OnInit {
   busy = new Set<string>();
 
   query = '';
+  /** The groups a page at a time; a group's people ten at a time. */
+  readonly paging = new Paging(20);
+  readonly people = new Shown(10);
   /** Save was pressed: what the name still needs is said under it. */
   tried = false;
   /** The editor, on the dialog shell. */
@@ -113,9 +117,9 @@ export class GroupsComponent extends DataPageBase implements OnInit {
     return group.everyone ? 'Every person' : `${group.members ?? 0} ${group.members === 1 ? 'person' : 'people'}`;
   }
 
-  /** The first three policies a group gives, by name, each a pill. */
+  /** The policies a group gives, by name: its row shows the first few. */
   policyNames(group: Group): string[] {
-    return group.policies.slice(0, 3).map((id) => this.policyName(id));
+    return group.policies.map((id) => this.policyName(id));
   }
 
   summarise(group: Group): string {
@@ -145,6 +149,7 @@ export class GroupsComponent extends DataPageBase implements OnInit {
     this.openEditor();
 
     // Shown so an administrator can see who a change reaches.
+    this.people.reset();
     this.editingPeople = (await this.groupService.get(group.group_id))?.users ?? [];
   }
 

@@ -5,6 +5,7 @@ import { Subscription } from 'rxjs';
 import { Candidate } from 'src/app/components/transfer-dialog/transfer-dialog.component';
 import { fullDate, relativeDate } from 'src/app/components/ui/dates';
 import { FilterGroup } from 'src/app/components/ui/filter-column.component';
+import { Paging } from 'src/app/components/ui/paging';
 import { Choice } from 'src/app/components/ui/radio-keys';
 import { AuthService } from 'src/app/services/auth.service';
 import { ConfirmService } from 'src/app/services/confirm.service';
@@ -59,6 +60,9 @@ export class SkillsComponent extends DataPageBase implements OnInit, OnDestroy {
   // ── What the address says ───────────────────────────────────────────
   show: Show = 'all';
   query = '';
+  /** The list a page at a time; back to the first when what narrows it changes. */
+  readonly paging = new Paging(20);
+  readonly handedPaging = new Paging(5);
   sort: SkillSort = 'written';
   /** The skill opened to be read; '' for none. */
   openId = '';

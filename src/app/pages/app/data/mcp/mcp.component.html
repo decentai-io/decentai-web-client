@@ -8,7 +8,7 @@
 
   <!-- Servers another member handed over: theirs until accepted. -->
   <app-list label="Handed to you" *ngIf="handed.length">
-    <app-row *ngFor="let server of handed">
+    <app-row *ngFor="let server of handedPaging.of(handed)">
       <lucide-icon rowMark name="server" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
       <span rowName>{{ server.name }}</span>
       <ng-container rowMeta>
@@ -20,6 +20,8 @@
       <button rowState class="btn sm" type="button" [disabled]="busy === server.id" (click)="accept(server, false)">Decline</button>
       <button rowState class="btn primary sm" type="button" [disabled]="busy === server.id" (click)="accept(server, true)">Accept</button>
     </app-row>
+    <app-pager *ngIf="handedPaging.more(handed)" [page]="handedPaging.page" [pageSize]="handedPaging.size"
+               [total]="handed.length" (pageChange)="handedPaging.page = $event"></app-pager>
   </app-list>
 
   <!-- The servers in numbers, as one line. -->
@@ -44,7 +46,7 @@
       <ng-container *ngTemplateOutlet="addButton"></ng-container>
     </ng-container>
 
-    <app-row *ngFor="let server of shownServers">
+    <app-row *ngFor="let server of paging.of(shownServers, query)">
       <lucide-icon rowMark name="server" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
       <a rowName class="mcp-row-name" [routerLink]="['/data/mcp', server.id]">{{ server.name }}</a>
       <span rowChips class="ui-pill" [class.is-accent]="sharing(server).word !== 'Private'" [matTooltip]="sharing(server).names">
@@ -71,6 +73,8 @@
         <lucide-icon name="ellipsis-vertical" [size]="16" aria-hidden="true"></lucide-icon>
       </button>
     </app-row>
+    <app-pager [page]="paging.page" [pageSize]="paging.size" [total]="shownServers.length"
+               (pageChange)="paging.page = $event"></app-pager>
 
     <!-- A list that could not be read is said to be that, never shown
          as a list with nothing in it. -->

@@ -25,6 +25,8 @@ export type Candidate = Peer;
   styleUrls: ['./transfer-dialog.component.css'],
 })
 export class TransferDialogComponent implements OnInit, OnChanges, OnDestroy {
+  /** The people shown as cards at once. */
+  static readonly SHOWN = 12;
   /** What is being handed over, in words: "the credential “Gmail”". */
   @Input() subject = 'this';
   /** What handing it over means, where it means more than usual. */
@@ -96,11 +98,20 @@ export class TransferDialogComponent implements OnInit, OnChanges, OnDestroy {
     const key = `${this.query}|${this.candidates.length}`;
     if (key === this.shownFor) return;
     this.shownFor = key;
-    this.shown = this.visible.map((person) => ({
+    // The first dozen, and the one chosen: the search finds the rest.
+    const first = this.visible.slice(0, TransferDialogComponent.SHOWN);
+    const chosen = this.visible.find((person) => person.user_id === this.selectedId);
+    if (chosen && !first.includes(chosen)) first.push(chosen);
+    this.shown = first.map((person) => ({
       value: person.user_id,
       name: person.name || person.email,
       hint: person.name ? person.email : undefined,
     }));
+  }
+
+  /** How many people the search would find past those shown. */
+  get unshown(): number {
+    return Math.max(0, this.visible.length - TransferDialogComponent.SHOWN);
   }
 
   get selected(): Candidate | null {

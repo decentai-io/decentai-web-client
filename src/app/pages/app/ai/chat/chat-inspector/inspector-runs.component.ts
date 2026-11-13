@@ -1,6 +1,7 @@
 import { Component, Input, OnChanges } from '@angular/core';
 
 import { clockTime, fullDate, relativeDate } from 'src/app/components/ui/dates';
+import { Shown } from 'src/app/components/ui/paging';
 import { ChatInspection, ChatProcess, NetworkUse } from 'src/app/models/chat-inspect';
 import { bytes } from 'src/app/pages/app/settings/nodes/nodes-words';
 import { agentName, duration, took } from './inspector-words';
@@ -24,6 +25,9 @@ const ENDED: Record<string, string> = {
 export class InspectorRunsComponent implements OnChanges {
   @Input({ required: true }) inspection!: ChatInspection;
   @Input() names: Record<string, string> = {};
+  /** Eight processes and ten hosts at a time, more on asking. */
+  readonly processes = new Shown(8);
+  readonly hosts = new Shown(10);
 
   totals = { connections: 0, refused: 0, bytes_out: 0, bytes_in: 0 };
   readonly bytes = bytes;

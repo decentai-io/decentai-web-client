@@ -160,11 +160,8 @@
         </div>
       </section>
   
-      <div class="record-older" *ngIf="before">
-        <button class="btn" type="button" [disabled]="loadingMore" (click)="older()">
-          {{ loadingMore ? "Loading…" : "Load older" }}
-        </button>
-      </div>
+      <app-more [shown]="lines.length" [hasMore]="!!before" [loading]="loadingMore" label="Load older"
+                (more)="older()"></app-more>
     </app-list>
   </section>
 </app-page>

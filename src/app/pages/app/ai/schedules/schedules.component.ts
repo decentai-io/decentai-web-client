@@ -285,6 +285,11 @@ export class SchedulesComponent extends DataPageBase implements OnInit, OnDestro
     }).sort((a, b) => next(a) - next(b));
   }
 
+  /** The oldest few cards: the rest are answered on Approvals. */
+  get firstCards(): Card[] {
+    return this.cards.slice(0, 5);
+  }
+
   get pagedSchedules(): Schedule[] {
     return this.shownSchedules.slice((this.page - 1) * this.pageSize, this.page * this.pageSize);
   }

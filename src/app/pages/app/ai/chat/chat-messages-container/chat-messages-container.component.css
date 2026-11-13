@@ -101,6 +101,19 @@
   text-align: center;
 }
 
+/* A long prompt or an unbroken word stays in the column: two lines,
+   the rest on pointing at it, and in the schedule it names. */
+.thread-note-text {
+  display: -webkit-box;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
+}
+
 .thread-note lucide-icon {
   display: flex;
   color: var(--ink-3);

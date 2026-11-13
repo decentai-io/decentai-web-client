@@ -43,7 +43,8 @@ describe('MarketplaceComponent', () => {
     ]);
     await component.ngOnInit();
 
-    expect(component.filters.map((choice) => choice.name)).toEqual(['All 3', 'Not installed 1', 'Installed 2', 'Updates 1']);
+    expect(component.filterGroups[1].items.map((item) => [item.name, item.count]))
+      .toEqual([['All agents', 3], ['Not installed', 1], ['Installed', 2], ['Update available', 1]]);
     component.setFilter('installed');
     expect(component.shownOffers.map((one) => component.idOf(one))).toEqual(['zeta', 'mid']);
     component.setFilter('all');
@@ -149,5 +150,30 @@ describe('MarketplaceComponent', () => {
     await component.openReviewOf('a');
     expect(component.review).toBeNull();
     expect(component.error).toContain('nothing to review');
+  });
+
+  it('lists the sources, what to show and the tags in its column, and narrows by a tag', async () => {
+    const tagged = (id: string, tags: string[]) => {
+      const one = offer(id);
+      one.manifest.agent.tags = tags;
+      return one;
+    };
+    const component = create([source('s1'), source('s2', { error: 'Not JSON.' })],
+      [tagged('a', ['mail', 'all']), tagged('b', ['notes', 'all']), tagged('c', ['mail', 'all'])]);
+    await component.ngOnInit();
+
+    const [sources, show, tags] = component.filterGroups;
+    expect(sources.items.map((item) => [item.name, item.count, item.icon])).toEqual([
+      ['s1 agents', 3, 'store'], ['s2 agents', 0, 'triangle-alert'],
+    ]);
+    expect(show.required).toBeTrue();
+    expect(tags.items.map((item) => item.name)).toEqual(['Mail', 'Notes']);
+
+    component.choose({ key: 'tag', value: 'mail' });
+    expect(component.shownOffers.map((one) => component.idOf(one))).toEqual(['a', 'c']);
+    expect(component.chosen).toEqual({ source: 's1', show: 'all', tag: 'mail' });
+    component.choose({ key: 'source', value: 's2' });
+    expect(component.current?.source_id).toBe('s2');
+    expect(component.tag).toBe('');
   });
 });

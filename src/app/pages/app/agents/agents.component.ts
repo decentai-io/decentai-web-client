@@ -3,6 +3,7 @@ import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 
+import { FilterGroup } from 'src/app/components/ui/filter-column.component';
 import { Choice } from 'src/app/components/ui/radio-keys';
 import { AgentsService, InstalledAgent } from 'src/app/services/agents.service';
 import { AuthService } from 'src/app/services/auth.service';
@@ -11,10 +12,23 @@ import { ProfileService } from 'src/app/services/profile.service';
 import { DataPageBase } from '../data-page-base';
 import { DetailTab } from './agent-detail.component';
 import { CardLevel } from './agent-card.component';
-import { AgentStat, Standing, agentFacts, agentStats, iconOf, levelBar, standingOf } from './agent-shared';
+import {
+  AgentStat, Standing, agentFacts, agentStats, iconOf, levelBar, networkOf, standingOf, tagCounts, tagName,
+} from './agent-shared';
 
 /** The tabs an address may name. */
 const TABS: DetailTab[] = ['overview', 'functions', 'access'];
+
+type AgentFilter = 'all' | 'attention' | 'updates';
+type AgentSort = 'name' | 'recent' | 'attention';
+type AgentView = 'grid' | 'list';
+
+/** Where the cards-or-table choice is kept on this device. */
+const VIEW_KEY = 'agents.view';
+
+/** "Needs attention first": what failed, then what is being checked,
+ *  then what has an update, then the ready. */
+const STANDING_ORDER: Standing['kind'][] = ['failed', 'checking', 'update', 'ready'];
 
 /**
  * Installed agents: the ones this person may use, and for an
@@ -34,7 +48,7 @@ const TABS: DetailTab[] = ['overview', 'functions', 'access'];
   selector: 'app-agents',
   standalone: false,
   templateUrl: './agents.component.html',
-  styleUrl: './agent-shared.css',
+  styleUrls: ['./agent-shared.css', './agents.component.css'],
 })
 export class AgentsComponent extends DataPageBase implements OnInit, OnDestroy {
   loading = true;
@@ -43,9 +57,23 @@ export class AgentsComponent extends DataPageBase implements OnInit, OnDestroy {
   updates = new Set<string>();
   busyId = '';
   query = '';
-  filter: 'all' | 'attention' | 'updates' = 'all';
+  filter: AgentFilter = 'all';
+  /** The tag the list is narrowed to; '' for none. */
+  tag = '';
+  sort: AgentSort = 'name';
+  view: AgentView = this.readView();
   page = 1;
-  readonly pageSize = 12;
+  readonly pageSize = 24;
+
+  readonly sorts: Choice<AgentSort>[] = [
+    { value: 'name', name: 'By name' },
+    { value: 'attention', name: 'Needs attention first' },
+    { value: 'recent', name: 'Recently installed' },
+  ];
+  readonly views: Choice<AgentView>[] = [
+    { value: 'grid', name: 'Cards' },
+    { value: 'list', name: 'Table' },
+  ];
 
   openAgent: InstalledAgent | null = null;
   /** The open agent's tab, as the address names it. */
@@ -291,24 +319,51 @@ export class AgentsComponent extends DataPageBase implements OnInit, OnDestroy {
   }
   private cardKept = new WeakMap<InstalledAgent, { stats: AgentStat[]; levels: CardLevel[] }>();
 
-  /** The three views of the list, each saying how many it holds. The
-   *  same array until a count changes: the control draws its choices
-   *  again for a new one. */
-  get filters(): Choice<'all' | 'attention' | 'updates'>[] {
+  /** The filter column: which agents by where they stand, and by tag,
+   *  each with how many it holds. The same array until a count changes:
+   *  the column draws its entries again for a new one. */
+  get filterGroups(): FilterGroup[] {
     const counts = [this.agents.length, this.agents.filter((agent) => this.needsAttention(agent)).length,
       this.agents.filter((agent) => this.updates.has(agent.agent_id)).length];
-    if (counts.join() !== this.filterCounts.join()) {
-      this.filterCounts = counts;
-      this.filterChoices = [
-        { value: 'all', name: `All ${counts[0]}` },
-        { value: 'attention', name: `Needs attention ${counts[1]}` },
-        { value: 'updates', name: `Updates ${counts[2]}` },
+    const tags = tagCounts(this.agents.map((agent) => agent.manifest));
+    const key = JSON.stringify([counts, tags]);
+    if (key !== this.groupsKey) {
+      this.groupsKey = key;
+      this.groupsShown = [
+        {
+          key: 'show',
+          required: true,
+          items: [
+            { value: 'all', name: 'All agents', icon: 'bot', count: counts[0] },
+            { value: 'attention', name: 'Needs attention', icon: 'circle-alert', count: counts[1] },
+            ...(this.canInstall ? [{ value: 'updates', name: 'Updates', icon: 'refresh-cw', count: counts[2] }] : []),
+          ],
+        },
+        ...(tags.length ? [{
+          key: 'tag',
+          label: 'Tags',
+          items: tags.map((tag) => ({ value: tag.tag, name: tagName(tag.tag), count: tag.count })),
+        }] : []),
       ];
     }
-    return this.filterChoices;
+    return this.groupsShown;
   }
-  private filterCounts: number[] = [];
-  private filterChoices: Choice<'all' | 'attention' | 'updates'>[] = [];
+  private groupsKey = '';
+  private groupsShown: FilterGroup[] = [];
+
+  /** What the column has chosen, the same object until it changes. */
+  get filterChosen(): Record<string, string> {
+    if (this.chosenNow['show'] !== this.filter || this.chosenNow['tag'] !== this.tag) {
+      this.chosenNow = { show: this.filter, tag: this.tag };
+    }
+    return this.chosenNow;
+  }
+  private chosenNow: Record<string, string> = {};
+
+  choose(choice: { key: string; value: string }): void {
+    if (choice.key === 'show') this.setFilter((choice.value || 'all') as AgentFilter);
+    else this.setTag(choice.value);
+  }
 
   /** The line under the grid. */
   get foot(): string {
@@ -317,14 +372,25 @@ export class AgentsComponent extends DataPageBase implements OnInit, OnDestroy {
     return `${this.agents.length} installed · ${ready} ready · ${this.defaultCount} in new chats`;
   }
 
+  /** The agents the filters and the search leave, in the chosen order. */
   get shownAgents(): InstalledAgent[] {
     const query = this.query.trim().toLowerCase();
-    return this.agents.filter((agent) => {
+    const shown = this.agents.filter((agent) => {
       if (this.filter === 'attention' && !this.needsAttention(agent)) return false;
       if (this.filter === 'updates' && !this.updates.has(agent.agent_id)) return false;
+      if (this.tag && !(agent.manifest.agent.tags || []).includes(this.tag)) return false;
       return !query || `${agent.name} ${agent.agent_id} ${agent.manifest.agent.description || ''}`
         .toLowerCase().includes(query);
     });
+    const byName = (a: InstalledAgent, b: InstalledAgent) => a.name.localeCompare(b.name);
+    if (this.sort === 'recent') {
+      return shown.sort((a, b) => (Date.parse(b.installed_at) || 0) - (Date.parse(a.installed_at) || 0) || byName(a, b));
+    }
+    if (this.sort === 'attention') {
+      return shown.sort((a, b) => STANDING_ORDER.indexOf(this.standing(a).kind)
+        - STANDING_ORDER.indexOf(this.standing(b).kind) || byName(a, b));
+    }
+    return shown.sort(byName);
   }
 
   get pagedAgents(): InstalledAgent[] {
@@ -332,14 +398,58 @@ export class AgentsComponent extends DataPageBase implements OnInit, OnDestroy {
     return this.shownAgents.slice(start, start + this.pageSize);
   }
 
-  setFilter(filter: 'all' | 'attention' | 'updates'): void {
+  setFilter(filter: AgentFilter): void {
     this.filter = filter;
+    this.page = 1;
+  }
+
+  setTag(tag: string): void {
+    this.tag = tag;
+    this.page = 1;
+  }
+
+  setSort(sort: AgentSort): void {
+    this.sort = sort;
     this.page = 1;
   }
 
   search(value: string): void {
     this.query = value;
     this.page = 1;
+  }
+
+  /** Every filter off: what "Show all" does. */
+  showAll(): void {
+    this.search('');
+    this.setFilter('all');
+    this.setTag('');
+  }
+
+  /** Cards, or a dense table; remembered on this device. */
+  setView(view: AgentView): void {
+    this.view = view;
+    try {
+      localStorage.setItem(VIEW_KEY, view);
+    } catch {
+      // A browser that keeps nothing shows the cards next time.
+    }
+  }
+
+  private readView(): AgentView {
+    try {
+      return localStorage.getItem(VIEW_KEY) === 'list' ? 'list' : 'grid';
+    } catch {
+      return 'grid';
+    }
+  }
+
+  /** Where an agent connects, in a few words, for the table. */
+  reach(agent: InstalledAgent): string {
+    const network = networkOf(agent.manifest);
+    if (network.any) return 'The open web';
+    const hosts = network.hosts.length + network.from_secrets.length;
+    if (!hosts) return 'No network';
+    return network.hosts[0] ? network.hosts[0] + (hosts > 1 ? ` +${hosts - 1}` : '') : `${hosts} from a secret`;
   }
 
   /** The version waiting at the agent's source, opened where it is read:

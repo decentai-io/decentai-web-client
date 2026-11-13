@@ -33,13 +33,15 @@
         <span class="check-name">Every server you may use</span>
         <span class="check-hint">Those added later too.</span>
       </mat-checkbox>
-      @for (server of servers; track server.id) {
+      @for (server of shownServers.of(servers); track server.id) {
         <mat-checkbox class="check-row" [checked]="serverChoice.has(server.id)" [disabled]="serverChoice.all"
                       (change)="serverChoice.toggle(server.id)">
           <span class="check-name">{{ server.name }}</span>
           <span class="check-hint">{{ server.address }}</span>
         </mat-checkbox>
       }
+      <app-more [shown]="shownServers.count(servers)" [total]="servers.length" label="Show more servers"
+                (more)="shownServers.more()"></app-more>
     }
   }
 </mat-dialog-content>

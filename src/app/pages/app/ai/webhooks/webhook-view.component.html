@@ -128,7 +128,8 @@
       <p class="run-why" *ngIf="run.reason">{{ run.reason }}</p>
     </li>
   </ul>
-  <button class="btn sm webhook-older" type="button" *ngIf="more" [disabled]="loading" (click)="load(true)">Older calls</button>
+  <app-more [shown]="executions.length" [hasMore]="more" [loading]="loading && !!executions.length" label="Older calls"
+            (more)="load(true)"></app-more>
   <p class="webhook-note" *ngIf="executions.length">
     Newest first, kept for 30 days. What its chat did with each is in the chat.
   </p>

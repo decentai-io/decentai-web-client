@@ -53,7 +53,7 @@
         <ng-container listToolbar>
           <h2 class="webhook-list-title">Handed to you</h2>
         </ng-container>
-        <app-row *ngFor="let hook of handed" [class.is-current]="hook.webhook_id === openId">
+        <app-row *ngFor="let hook of handedPaging.of(handed)" [class.is-current]="hook.webhook_id === openId">
           <lucide-icon rowMark name="webhook" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
           <a rowName class="webhook-row-name" [routerLink]="['/ai/webhooks', hook.webhook_id]">{{ hook.name }}</a>
           <ng-container rowMeta>
@@ -70,6 +70,8 @@
             Accept
           </button>
         </app-row>
+        <app-pager *ngIf="handedPaging.more(handed)" [page]="handedPaging.page" [pageSize]="handedPaging.size"
+                   [total]="handed.length" (pageChange)="handedPaging.page = $event"></app-pager>
       </app-list>
 
       <app-list label="Your webhooks" [loading]="loading" [foot]="foot">
@@ -78,7 +80,7 @@
           <ng-container *ngIf="!loading"><ng-container *ngTemplateOutlet="addButton"></ng-container></ng-container>
         </ng-container>
 
-        <app-row *ngFor="let hook of webhooks" [class.is-current]="hook.webhook_id === openId" [class.is-resting]="!hook.enabled">
+        <app-row *ngFor="let hook of ownPaging.of(webhooks)" [class.is-current]="hook.webhook_id === openId" [class.is-resting]="!hook.enabled">
           <lucide-icon rowMark name="webhook" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
           <a rowName class="webhook-row-name" [routerLink]="['/ai/webhooks', hook.webhook_id]"
              [attr.aria-current]="hook.webhook_id === openId ? 'true' : null">{{ hook.name }}</a>
@@ -110,6 +112,8 @@
             (ngModelChange)="setEnabled(hook, $event)"
           ></app-switch>
         </app-row>
+        <app-pager *ngIf="ownPaging.more(webhooks)" [page]="ownPaging.page" [pageSize]="ownPaging.size"
+                   [total]="webhooks.length" (pageChange)="ownPaging.page = $event"></app-pager>
 
         <app-empty
           *ngIf="!webhooks.length"
@@ -128,7 +132,7 @@
         <ng-container listToolbar>
           <h2 class="webhook-list-title">Shared with you</h2>
         </ng-container>
-        <app-row *ngFor="let hook of shared" [class.is-current]="hook.webhook_id === openId" [class.is-resting]="!hook.enabled">
+        <app-row *ngFor="let hook of sharedPaging.of(shared)" [class.is-current]="hook.webhook_id === openId" [class.is-resting]="!hook.enabled">
           <lucide-icon rowMark name="webhook" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
           <a rowName class="webhook-row-name" [routerLink]="['/ai/webhooks', hook.webhook_id]"
              [attr.aria-current]="hook.webhook_id === openId ? 'true' : null">{{ hook.name }}</a>
@@ -143,6 +147,8 @@
             </span>
           </ng-container>
         </app-row>
+        <app-pager *ngIf="sharedPaging.more(shared)" [page]="sharedPaging.page" [pageSize]="sharedPaging.size"
+                   [total]="shared.length" (pageChange)="sharedPaging.page = $event"></app-pager>
       </app-list>
     </div>
 

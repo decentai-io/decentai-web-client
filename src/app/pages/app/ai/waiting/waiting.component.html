@@ -42,7 +42,11 @@
   ></app-empty>
 
   <!-- Each chat's cards under its title, oldest first. -->
-  <section class="waiting-chat" *ngFor="let group of groups" [attr.aria-label]="group.title">
+  <p class="ui-panel-note" *ngIf="capped">
+    These are the oldest 200. Answer some, then refresh, to see the ones behind them.
+  </p>
+
+  <section class="waiting-chat" *ngFor="let group of chats.of(groups)" [attr.aria-label]="group.title">
     <header class="waiting-head">
       <h2 class="waiting-title">
         <a [routerLink]="['/ai/chats', group.chatId]">{{ group.title }}</a>
@@ -55,7 +59,7 @@
     </header>
 
     <div class="waiting-cards">
-      <article class="waiting-card" *ngFor="let card of group.cards" [class.is-busy]="answering.has(card.card_id)">
+      <article class="waiting-card" *ngFor="let card of cardsOf(group)" [class.is-busy]="answering.has(card.card_id)">
         <!-- What is asked, by whom, since when: over the card. -->
         <p class="waiting-kicker">
           <span class="waiting-kind" [attr.data-kind]="card.kind">
@@ -86,5 +90,10 @@
         </div>
       </article>
     </div>
+    <app-more [shown]="cardsOf(group).length" [total]="group.cards.length" label="Show all of this chat's"
+              (more)="showAll(group)"></app-more>
   </section>
+
+  <app-more [shown]="chats.count(groups)" [total]="groups.length" label="Show more chats"
+            (more)="chats.more()"></app-more>
 </app-page>

@@ -75,9 +75,9 @@ export class WebhooksService {
   }
 
   /** What arrived, newest first, a page at a time. */
-  async executions(webhookId: string, before = ''): Promise<{ executions: WebhookExecution[] } & Failure> {
+  async executions(webhookId: string, before = '', limit = 25): Promise<{ executions: WebhookExecution[] } & Failure> {
     const r = await this.request.gateway('Settings:Webhook:executions', {
-      webhook_id: webhookId, ...(before ? { before } : {}),
+      webhook_id: webhookId, limit, ...(before ? { before } : {}),
     });
     return { executions: r.executions ?? [], error: r.error };
   }

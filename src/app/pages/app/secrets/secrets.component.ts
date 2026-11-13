@@ -5,6 +5,7 @@ import { firstValueFrom, Subscription } from 'rxjs';
 
 import { fullDate, relativeDate } from 'src/app/components/ui/dates';
 import { FilterGroup, FilterItem } from 'src/app/components/ui/filter-column.component';
+import { Paging } from 'src/app/components/ui/paging';
 import { AuthService } from 'src/app/services/auth.service';
 import { ConfirmService } from 'src/app/services/confirm.service';
 import { OauthConnectService } from 'src/app/services/oauth.service';
@@ -52,6 +53,8 @@ export class SecretsComponent extends RecordPage implements OnInit, OnDestroy {
   /** An agent's id, or ''. */
   agent = '';
   query = '';
+  /** The list a page at a time; back to the first when what narrows it changes. */
+  readonly paging = new Paging(20);
   /** The secret opened beside the list; '' for none. */
   openId = '';
   private address = new Subscription();

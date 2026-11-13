@@ -33,10 +33,11 @@
       </div>
       <p class="admin-lead">What you may do comes from Everyone, and from the groups you are in.</p>
       <app-list label="Your groups" *ngIf="groups.length">
-        <app-row *ngFor="let group of groups" [name]="group">
+        <app-row *ngFor="let group of shownGroups.of(groups)" [name]="group">
           <lucide-icon rowMark name="users" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
         </app-row>
       </app-list>
+      <app-more [shown]="shownGroups.count(groups)" [total]="groups.length" (more)="shownGroups.more()"></app-more>
       <app-empty *ngIf="!groups.length" icon="users" title="You are in no group but Everyone"
                  line="Your access is what everyone gets. Ask an administrator if you need more."></app-empty>
     </section>

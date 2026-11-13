@@ -10,18 +10,19 @@ import { LucideAngularModule } from 'lucide-angular';
  *              (pageChange)="page = $event"></app-pager>
  *
  * When rows go (a delete, a narrower search) and the page is past the
- * last one, it asks for the last one.
+ * last one, it asks for the last one. A list of one page has no foot:
+ * its rows are counted by looking at them.
  */
 @Component({
   selector: 'app-pager',
   standalone: true,
   imports: [NgIf, LucideAngularModule],
   styleUrl: './pager.component.css',
-  host: { '[hidden]': 'total === 0' },
+  host: { '[hidden]': 'total <= pageSize' },
   template: `
-    <ng-container *ngIf="total > 0">
+    <ng-container *ngIf="total > pageSize">
       <span class="pager-range">Showing {{ first }}–{{ last }} of {{ total }}</span>
-      <nav class="pager-buttons" aria-label="Pages" *ngIf="pageCount > 1">
+      <nav class="pager-buttons" aria-label="Pages">
         <button
           type="button"
           class="icon-btn sm"

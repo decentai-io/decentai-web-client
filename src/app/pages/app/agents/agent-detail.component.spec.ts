@@ -31,7 +31,7 @@ describe('AgentDetailComponent', () => {
     } as any;
   }
 
-  function create(service: any = {}, canInstall = false) {
+  function create(service: any = {}, canInstall = false, records: any = undefined, can = (_action: string) => true) {
     const component = new AgentDetailComponent(
       { navigate: jasmine.createSpy('navigate') } as any,
       {
@@ -41,8 +41,11 @@ describe('AgentDetailComponent', () => {
           { id: 'r2', agent: 'mail', function: 'send', record: '', allowed: true, at: '' },
         ],
         forget: async () => ({}),
+        access: async () => ({ access: [], groups: [], functions: [] }),
         ...service,
       } as any,
+      records,
+      { can } as any,
     );
     component.agent = agent();
     component.canInstall = canInstall;
@@ -60,7 +63,8 @@ describe('AgentDetailComponent', () => {
     });
     expect(component.networkNote).toContain('may ask to open others for one call');
     expect(component.scopes).toEqual([{ name: 'notebook', description: 'Which notebook.' }]);
-    expect(component.tabs.map((tab) => tab.name)).toEqual(['Overview', 'Functions 3']);
+    expect(component.tabs.map((tab) => tab.name)).toEqual(['Overview', 'Functions']);
+    expect(component.tabs[1].count).toBe(3);
   });
 
   it('puts a README\'s headings under the page\'s own', () => {
@@ -114,8 +118,63 @@ describe('AgentDetailComponent', () => {
     expect(reader.shownTab).toBe('overview');
 
     const installer = create({}, true);
-    expect(installer.tabs.map((tab) => tab.name)).toEqual(['Overview', 'Functions 3', 'Access']);
+    expect(installer.tabs.map((tab) => tab.name)).toEqual(['Overview', 'Functions', 'Access']);
     installer.tab = 'access';
     expect(installer.shownTab).toBe('access');
+  });
+
+  it('says which secrets it needs are set, and offers to add the missing one already of its kind', async () => {
+    const component = create({}, false, {
+      shapes: async () => [{ agent: 'notebook', id: 'token', label: 'Token' }, { agent: 'other', id: 'token' }],
+      list: async (_kind: string, narrow: any) => ({ records: narrow.of.resource === 'login' ? [{ record_id: 's1' }] : [], handed: [] }),
+    });
+    component.agent = agent({ manifest: { ...agent().manifest, resources: { secrets: [{ id: 'login', label: 'Login' }, { id: 'token' }] } } });
+    component.ngOnChanges({ agent: new SimpleChange(agent({ agent_id: 'x' }), component.agent, false) });
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(component.secrets.map((slot) => [slot.label, slot.set, slot.shape?.id ?? null]))
+      .toEqual([['Login', true, null], ['token', false, 'token']]);
+    expect(component.secretsMissing).toBe(1);
+  });
+
+  it('says nothing of whether a secret is set to whoever may not read secrets', async () => {
+    const list = jasmine.createSpy('list');
+    const component = create({}, false, { shapes: async () => [], list }, () => false);
+    component.agent = agent({ agent_id: 'mail', manifest: { ...agent().manifest, resources: { secrets: [{ id: 'login' }] } } });
+    component.ngOnChanges({ agent: new SimpleChange(agent(), component.agent, false) });
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(list).not.toHaveBeenCalled();
+    expect(component.secrets.map((slot) => slot.set)).toEqual([null]);
+  });
+
+  it('sums up who may use it, by group, and follows what Access saves', async () => {
+    const component = create({
+      access: async () => ({
+        access: [{ group_id: 'g1', effect: 'allow', functions: ['*'] }, { group_id: 'g2', effect: 'ask', functions: ['find'] }],
+        groups: [{ group_id: 'g1', name: 'Everyone', members: 12 }, { group_id: 'g2', name: 'Ops', members: 1 }],
+        functions: [{ id: 'find', name: 'Find', level: 0, scoped_by: [] }, { id: 'save', name: 'Save', level: 1, scoped_by: [] }],
+      }),
+    }, true);
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(component.access.state).toBe('ready');
+    expect(component.access.lines.map((line) => [line.group, line.word, line.reach, line.members])).toEqual([
+      ['Everyone', 'Allow', 'All functions', '12 people'],
+      ['Ops', 'Ask first', '1 of 2 functions', '1 person'],
+    ]);
+
+    component.accessSaved({ access: [], groups: [], functions: [] });
+    expect(component.access.lines).toEqual([]);
+    expect(create().access.state).toBe('refused');
+  });
+
+  it('opens Functions at the level the side was asked for', () => {
+    const component = create();
+    const asked: string[] = [];
+    component.tabChange.subscribe((tab) => asked.push(tab));
+    component.openTab('functions', 1);
+    expect(asked).toEqual(['functions']);
+    expect(component.functionsLevel).toBe(1);
+    component.openTab('overview');
+    expect(component.functionsLevel).toBeNull();
+    expect(component.levels.map((level) => [level.name, level.items.length])).toEqual([['Reads', 2], ['Changes', 1]]);
   });
 });

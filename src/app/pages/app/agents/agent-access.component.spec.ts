@@ -134,5 +134,40 @@ describe('who may use an agent', () => {
       expect(failed.state).toBe('failed');
       expect(failed.loadProblem).toBe('Could not reach the server.');
     });
+
+    it('chooses a row\'s functions a level at a time, and says them in a few words', async () => {
+      const component = await opened();
+      const row = component.rows[0];
+      expect(component.reachWords(row)).toBe('All functions');
+      expect(component.scopeWords(row)).toBe('Any value');
+      expect(component.levels.map((level) => level.name)).toEqual(['Reads', 'Changes', 'Outside action']);
+
+      component.setReach(row, 'some');
+      const changes = component.levels[1];
+      expect(component.levelState(row, changes)).toBe('none');
+      component.toggleLevel(row, changes);
+      expect(row.chosen).toEqual(['save']);
+      expect(component.levelState(row, changes)).toBe('all');
+      expect(component.reachWords(row)).toBe('1 of 3');
+      component.setScope(row, 'notebook', ['work', 'home']);
+      expect(component.scopeWords(row)).toBe('notebook: work, home');
+      component.toggleLevel(row, changes);
+      expect(row.chosen).toEqual([]);
+    });
+
+    it('opens the row a save is stopped by, and says the saved rows to the page', async () => {
+      const component = await opened();
+      const saved: any[] = [];
+      component.saved.subscribe((rows) => saved.push(rows));
+      component.setReach(component.rows[0], 'some');
+      await component.save();
+      expect(component.isOpen(component.rows[0])).toBeTrue();
+
+      component.toggle(component.rows[0], FUNCTIONS[0]);
+      await component.save();
+      expect(saved[0].access).toEqual([{ group_id: 'g_all', effect: 'allow', functions: ['find'] }]);
+      expect(saved[0].groups).toBe(GROUPS);
+      expect(component.open.size).toBe(0);
+    });
   });
 });

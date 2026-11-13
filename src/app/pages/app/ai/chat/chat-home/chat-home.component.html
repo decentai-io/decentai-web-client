@@ -115,6 +115,8 @@
             </ul>
           </section>
         }
+        <app-more class="chats-more" [shown]="shownCount" [total]="filteredChats.length" label="Show more chats"
+                  (more)="showMoreChats()"></app-more>
       }
     </div>
   </section>

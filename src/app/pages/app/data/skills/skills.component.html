@@ -8,7 +8,7 @@
 
   <!-- Skills another member handed over: theirs until accepted. -->
   <app-list label="Handed to you" *ngIf="handed.length">
-    <app-row *ngFor="let skill of handed">
+    <app-row *ngFor="let skill of handedPaging.of(handed)">
       <lucide-icon rowMark name="sparkles" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
       <span rowName>{{ skill.name }}</span>
       <ng-container rowMeta>
@@ -20,6 +20,8 @@
       <button rowState class="btn sm" type="button" [disabled]="busyId === skill.id" (click)="accept(skill, false)">Decline</button>
       <button rowState class="btn primary sm" type="button" [disabled]="busyId === skill.id" (click)="accept(skill, true)">Accept</button>
     </app-row>
+    <app-pager *ngIf="handedPaging.more(handed)" [page]="handedPaging.page" [pageSize]="handedPaging.size"
+               [total]="handed.length" (pageChange)="handedPaging.page = $event"></app-pager>
   </app-list>
 
   <!-- The skills in numbers, as one line; whose they are narrows the list. -->
@@ -82,7 +84,7 @@
         </button>
       </ng-container>
 
-      <app-row *ngFor="let skill of shownSkills" [class.is-current]="skill.id === openId">
+      <app-row *ngFor="let skill of paging.of(shownSkills, show + '|' + query + '|' + sort)" [class.is-current]="skill.id === openId">
         <lucide-icon rowMark name="sparkles" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
         <!-- The name is the way in: reading a skill is not editing it. -->
         <a rowName class="skill-row-title" [routerLink]="['/data/skills', skill.id]" queryParamsHandling="preserve"
@@ -111,6 +113,8 @@
           <lucide-icon name="ellipsis-vertical" [size]="16" aria-hidden="true"></lucide-icon>
         </button>
       </app-row>
+      <app-pager [page]="paging.page" [pageSize]="paging.size" [total]="shownSkills.length"
+                 (pageChange)="paging.page = $event"></app-pager>
 
       <app-empty
         *ngIf="!loading && !skills.length"
