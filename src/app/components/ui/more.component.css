@@ -1,0 +1,32 @@
+/* Like the pager it stands for (pager.component.css): the count at the
+   left, the button at the right. */
+:host {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 32px;
+  margin-top: 12px;
+}
+
+:host([hidden]) {
+  display: none;
+}
+
+.more-range {
+  color: var(--ink-3);
+  font-size: var(--t-sm);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--lh-sm);
+}
+
+/* Alone (no count), the button keeps to the right, under the actions. */
+.btn {
+  margin-left: auto;
+}
+
+/* Inside a list's frame (list.component.css), in line with the rows. */
+:host-context(.list-rows.is-framed) {
+  margin-top: 4px;
+  padding: 0 12px 4px;
+}

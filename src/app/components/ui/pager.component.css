@@ -22,3 +22,9 @@
   display: flex;
   gap: 2px;
 }
+
+/* Inside a list's frame (list.component.css), in line with the rows. */
+:host-context(.list-rows.is-framed) {
+  margin-top: 4px;
+  padding: 0 12px 4px;
+}

@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output, TemplateRef, ViewChild } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 
+import { Paging } from 'src/app/components/ui/paging';
 import { Choice } from 'src/app/components/ui/radio-keys';
 import { AuthService } from 'src/app/services/auth.service';
 import { ConfirmService } from 'src/app/services/confirm.service';
@@ -63,6 +64,8 @@ export class ModelProvidersComponent extends DataPageBase {
   @Output() changed = new EventEmitter<void>();
 
   query = '';
+  /** The providers a page at a time. */
+  readonly paging = new Paging(20);
   busyId = '';
 
   /** The add-and-edit form, which is shown on the dialog shell. */

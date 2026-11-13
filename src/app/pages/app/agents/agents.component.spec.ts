@@ -70,7 +70,8 @@ describe('AgentsComponent', () => {
     });
     await component.ngOnInit();
 
-    expect(component.filters.map((choice) => choice.name)).toEqual(['All 3', 'Needs attention 2', 'Updates 1']);
+    expect(component.filterGroups[0].items.map((item) => [item.name, item.count]))
+      .toEqual([['All agents', 3], ['Needs attention', 2], ['Updates', 1]]);
     expect(component.foot).toBe('3 installed · 2 ready · 3 in new chats');
     component.setFilter('attention');
     expect(component.shownAgents.map((one) => one.agent_id)).toEqual(['b', 'c']);
@@ -179,5 +180,43 @@ describe('AgentsComponent', () => {
     expect(component.openAgent).toBeNull();
     expect(component.error).toContain('not installed here');
     expect(router.navigate).toHaveBeenCalledWith(['/agents'], { replaceUrl: true });
+  });
+
+  // ── Narrowing and ordering ──────────────────────────────────────────
+
+  it('narrows by a tag the agents do not all share, and orders by name, attention or installing', async () => {
+    const tagged = (id: string, tags: string[], overrides: any = {}) => {
+      const one = agent(id, overrides);
+      one.manifest.agent.tags = tags;
+      return one;
+    };
+    const component = create([
+      tagged('zeta', ['mail', 'work'], { installed_at: '2026-01-03T00:00:00Z' }),
+      tagged('alpha', ['notes', 'work'], { installed_at: '2026-01-01T00:00:00Z', state: 'failed' }),
+      tagged('mid', ['mail', 'work'], { installed_at: '2026-01-02T00:00:00Z' }),
+    ]);
+    await component.ngOnInit();
+
+    // "work" is on every one: it tells none apart.
+    expect(component.filterGroups[1].items.map((item) => [item.value, item.count])).toEqual([['mail', 2], ['notes', 1]]);
+    expect(component.shownAgents.map((one) => one.agent_id)).toEqual(['alpha', 'mid', 'zeta']);
+    component.setSort('recent');
+    expect(component.shownAgents.map((one) => one.agent_id)).toEqual(['zeta', 'mid', 'alpha']);
+    component.setSort('attention');
+    expect(component.shownAgents[0].agent_id).toBe('alpha');
+
+    component.choose({ key: 'tag', value: 'mail' });
+    expect(component.shownAgents.map((one) => one.agent_id).sort()).toEqual(['mid', 'zeta']);
+    expect(component.filterChosen).toEqual({ show: 'all', tag: 'mail' });
+    component.showAll();
+    expect(component.shownAgents.length).toBe(3);
+  });
+
+  it('remembers cards or a table on this device', async () => {
+    const component = create([agent('a')]);
+    component.setView('list');
+    expect(create([]).view).toBe('list');
+    component.setView('grid');
+    expect(create([]).view).toBe('grid');
   });
 });

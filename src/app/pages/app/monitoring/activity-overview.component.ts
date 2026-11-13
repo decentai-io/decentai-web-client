@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 
+import { Shown } from 'src/app/components/ui/paging';
 import { Choice } from 'src/app/components/ui/radio-keys';
 import { AgentUsage, MonitoringService, SummaryRow } from 'src/app/services/monitoring.service';
 
@@ -48,6 +49,8 @@ export class ActivityOverviewComponent implements OnInit {
   ];
 
   done: WhatDone[] = [];
+  /** The ten done most, then ten more at a time. */
+  readonly doneShown = new Shown(10);
   /** The agents running now; null until a runtime's report is read, or
    *  where it could not be. */
   running: AgentUsage[] | null = null;

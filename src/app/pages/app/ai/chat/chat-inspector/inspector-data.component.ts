@@ -2,6 +2,7 @@ import { Component, Input } from '@angular/core';
 
 import { relativeDate } from 'src/app/components/ui/dates';
 import { sizeLabel } from 'src/app/components/ui/file-types';
+import { Shown } from 'src/app/components/ui/paging';
 import { ChatFile, ChatInspection, RecordUse } from 'src/app/models/chat-inspect';
 import { agentName, operationsWords, recordLink } from './inspector-words';
 
@@ -20,6 +21,11 @@ import { agentName, operationsWords, recordLink } from './inspector-words';
 export class InspectorDataComponent {
   @Input({ required: true }) inspection!: ChatInspection;
   @Input() names: Record<string, string> = {};
+  /** Each list eight at a time, more on asking: a long chat touches many. */
+  readonly files = new Shown(8);
+  readonly records = new Shown(8);
+  readonly skills = new Shown(8);
+  readonly tools = new Shown(8);
 
   static readonly RECORD_ICONS: Record<RecordUse['kind'], string> = { secret: 'key-round', data: 'database', file: 'file' };
 

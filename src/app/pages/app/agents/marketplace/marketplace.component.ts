@@ -5,6 +5,7 @@ import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 
 import { relativeDate } from 'src/app/components/ui/dates';
+import { FilterGroup } from 'src/app/components/ui/filter-column.component';
 import { Choice } from 'src/app/components/ui/radio-keys';
 import {
   AgentSource, AgentsService, CatalogOffer, InstalledAgent, Manifest,
@@ -12,7 +13,7 @@ import {
 import { ConfirmService } from 'src/app/services/confirm.service';
 import { DataPageBase } from '../../data-page-base';
 import { CardChip, CardLevel } from '../agent-card.component';
-import { AgentStat, agentFacts, agentStats, iconOf, levelBar } from '../agent-shared';
+import { AgentStat, agentFacts, agentStats, iconOf, levelBar, tagCounts, tagName } from '../agent-shared';
 import { SourceDraft } from './source-form.component';
 
 /** Which of a source's agents are shown, and in what order. */
@@ -64,8 +65,10 @@ export class MarketplaceComponent extends DataPageBase implements OnInit, OnDest
   query = '';
   filter: OfferFilter = 'all';
   sort: OfferSort = 'listed';
+  /** The tag the catalog is narrowed to; '' for none. */
+  tag = '';
   page = 1;
-  readonly pageSize = 12;
+  readonly pageSize = 24;
 
   readonly sorts: Choice<OfferSort>[] = [
     { value: 'listed', name: 'As listed' },
@@ -203,6 +206,7 @@ export class MarketplaceComponent extends DataPageBase implements OnInit, OnDest
     this.selectedId = source?.source_id || '';
     this.query = '';
     this.filter = 'all';
+    this.tag = '';
     this.page = 1;
   }
 
@@ -237,39 +241,99 @@ export class MarketplaceComponent extends DataPageBase implements OnInit, OnDest
     }
   }
 
-  /** The filter's choices with how many agents each holds, made again
-   *  only when a count changes: a new list on every check would redraw
-   *  the control under the pointer. */
-  get filters(): Choice<OfferFilter>[] {
+  /** The filter column: the sources, which of the chosen one's agents
+   *  by whether they are installed, and its tags, each with how many it
+   *  holds. Made again only when something in it changes: a new list on
+   *  every check would redraw the column under the pointer. */
+  get filterGroups(): FilterGroup[] {
     const offers = this.current ? this.offersOf(this.current) : [];
     const counts = (['all', 'new', 'installed', 'updates'] as OfferFilter[])
       .map((filter) => offers.filter((offer) => this.matchesFilter(offer, filter)).length);
-    if (counts.join() !== this.filterCounts.join()) {
-      this.filterCounts = counts;
-      this.filterChoices = [
-        { value: 'all', name: `All ${counts[0]}` },
-        { value: 'new', name: `Not installed ${counts[1]}` },
-        { value: 'installed', name: `Installed ${counts[2]}` },
-        { value: 'updates', name: `Updates ${counts[3]}` },
+    const sources = this.sources.map((source) => ({
+      value: source.source_id,
+      name: this.sourceName(source),
+      icon: source.error ? 'triangle-alert' : 'store',
+      count: this.offersOf(source).length,
+    }));
+    const tags = tagCounts(offers.map((offer) => offer.manifest));
+    const key = JSON.stringify([counts, sources, tags]);
+    if (key !== this.groupsKey) {
+      this.groupsKey = key;
+      this.groupsShown = [
+        { key: 'source', label: 'Sources', required: true, items: sources },
+        {
+          key: 'show',
+          label: 'Show',
+          required: true,
+          items: [
+            { value: 'all', name: 'All agents', count: counts[0] },
+            { value: 'new', name: 'Not installed', count: counts[1] },
+            { value: 'installed', name: 'Installed', count: counts[2] },
+            { value: 'updates', name: 'Update available', count: counts[3] },
+          ],
+        },
+        ...(tags.length ? [{
+          key: 'tag',
+          label: 'Tags',
+          items: tags.map((tag) => ({ value: tag.tag, name: tagName(tag.tag), count: tag.count })),
+        }] : []),
       ];
     }
-    return this.filterChoices;
+    return this.groupsShown;
   }
-  private filterCounts: number[] = [];
-  private filterChoices: Choice<OfferFilter>[] = [];
+  private groupsKey = '';
+  private groupsShown: FilterGroup[] = [];
 
-  /** The chosen source's agents: the ones the filter and the search
+  /** What the column has chosen, the same object until it changes. */
+  get chosen(): Record<string, string> {
+    const source = this.current?.source_id || '';
+    const now = this.chosenNow;
+    if (now['source'] !== source || now['show'] !== this.filter || now['tag'] !== this.tag) {
+      this.chosenNow = { source, show: this.filter, tag: this.tag };
+    }
+    return this.chosenNow;
+  }
+  private chosenNow: Record<string, string> = {};
+
+  /** The column chose something: a source is an address of its own. */
+  choose(choice: { key: string; value: string }): void {
+    if (choice.key === 'source') {
+      const source = this.sources.find((candidate) => candidate.source_id === choice.value);
+      if (!source || source === this.current) return;
+      this.go(source.source_id);
+      this.showSource(source);
+    } else if (choice.key === 'show') {
+      this.setFilter((choice.value || 'all') as OfferFilter);
+    } else {
+      this.setTag(choice.value);
+    }
+  }
+
+  /** The chosen source's agents: the ones the filters and the search
    *  leave, in the chosen order. */
   get shownOffers(): CatalogOffer[] {
     const source = this.current;
     if (!source) return [];
     const query = this.query.trim().toLowerCase();
     const offers = this.offersOf(source).filter((offer) =>
-      this.matchesFilter(offer, this.filter) && (!query
-        || `${this.idOf(offer)} ${this.nameOf(offer)} ${offer.manifest.agent.description || ''}`
-          .toLowerCase().includes(query)));
+      this.matchesFilter(offer, this.filter)
+      && (!this.tag || (offer.manifest.agent.tags || []).includes(this.tag))
+      && (!query || `${this.idOf(offer)} ${this.nameOf(offer)} ${offer.manifest.agent.description || ''}`
+        .toLowerCase().includes(query)));
     if (this.sort === 'name') offers.sort((a, b) => this.nameOf(a).localeCompare(this.nameOf(b)));
     return offers;
+  }
+
+  setTag(tag: string): void {
+    this.tag = tag;
+    this.page = 1;
+  }
+
+  /** Every filter off: what "Show all" does. */
+  showAll(): void {
+    this.search('');
+    this.setFilter('all');
+    this.setTag('');
   }
 
   get pagedOffers(): CatalogOffer[] {
@@ -297,7 +361,8 @@ export class MarketplaceComponent extends DataPageBase implements OnInit, OnDest
     const all = this.offersOf(source).length;
     const shown = this.shownOffers.length;
     if (!all) return '';
-    return shown === all ? `${all} ${all === 1 ? 'agent' : 'agents'}` : `${shown} of ${all} agents`;
+    // the pager says how many in all; the foot speaks only when a filter hides some
+    return shown === all ? '' : `${shown} of ${all} agents`;
   }
 
   /** When the source's catalog was last read. A catalog with no age on

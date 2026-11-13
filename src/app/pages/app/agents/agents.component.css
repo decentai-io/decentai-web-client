@@ -1,0 +1,84 @@
+/* The installed agents: the filter column at the left (the shared
+   side layout), then the list as cards or as a dense table, the pager
+   under it. The cards' grid is the agents' own (agent-shared.css). */
+
+.agents-sort {
+  flex: none;
+  width: 210px;
+}
+
+@media (max-width: 700px) {
+  .agents-sort {
+    flex: 1 1 160px;
+    width: auto;
+  }
+
+  .agents-view {
+    margin-left: 0;
+  }
+}
+
+.agent-grid + .agents-pager {
+  margin-top: 12px;
+}
+
+/* ── The table ─────────────────────────────────────────────────────── */
+.agents-table .cell-main {
+  width: 24%;
+}
+
+.agents-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+  min-width: 0;
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.agents-name:hover .agents-name-words {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.agents-name app-agent-mark {
+  flex: none;
+}
+
+.agents-name-words {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agents-version {
+  flex: none;
+  color: var(--ink-3);
+  font-size: var(--t-xs);
+  font-weight: 400;
+}
+
+/* What it does: one line, the whole of it in the tooltip. */
+.agents-about {
+  max-width: 0;
+  width: 36%;
+}
+
+.agents-about span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agents-reach {
+  max-width: 200px;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -34,7 +34,7 @@
       <ng-container *ngTemplateOutlet="addButton"></ng-container>
     </ng-container>
 
-    <app-row *ngFor="let group of shown">
+    <app-row *ngFor="let group of paging.of(shown, query)">
       <lucide-icon rowMark [name]="group.administrators ? 'shield-check' : group.everyone ? 'globe' : 'users'" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
       <button rowName class="admin-name" type="button" *ngIf="canUpdate || canAssign; else plainName" (click)="startEdit(group)">{{ group.name }}</button>
       <ng-template #plainName><span rowName>{{ group.name }}</span></ng-template>
@@ -43,9 +43,7 @@
       <!-- Who is in it and what it gives, as pills. -->
       <span rowMeta class="ui-pills admin-pills">
         <span class="ui-pill"><lucide-icon name="user" [size]="12" aria-hidden="true"></lucide-icon>{{ peopleWord(group) }}</span>
-        <span class="ui-pill" *ngIf="!group.policies.length">No policies</span>
-        <span class="ui-pill" *ngFor="let name of policyNames(group)"><lucide-icon name="scroll-text" [size]="12" aria-hidden="true"></lucide-icon>{{ name }}</span>
-        <span class="ui-pill" *ngIf="group.policies.length > 3">+{{ group.policies.length - 3 }} more</span>
+        <app-pills [items]="policyNames(group)" icon="scroll-text" none="No policies"></app-pills>
       </span>
       <button rowState class="icon-btn sm" type="button" *ngIf="canUpdate || canAssign || (canDelete && !stays(group))"
               [attr.aria-label]="'More for ' + group.name" [disabled]="isBusy(group.group_id)"
@@ -53,6 +51,9 @@
         <lucide-icon name="ellipsis-vertical" [size]="16" aria-hidden="true"></lucide-icon>
       </button>
     </app-row>
+
+    <app-pager [page]="paging.page" [pageSize]="paging.size" [total]="shown.length"
+               (pageChange)="paging.page = $event"></app-pager>
 
     <app-empty *ngIf="!loading && !groups.length" icon="users" title="No groups yet"
                line="A group gives its people its policies.">
@@ -94,19 +95,23 @@
 
           <fieldset class="admin-picks">
             <legend>Policies<span class="admin-count">{{ selected.size }} of {{ policies.length }}</span></legend>
-            <mat-checkbox class="check-row" *ngFor="let policy of policies" [checked]="selected.has(policy.policy_id)"
-                          [disabled]="!canAssign" (change)="togglePolicy(policy.policy_id)">
-              <span class="check-name">{{ policy.name }}</span>
-              <span class="check-hint" *ngIf="policy.built_in">Built in</span>
-            </mat-checkbox>
+            <div class="ui-checks" [class.is-long]="policies.length > 6">
+              <mat-checkbox class="check-row" *ngFor="let policy of policies" [checked]="selected.has(policy.policy_id)"
+                            [disabled]="!canAssign" (change)="togglePolicy(policy.policy_id)">
+                <span class="check-name">{{ policy.name }}</span>
+                <span class="check-hint" *ngIf="policy.built_in">Built in</span>
+              </mat-checkbox>
+            </div>
           </fieldset>
 
           <!-- Who a change reaches: shown here, changed on the Users page. -->
           <details class="fold" *ngIf="!isCreating && !editing?.everyone">
             <summary>{{ editingPeople.length }} {{ editingPeople.length === 1 ? "person is" : "people are" }} in this group</summary>
             <ul class="admin-lines" *ngIf="editingPeople.length">
-              <li *ngFor="let person of editingPeople"><strong>{{ person.name }}</strong> · {{ person.email }}</li>
+              <li *ngFor="let person of people.of(editingPeople)"><strong>{{ person.name }}</strong> · {{ person.email }}</li>
             </ul>
+            <app-more [shown]="people.count(editingPeople)" [total]="editingPeople.length" label="Show more people"
+                      (more)="people.more()"></app-more>
             <p class="dialog-note" *ngIf="!editingPeople.length">Add people from the Users page.</p>
           </details>
           <p class="dialog-note" *ngIf="editing?.everyone">Every person of the organization is in it.</p>

@@ -1,6 +1,7 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
+import { Shown } from 'src/app/components/ui/paging';
 import { Skill, SkillsService } from 'src/app/services/skills.service';
 import { ListChoice } from '../chat-defaults';
 
@@ -26,6 +27,8 @@ export class ChatSkillsDialogComponent implements OnInit {
   readonly choice = new ListChoice();
   isLoading = true;
   query = '';
+  /** Twenty at a time: the search finds the rest. */
+  readonly shown = new Shown(20);
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: { skills: string[] | null; defaults: string[] | null },

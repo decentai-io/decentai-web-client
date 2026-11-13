@@ -47,7 +47,7 @@
       </button>
     </ng-container>
 
-    <app-row *ngFor="let member of shown" [name]="member.name || member.email">
+    <app-row *ngFor="let member of paging.of(shown, query)" [name]="member.name || member.email">
       <!-- Their initials in the mark: a list of people reads as people. -->
       <span rowMark class="admin-initials" [class.is-held]="member.status === 'disabled' || member.stopped" aria-hidden="true">{{ initials(member) }}</span>
       <span rowChips class="chip accent" *ngIf="isSelf(member)">You</span>
@@ -60,10 +60,7 @@
       <ng-container rowMeta>
         <span class="admin-email">{{ member.email }}</span>
         <!-- Their groups, each a pill. -->
-        <span class="ui-pills admin-pills">
-          <span class="ui-pill" *ngIf="!member.groups.length">No groups</span>
-          <span class="ui-pill" *ngFor="let name of groupList(member.groups)"><lucide-icon name="users" [size]="12" aria-hidden="true"></lucide-icon>{{ name }}</span>
-        </span>
+        <app-pills class="admin-pills" [items]="groupList(member.groups)" icon="users" none="No groups"></app-pills>
       </ng-container>
 
       <button rowState class="icon-btn sm" type="button" *ngIf="hasActions(member)"
@@ -72,6 +69,9 @@
         <lucide-icon name="ellipsis-vertical" [size]="16" aria-hidden="true"></lucide-icon>
       </button>
     </app-row>
+
+    <app-pager [page]="paging.page" [pageSize]="paging.size" [total]="shown.length"
+               (pageChange)="paging.page = $event"></app-pager>
 
     <app-empty *ngIf="members.length && !shown.length" icon="search-x" title="Nobody matches" line="Try another search.">
       <button class="btn" type="button" (click)="query = ''">Clear the search</button>
@@ -85,10 +85,10 @@
       <span class="ui-pill">{{ invitations.length }}</span>
     </h2>
     <app-list label="Pending invitations">
-      <app-row *ngFor="let invitation of invitations" [name]="invitation.email">
+      <app-row *ngFor="let invitation of invitationPaging.of(invitations)" [name]="invitation.email">
         <lucide-icon rowMark name="mail" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
         <span rowMeta class="ui-pills">
-          <span class="ui-pill"><lucide-icon name="users" [size]="12" aria-hidden="true"></lucide-icon>{{ groupNames(invitation.groups) }}</span>
+          <app-pills class="admin-invite-groups" [items]="groupList(invitation.groups)" icon="users" none="No groups"></app-pills>
           <span class="ui-pill"><lucide-icon name="hourglass" [size]="12" aria-hidden="true"></lucide-icon>ends {{ day(invitation.expires_at) }}</span>
         </span>
         <button rowState class="btn sm" type="button" *ngIf="canInvite" [disabled]="isBusy(invitation.invitation_id)"
@@ -99,6 +99,8 @@
         <button rowState class="btn ghost danger sm" type="button" *ngIf="canRevokeInvitations"
                 [disabled]="isBusy(invitation.invitation_id)" (click)="revoke(invitation)">Withdraw</button>
       </app-row>
+      <app-pager [page]="invitationPaging.page" [pageSize]="invitationPaging.size" [total]="invitations.length"
+                 (pageChange)="invitationPaging.page = $event"></app-pager>
     </app-list>
   </section>
 
@@ -146,10 +148,12 @@
           </app-field>
           <fieldset class="admin-picks" *ngIf="groups.length">
             <legend>Groups<span class="admin-count">{{ inviteGroupIds.size }} of {{ groups.length }}</span></legend>
-            <mat-checkbox class="check-row" *ngFor="let group of groups" [checked]="inviteGroupIds.has(group.group_id)"
-                          (change)="toggleInviteGroup(group.group_id)">
-              <span class="check-name">{{ group.name }}</span>
-            </mat-checkbox>
+            <div class="ui-checks" [class.is-long]="groups.length > 6">
+              <mat-checkbox class="check-row" *ngFor="let group of groups" [checked]="inviteGroupIds.has(group.group_id)"
+                            (change)="toggleInviteGroup(group.group_id)">
+                <span class="check-name">{{ group.name }}</span>
+              </mat-checkbox>
+            </div>
           </fieldset>
           <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
         </div>
@@ -195,10 +199,12 @@
           <p class="dialog-note">Everyone holds them already, without being listed.</p>
           <fieldset class="admin-picks">
             <legend>Groups<span class="admin-count">{{ selected.size }} of {{ groups.length }}</span></legend>
-            <mat-checkbox class="check-row" *ngFor="let group of groups" [checked]="selected.has(group.group_id)"
-                          (change)="toggleGroup(group.group_id)">
-              <span class="check-name">{{ group.name }}</span>
-            </mat-checkbox>
+            <div class="ui-checks" [class.is-long]="groups.length > 6">
+              <mat-checkbox class="check-row" *ngFor="let group of groups" [checked]="selected.has(group.group_id)"
+                            (change)="toggleGroup(group.group_id)">
+                <span class="check-name">{{ group.name }}</span>
+              </mat-checkbox>
+            </div>
           </fieldset>
           <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
         </div>

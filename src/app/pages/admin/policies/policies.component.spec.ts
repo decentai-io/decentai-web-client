@@ -129,6 +129,13 @@ describe('PoliciesComponent', () => {
     component.toggleWhole(long);
     expect(component.statementsOf(long)[0].items.length).toBe(9);
     expect(component.hiddenCount(long)).toBe(0);
+
+    component.toggleWhole(long);
+    const many = policy(Array.from({ length: 7 }, (_, i) => ({ effect: 'allow', actions: [`iam:user:b${i}`] })));
+    expect(component.statementsOf(many).length).toBe(4);
+    expect(component.hiddenCount(many)).toBe(3);
+    component.toggleWhole(many);
+    expect(component.statementsOf(many).length).toBe(7);
   });
 
   it('finds a policy by what it says, in words', async () => {

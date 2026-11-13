@@ -66,7 +66,7 @@ export interface CardLevel {
       <span class="card-head">
         <app-agent-mark [name]="name" [icon]="icon"></app-agent-mark>
         <span class="card-title">
-          <span class="card-name">{{ name }}</span>
+          <span class="card-name" [title]="name">{{ name }}</span>
           <span class="card-version" *ngIf="version">{{ version }}</span>
         </span>
         <span class="chip card-chip" *ngIf="chip" [ngClass]="chip.tone">{{ chip.word }}</span>

@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 
 import { Candidate } from 'src/app/components/transfer-dialog/transfer-dialog.component';
 import { fullDate } from 'src/app/components/ui/dates';
+import { Paging } from 'src/app/components/ui/paging';
 import { AuthService } from 'src/app/services/auth.service';
 import { ConfirmService } from 'src/app/services/confirm.service';
 import { McpServer, McpService } from 'src/app/services/mcp.service';
@@ -46,6 +47,9 @@ export class McpComponent extends DataPageBase implements OnInit, OnDestroy {
   /** Servers another member handed to the person, not yet accepted. */
   handed: McpServer[] = [];
   query = '';
+  /** The servers a page at a time; back to the first on a new search. */
+  readonly paging = new Paging(20);
+  readonly handedPaging = new Paging(5);
 
   /** The server a row's action is on its way for. */
   busy = '';

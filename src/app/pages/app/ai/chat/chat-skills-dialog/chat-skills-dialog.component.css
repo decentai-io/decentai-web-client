@@ -19,3 +19,11 @@
   font-variant-numeric: tabular-nums;
 }
 
+
+/* A description is read in full on the skill's page: two lines here. */
+.check-hint {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}

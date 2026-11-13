@@ -1,6 +1,7 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
+import { Shown } from 'src/app/components/ui/paging';
 import { AgentsService, InstalledAgent } from 'src/app/services/agents.service';
 import { McpServer, McpService } from 'src/app/services/mcp.service';
 import { ListChoice } from '../chat-defaults';
@@ -27,6 +28,8 @@ export interface ChatReach {
 export class ChatAgentsDialogComponent implements OnInit {
   agents: InstalledAgent[] = [];
   servers: McpServer[] = [];
+  /** Twenty servers at a time. */
+  readonly shownServers = new Shown(20);
   readonly agentChoice = new ListChoice();
   readonly serverChoice = new ListChoice();
   isLoading = true;

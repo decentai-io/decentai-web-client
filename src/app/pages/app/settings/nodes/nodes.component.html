@@ -124,14 +124,14 @@
         <button class="btn ghost sm" type="button" *ngIf="filtering" (click)="clearFilters()">Clear</button>
       </ng-container>
 
-      <section class="nodes-group" *ngFor="let group of groups; trackBy: byGroup" [attr.aria-label]="group.name">
+      <section class="nodes-group" *ngFor="let group of pagedGroups; trackBy: byGroup" [attr.aria-label]="group.name">
         <h3 class="nodes-group-head">
           <span class="nodes-group-name">{{ group.name }}</span>
           <span class="ui-pill nodes-group-count">{{ group.connected }} of {{ plural(group.nodes.length, "node") }} connected</span>
         </h3>
         <div class="nodes-group-rows" role="list" [attr.aria-label]="'Nodes of ' + group.name">
           <app-row
-            *ngFor="let node of group.nodes; trackBy: byNode"
+            *ngFor="let node of group.shown; trackBy: byNode"
             class="node-row"
             [class.is-away]="!node.live"
             (click)="open(node)"
@@ -150,6 +150,8 @@
           </app-row>
         </div>
       </section>
+      <app-pager [page]="nodePaging.page" [pageSize]="nodePaging.size" [total]="shownNodes.length"
+                 (pageChange)="nodePaging.page = $event"></app-pager>
 
       <app-empty
         *ngIf="!nodes.length"
@@ -193,7 +195,7 @@
       </ng-container>
 
       <app-row
-        *ngFor="let token of visibleTokens"
+        *ngFor="let token of tokenPaging.of(visibleTokens, showSpent ? 'spent' : '')"
         class="authority-row"
         [class.is-revoked]="!tokenLive(token)"
         [name]="tokenName(token)"
@@ -201,7 +203,7 @@
         <lucide-icon rowMark name="key-round" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
         <span rowChips class="chip" [class.live]="tokenLive(token)" [class.danger]="token.withdrawn">{{ tokenWord(token) }}</span>
         <span rowChips class="chip"><lucide-icon [name]="token.metadata.scope ? 'building-2' : 'network'" [size]="12" aria-hidden="true"></lucide-icon>{{ token.metadata.scope ? "This organization" : "Shared" }}</span>
-        <span rowChips class="chip" *ngFor="let label of token.metadata.labels || []">{{ label }}</span>
+        <app-pills rowChips [items]="token.metadata.labels || []"></app-pills>
         <ng-container rowMeta>
           <span class="ui-pills node-facts authority-facts">
             <span class="ui-pill" *ngFor="let fact of tokenFacts(token)">{{ fact }}</span>
@@ -219,6 +221,8 @@
           {{ busy === token._id ? "Withdrawing…" : "Withdraw" }}
         </button>
       </app-row>
+      <app-pager [page]="tokenPaging.page" [pageSize]="tokenPaging.size" [total]="visibleTokens.length"
+                 (pageChange)="tokenPaging.page = $event"></app-pager>
 
       <app-empty
         *ngIf="!visibleTokens.length"

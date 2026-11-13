@@ -59,7 +59,7 @@
       </a>
     </header>
     <ul class="ov-bars">
-      <li *ngFor="let row of done">
+      <li *ngFor="let row of doneShown.of(done)">
         <span class="ov-bar-name"><code>{{ row.what }}</code></span>
         <span class="ov-bar-track" aria-hidden="true"><span [style.width.%]="share(row.total)"></span></span>
         <span class="ov-bar-value">{{ number(row.total) }}</span>
@@ -69,5 +69,6 @@
         </span>
       </li>
     </ul>
+    <app-more [shown]="doneShown.count(done)" [total]="done.length" (more)="doneShown.more()"></app-more>
   </section>
 </div>

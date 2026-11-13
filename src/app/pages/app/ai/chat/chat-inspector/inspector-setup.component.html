@@ -68,7 +68,7 @@
       Remembered decisions <span class="insp-label-count">{{ remembered.length }}</span>
     </h3>
     <ul class="insp-list">
-      @for (one of remembered; track one.id) {
+      @for (one of rememberedShown.of(remembered); track one.id) {
         <li class="insp-row">
           <span class="insp-main">
             <span class="insp-name">{{ rememberedBy(one) }} · {{ one.function }}</span>
@@ -81,13 +81,14 @@
         <li class="insp-note">None for this chat's agents.</li>
       }
     </ul>
+    <app-more [shown]="rememberedShown.count(remembered)" [total]="remembered.length" label="Show more" (more)="rememberedShown.more()"></app-more>
     <p class="insp-meta setup-hint">Yours, so they apply in every chat. Forget one, and its next call asks you again.</p>
   </section>
 
   <section class="insp-section" aria-labelledby="setup-asked">
     <h3 class="insp-label" id="setup-asked">What it asked you <span class="insp-label-count">{{ cards.length }}</span></h3>
     <ul class="insp-list">
-      @for (card of cards; track card.card_id) {
+      @for (card of cardsShown.of(cards); track card.card_id) {
         <li class="insp-row">
           <span class="insp-row-icon" [class.is-warn]="card.status === 'open'">
             <lucide-icon [name]="cardIcon(card)" [size]="14" aria-hidden="true"></lucide-icon>
@@ -102,5 +103,6 @@
         <li class="insp-note">It has asked you nothing yet.</li>
       }
     </ul>
+    <app-more [shown]="cardsShown.count(cards)" [total]="cards.length" label="Show more" (more)="cardsShown.more()"></app-more>
   </section>
 </div>

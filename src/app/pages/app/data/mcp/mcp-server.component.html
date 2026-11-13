@@ -105,7 +105,7 @@
       </ng-container>
 
       <ul class="tool-rows" *ngIf="shownTools.length">
-        <li class="tool-row" *ngFor="let tool of shownTools; trackBy: byName" [class.is-off]="!tool.on">
+        <li class="tool-row" *ngFor="let tool of paging.of(shownTools, query); trackBy: byName" [class.is-off]="!tool.on">
           <!-- The switch is named by the tool, so its whole label is
                the way to press it. -->
           <app-switch
@@ -129,6 +129,8 @@
           </select>
         </li>
       </ul>
+      <app-pager [page]="paging.page" [pageSize]="paging.size" [total]="shownTools.length"
+                 (pageChange)="paging.page = $event"></app-pager>
 
       <app-empty
         *ngIf="!tools.length"

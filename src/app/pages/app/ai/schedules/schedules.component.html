@@ -82,7 +82,7 @@
       </a>
     </div>
     <app-list label="Approvals">
-      <app-row *ngFor="let card of cards">
+      <app-row *ngFor="let card of firstCards">
         <lucide-icon rowMark [name]="cardIcon(card)" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
         <a rowName class="schedule-row-name" [routerLink]="['/ai/chats', card.chat_id]">{{ cardWords(card) }}</a>
         <ng-container rowMeta>
@@ -95,6 +95,9 @@
         </ng-container>
       </app-row>
     </app-list>
+    <p class="ui-panel-note" *ngIf="cards.length > firstCards.length">
+      And {{ cards.length - firstCards.length }} more, on <a routerLink="/ai/waiting">Approvals</a>.
+    </p>
   </section>
 
   <!-- Saying it is the short way on to the clock. -->

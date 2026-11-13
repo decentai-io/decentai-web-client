@@ -162,7 +162,7 @@
                     <lucide-icon name="minus" [size]="16" aria-hidden="true"></lucide-icon><span class="visually-hidden">no</span>
                   </span>
                   <span class="chip" *ngSwitchCase="'chip'">{{ cell(record, column) }}</span>
-                  <span *ngSwitchDefault [ngClass]="'records-' + cellKind(record, column)">{{ cell(record, column) || '—' }}</span>
+                  <span *ngSwitchDefault [ngClass]="'records-' + cellKind(record, column)" [title]="cell(record, column)">{{ cell(record, column) || '—' }}</span>
                 </ng-container>
               </ng-template>
             </td>

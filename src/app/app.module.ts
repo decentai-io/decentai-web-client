@@ -230,6 +230,8 @@ import { FilterColumnComponent } from './components/ui/filter-column.component';
 import { ListComponent } from './components/ui/list.component';
 import { PageComponent } from './components/ui/page.component';
 import { PagerComponent } from './components/ui/pager.component';
+import { MoreComponent } from './components/ui/more.component';
+import { PillsComponent } from './components/ui/pills.component';
 import { RecordRowComponent } from './components/ui/record-row.component';
 import { RowComponent } from './components/ui/row.component';
 import { SaveBarComponent } from './components/ui/save-bar.component';
@@ -455,6 +457,8 @@ import { AgentCardComponent } from './pages/app/agents/agent-card.component';
     SortHeaderComponent,
     SelectionBarComponent,
     PagerComponent,
+    MoreComponent,
+    PillsComponent,
 
     // The icon set (Lucide): only the icons named here are bundled.
     LucideAngularModule.pick({

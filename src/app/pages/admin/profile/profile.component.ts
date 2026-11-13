@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 
 import { dayDate } from 'src/app/components/ui/dates';
 import { AuthService } from 'src/app/services/auth.service';
+import { Shown } from 'src/app/components/ui/paging';
 import { Profile, ProfileService } from 'src/app/services/profile.service';
 
 /**
@@ -24,6 +25,8 @@ export class ProfileComponent implements OnInit {
   profile: Profile | null = null;
   /** The names of the groups the person is in. */
   groups: string[] = [];
+  /** Ten at a time: a person may be in many. */
+  readonly shownGroups = new Shown(10);
 
   name = '';
   /** Save was pressed: what the name still needs is said under it. */

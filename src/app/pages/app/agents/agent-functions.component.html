@@ -1,93 +1,117 @@
-<!-- How far its functions may go, as a bar and its legend: only the
-     levels this agent reaches, since four rows to explain two is noise.
-     Left out where the page around it says so already (`legend`). -->
-<ng-container *ngIf="legend">
-  <p class="form-section-note fn-intro">
-    Everything this agent can be asked to do. A function runs without asking when its level is at or
-    below the chat's trust level, and asks first when it is above. Who may call it is the
-    organization's policy.
-  </p>
-  <div class="fn-summary" *ngIf="bar.length">
-    <div class="lvl-bar" role="img" [attr.aria-label]="barWords">
-      <span class="lvl-bar-part" *ngFor="let level of bar" [attr.data-index]="level.index" [style.flex-grow]="level.count"></span>
-    </div>
-    <ul class="lvl-legend">
-      <li *ngFor="let level of bar">
-        <span class="lvl-swatch" [attr.data-index]="level.index"></span>
-        <span class="lvl-legend-name"><em>{{ level.count }}</em>{{ level.name }}</span>
-        <span class="lvl-legend-about">{{ meaningOf(level.name) }}</span>
-      </li>
-    </ul>
-  </div>
-</ng-container>
+<p class="fn-intro" *ngIf="legend">
+  Everything this agent can be asked to do. A function runs without asking when its level is at or below the
+  chat's trust level, and asks first when it is above.
+</p>
 
-<!-- One function a row, in one frame: read by name, its level at the
-     right. -->
-<ul class="fn-list" *ngIf="functions.length">
-  <li class="fn-row" *ngFor="let item of functions">
-    <div class="fn-head">
-      <span class="fn-titles">
-        <span class="fn-title">{{ item.fn.name || item.fn.id }}</span>
-        <code class="fn-name" *ngIf="item.fn.name && item.fn.name !== item.fn.id">{{ item.fn.id }}</code>
-      </span>
-      <span class="lvl" [attr.data-level]="levelLabel(item.fn.level)" [matTooltip]="meaningOf(levelLabel(item.fn.level))">
-        <span class="lvl-dot"></span>{{ levelLabel(item.fn.level) }}
-      </span>
-    </div>
+<app-list label="Functions" rows="table" *ngIf="functions.length">
+  <ng-container listToolbar>
+    <app-segmented *ngIf="filterable" label="Functions by level" [choices]="levels"
+                   [ngModel]="filter" (ngModelChange)="setFilter($event)"></app-segmented>
+    <span class="search-field toolbar-search" *ngIf="functions.length > 6">
+      <lucide-icon name="search" [size]="16" aria-hidden="true"></lucide-icon>
+      <input class="input" type="search" placeholder="Search functions" aria-label="Search functions"
+             [ngModel]="query" (ngModelChange)="search($event)" />
+    </span>
+  </ng-container>
 
-    <p class="fn-about" *ngIf="item.fn.description" [title]="item.fn.description">{{ item.fn.description }}</p>
-
-    <p class="fn-meta">
-      <span class="fn-meta-item" matTooltip="How long it has to finish; the clock stops while a person decides">
-        <lucide-icon name="timer" [size]="13" aria-hidden="true"></lucide-icon>{{ item.fn.timeout_seconds || 60 }} s
-      </span>
-      <span class="fn-meta-item is-accent" *ngIf="item.fn.schedulable">
-        <lucide-icon name="calendar-clock" [size]="13" aria-hidden="true"></lucide-icon>can be scheduled
-      </span>
-      <span class="fn-meta-item" *ngIf="item.params.length">
-        <lucide-icon name="arrow-right" [size]="13" aria-hidden="true"></lucide-icon>{{ item.params.length }} {{ item.params.length === 1 ? "input" : "inputs" }}
-      </span>
-      <span class="fn-meta-item" *ngIf="item.fn.calls?.length" [matTooltip]="item.fn.calls!.join(', ')">
-        <lucide-icon name="zap" [size]="13" aria-hidden="true"></lucide-icon>calls {{ item.fn.calls!.length }}
-      </span>
-    </p>
-
-    <!-- What it takes, calls, is scoped by and returns: behind one
-         disclosure, since a list is read by name first. -->
-    <details class="fold fn-more" [open]="expanded"
-             *ngIf="item.params.length || item.fn.calls?.length || item.scopes.length || item.returns.length">
-      <summary>What it takes and returns</summary>
-      <dl class="fn-facts">
-        <ng-container *ngIf="item.params.length">
-          <dt>Takes</dt>
-          <dd>
-            <code *ngFor="let param of item.params" [class.is-required]="param.required"
-                  [matTooltip]="param.required ? 'Required' : 'Optional'">{{ param.name }}<em>{{ param.type }}</em></code>
-          </dd>
-        </ng-container>
-        <!-- What it may ask of the runtime: the model, the chat's person,
-             its records, a host opened for one call. -->
-        <ng-container *ngIf="item.fn.calls?.length">
-          <dt>Calls</dt>
-          <dd><code *ngFor="let call of item.fn.calls">{{ call }}</code></dd>
-        </ng-container>
-        <!-- A policy can narrow a scope to particular values; this says
-             which input carries the value it is narrowed on. -->
-        <ng-container *ngIf="item.scopes.length">
-          <dt>Scoped by</dt>
-          <dd>
-            <span class="fn-scope" *ngFor="let scope of item.scopes">
-              <code>{{ scope.name }}</code> from <code>{{ scope.from }}</code><ng-container *ngIf="!scope.required"> (optional)</ng-container>
+  <table class="table fn-table" *ngIf="shown.length">
+    <thead>
+      <tr>
+        <th scope="col" class="fn-col-name">Function</th>
+        <th scope="col" class="fn-col-about">What it does</th>
+        <th scope="col" class="fn-col-level">Level</th>
+        <th scope="col" class="cell-minor fn-col-scopes" *ngIf="columns.scopes">Scoped by</th>
+        <th scope="col" class="cell-minor fn-col-schedule" *ngIf="columns.schedule">Schedule</th>
+        <th scope="col" class="cell-minor fn-col-calls" *ngIf="columns.calls">Calls</th>
+        <th scope="col" class="fn-col-open"><span class="visually-hidden">Details</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <ng-container *ngFor="let row of paged; trackBy: byId">
+        <tr [class.is-open]="isOpen(row)" (click)="hasMore(row) && toggle(row)">
+          <td class="cell-main">
+            <span class="fn-title" [title]="row.title">{{ row.title }}</span>
+            <code class="fn-id" *ngIf="row.title !== row.fn.id">{{ row.fn.id }}</code>
+            <span class="fn-about-inline" *ngIf="row.fn.description">{{ row.fn.description }}</span>
+          </td>
+          <td class="fn-col-about">
+            <span class="fn-about" [title]="row.fn.description || ''">{{ row.fn.description || "—" }}</span>
+          </td>
+          <td class="cell-fact fn-col-level">
+            <span class="lvl" [attr.data-level]="row.level" [matTooltip]="meaningOf(row.level)">
+              <span class="lvl-dot"></span>{{ row.level }}
             </span>
-          </dd>
-        </ng-container>
-        <ng-container *ngIf="item.returns.length">
-          <dt>Returns</dt>
-          <dd><code *ngFor="let field of item.returns">{{ field.name }}<em>{{ field.type }}</em></code></dd>
-        </ng-container>
-      </dl>
-    </details>
-  </li>
-</ul>
+          </td>
+          <td class="cell-minor fn-col-scopes" *ngIf="columns.scopes">
+            <span class="fn-code" *ngIf="row.scopes.length; else none" [title]="scopeNames(row)">{{ scopeNames(row) }}</span>
+          </td>
+          <td class="cell-minor fn-col-schedule" *ngIf="columns.schedule">
+            <span class="fn-yes" *ngIf="row.fn.schedulable; else none" matTooltip="A schedule may run it with nobody present">
+              <lucide-icon name="calendar-clock" [size]="14" aria-hidden="true"></lucide-icon>Yes
+            </span>
+          </td>
+          <td class="cell-minor fn-col-calls" *ngIf="columns.calls">
+            <span class="fn-calls" *ngIf="row.fn.calls?.length; else none" [matTooltip]="row.fn.calls!.join(', ')">
+              <span class="fn-code">{{ row.fn.calls![0] }}</span>
+              <span class="fn-more" *ngIf="row.fn.calls!.length > 1">+{{ row.fn.calls!.length - 1 }}</span>
+            </span>
+          </td>
+          <td class="cell-actions fn-col-open">
+            <button class="icon-btn sm" type="button" *ngIf="hasMore(row)" [attr.aria-expanded]="isOpen(row)"
+                    [attr.aria-label]="(isOpen(row) ? 'Close ' : 'Open ') + row.title" (click)="$event.stopPropagation(); toggle(row)">
+              <lucide-icon [name]="isOpen(row) ? 'chevron-up' : 'chevron-down'" [size]="16" aria-hidden="true"></lucide-icon>
+            </button>
+          </td>
+        </tr>
+
+        <!-- What it takes, calls, is scoped by and returns. -->
+        <tr class="table-detail fn-detail" *ngIf="isOpen(row)">
+          <td [attr.colspan]="columnCount">
+            <p class="fn-detail-about" *ngIf="row.fn.description">{{ row.fn.description }}</p>
+            <dl class="fn-facts">
+              <ng-container *ngIf="row.params.length">
+                <dt>Takes</dt>
+                <dd>
+                  <code *ngFor="let param of row.params" [class.is-required]="param.required"
+                        [matTooltip]="param.required ? 'Required' : 'Optional'">{{ param.name }}<em>{{ param.type }}</em></code>
+                </dd>
+              </ng-container>
+              <ng-container *ngIf="row.returns.length">
+                <dt>Returns</dt>
+                <dd><code *ngFor="let field of row.returns">{{ field.name }}<em>{{ field.type }}</em></code></dd>
+              </ng-container>
+              <!-- What it may ask of the runtime: the model, the chat's
+                   person, its records, a host opened for one call. -->
+              <ng-container *ngIf="row.fn.calls?.length">
+                <dt>Calls</dt>
+                <dd><code *ngFor="let call of row.fn.calls">{{ call }}</code></dd>
+              </ng-container>
+              <!-- A group's use can be narrowed to particular values of a
+                   scope; this says which input carries the value. -->
+              <ng-container *ngIf="row.scopes.length">
+                <dt>Scoped by</dt>
+                <dd>
+                  <span class="fn-scope" *ngFor="let scope of row.scopes">
+                    <code>{{ scope.name }}</code> from <code>{{ scope.from }}</code><ng-container *ngIf="!scope.required"> (optional)</ng-container>
+                  </span>
+                </dd>
+              </ng-container>
+              <dt>Time</dt>
+              <dd>{{ row.fn.timeout_seconds || 60 }} seconds to finish; the clock stops while a person decides.</dd>
+            </dl>
+          </td>
+        </tr>
+      </ng-container>
+    </tbody>
+  </table>
+
+  <app-empty *ngIf="!shown.length" icon="search-x" title="No function matches" line="Try another search, or show every level.">
+    <button class="btn" type="button" (click)="showAll()">Show all</button>
+  </app-empty>
+</app-list>
+
+<app-pager [page]="page" [pageSize]="pageSize" [total]="shown.length" (pageChange)="page = $event"></app-pager>
 
 <app-empty *ngIf="!functions.length" icon="square-terminal" title="This agent declares no functions"></app-empty>
+
+<ng-template #none><span class="fn-none">—</span></ng-template>

@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 
 import { relativeDate } from 'src/app/components/ui/dates';
 import { Choice } from 'src/app/components/ui/radio-keys';
+import { Shown } from 'src/app/components/ui/paging';
 import { InspectedCard } from 'src/app/models/chat-inspect';
 import { ChatSettings } from 'src/app/models/chat-protocol';
 import { AgentsService, InstalledAgent, RememberedApproval } from 'src/app/services/agents.service';
@@ -32,6 +33,9 @@ export class InspectorSetupComponent implements OnInit {
   @Input() names: Record<string, string> = {};
   /** Every card it asked, newest first. */
   @Input() cards: InspectedCard[] = [];
+  /** Eight at a time, more on asking. */
+  readonly rememberedShown = new Shown(8);
+  readonly cardsShown = new Shown(8);
   @Output() changeSettings = new EventEmitter<Partial<ChatSettings>>();
   @Output() changeAgents = new EventEmitter<void>();
   @Output() changeSkills = new EventEmitter<void>();

@@ -4,6 +4,7 @@ import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { firstValueFrom, Subscription } from 'rxjs';
 
 import { Candidate } from 'src/app/components/transfer-dialog/transfer-dialog.component';
+import { Paging } from 'src/app/components/ui/paging';
 import { AuthService } from 'src/app/services/auth.service';
 import { ConfirmService } from 'src/app/services/confirm.service';
 import { ProfileService } from 'src/app/services/profile.service';
@@ -37,6 +38,10 @@ const WIDE = { width: '640px', maxWidth: '100vw' };
 })
 export class WebhooksComponent extends DataPageBase implements OnInit, OnDestroy {
   loading = true;
+  /** Each list a page at a time: yours are 25 at most, the others' have no end. */
+  readonly ownPaging = new Paging(10);
+  readonly sharedPaging = new Paging(10);
+  readonly handedPaging = new Paging(5);
   /** Why the webhooks could not be read. */
   loadError = '';
   webhooks: Webhook[] = [];

@@ -70,3 +70,15 @@
   font-size: var(--t-code);
   line-height: var(--lh-code);
 }
+
+/* A long value in a cell keeps its row short: two lines, the whole of it
+   on pointing at it, and on the record opened. */
+.records-text {
+  display: -webkit-box;
+  min-width: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}

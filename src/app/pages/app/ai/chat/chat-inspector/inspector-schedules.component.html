@@ -6,7 +6,7 @@
   <section class="insp-section" aria-labelledby="sched-chat">
     <h3 class="insp-label" id="sched-chat">This chat <span class="insp-label-count">{{ list.length }}</span></h3>
     <ul class="insp-list">
-      @for (schedule of list; track schedule.schedule_id) {
+      @for (schedule of chatShown.of(list); track schedule.schedule_id) {
         <li class="insp-row">
           <span class="insp-row-icon" [class.is-warn]="failing(schedule)" [class.is-live]="!schedule.paused && schedule.next_at && !failing(schedule)">
             <lucide-icon name="calendar-clock" [size]="14" aria-hidden="true"></lucide-icon>
@@ -37,6 +37,7 @@
         <li class="insp-note">None. Ask the assistant to do something later, or every day.</li>
       }
     </ul>
+    <app-more [shown]="chatShown.count(list)" [total]="list.length" label="Show more" (more)="chatShown.more()"></app-more>
   </section>
 
   <section class="insp-section" aria-labelledby="sched-upcoming">
@@ -45,7 +46,7 @@
       <a class="btn ghost sm" routerLink="/ai/schedules">All schedules</a>
     </h3>
     <ul class="insp-list">
-      @for (run of upcoming; track run.schedule_id) {
+      @for (run of upcomingShown.of(upcoming); track run.schedule_id) {
         <li class="insp-row">
           <span class="insp-row-icon"><lucide-icon name="calendar-clock" [size]="14" aria-hidden="true"></lucide-icon></span>
           <span class="insp-main">
@@ -58,5 +59,6 @@
         <li class="insp-note">Nothing due in your other chats.</li>
       }
     </ul>
+    <app-more [shown]="upcomingShown.count(upcoming)" [total]="upcoming.length" label="Show more" (more)="upcomingShown.more()"></app-more>
   </section>
 </div>

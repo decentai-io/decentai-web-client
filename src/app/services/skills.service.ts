@@ -23,6 +23,32 @@ export interface Skill extends Shared {
   text: string;
 }
 
+/** The most a list of skills or MCP servers answers with at once. */
+export const SHARED_PAGE = 100;
+
+/**
+ * Every one the person may see, a page at a time until the last: the
+ * API server gives at most a hundred at once, after the last id given,
+ * and those handed to the person with every page. A refusal ends the
+ * reading with what was read.
+ */
+export async function readShared<T extends Shared>(
+  request: RequestService, endpoint: string,
+): Promise<{ items: T[]; handed: T[] } & Failure> {
+  const items: T[] = [];
+  let handed: T[] = [];
+  let after = '';
+  do {
+    const r = await request.gateway<{ items: T[]; handed: T[] }>(endpoint, { limit: SHARED_PAGE, ...(after ? { after } : {}) });
+    if (r.error) return { items, handed, error: r.error };
+    const page = r.items ?? [];
+    items.push(...page);
+    handed = r.handed ?? [];
+    after = page.length === SHARED_PAGE ? page[page.length - 1].id : '';
+  } while (after);
+  return { items, handed };
+}
+
 export interface SkillFields {
   name: string;
   description: string;
@@ -39,8 +65,7 @@ export class SkillsService {
 
   /** The skills the person may read, and those handed to them. */
   async list(): Promise<{ items: Skill[]; handed: Skill[] } & Failure> {
-    const r = await this.request.gateway('Skills:Skill:list', { limit: 100 });
-    return { items: r.items ?? [], handed: r.handed ?? [], error: r.error };
+    return readShared<Skill>(this.request, 'Skills:Skill:list');
   }
 
   async get(id: string): Promise<Skill | null> {

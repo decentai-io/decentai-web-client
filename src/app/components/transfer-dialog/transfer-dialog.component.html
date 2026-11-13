@@ -20,6 +20,7 @@
         </span>
         <app-choice-cards label="Hand over to" [choices]="choices" [(ngModel)]="selectedId"></app-choice-cards>
         <p class="transfer-empty" *ngIf="!visible.length">No one matches.</p>
+        <p class="transfer-empty" *ngIf="unshown">And {{ unshown }} more: search by name or email to find them.</p>
       </ng-container>
     </ng-container>
   </mat-dialog-content>

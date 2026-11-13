@@ -32,116 +32,168 @@
   <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
   <p class="form-notice" role="status" *ngIf="notice">{{ notice }}</p>
 
-  <app-list label="agents" rows="groups" [loading]="loading" [foot]="foot">
-    <ng-container listToolbar *ngIf="agents.length">
-      <!-- With something ticked, the toolbar is what can be done to it. -->
-      <app-selection-bar
-        class="toolbar-fill"
-        *ngIf="selected.size; else toolbar"
-        [count]="selected.size"
-        [shown]="selectableShown.length"
-        (selectAll)="selectAllShown()"
-        (clear)="clearSelection()"
-      >
-        <button class="btn danger sm" type="button" [disabled]="uninstallBusy" (click)="requestUninstallSelected()">
-          <lucide-icon name="trash-2" [size]="16" aria-hidden="true"></lucide-icon>
-          Uninstall
-        </button>
-      </app-selection-bar>
+  <div [class.side-layout]="agents.length > 0">
+    <app-filter-column *ngIf="agents.length" label="Filter agents" [groups]="filterGroups" [chosen]="filterChosen"
+                       (choose)="choose($event)"></app-filter-column>
 
-      <ng-template #toolbar>
-        <app-segmented label="Which agents" [choices]="filters" [ngModel]="filter" (ngModelChange)="setFilter($event)"></app-segmented>
-        <span class="search-field toolbar-search toolbar-end">
-          <lucide-icon name="search" [size]="16" aria-hidden="true"></lucide-icon>
-          <input
-            class="input"
-            type="search"
-            placeholder="Search agents"
-            aria-label="Search installed agents"
-            [ngModel]="query"
-            (ngModelChange)="search($event)"
-          />
-        </span>
-      </ng-template>
-    </ng-container>
-
-    <div class="agent-grid" *ngIf="pagedAgents.length">
-      <app-agent-card
-        *ngFor="let agent of pagedAgents"
-        [name]="agent.name"
-        [icon]="iconOf(agent)"
-        [version]="'v' + agent.version"
-        [chip]="standing(agent)"
-        [description]="agent.manifest.agent.description || ''"
-        [stats]="stats(agent)"
-        [levels]="levels(agent)"
-        [problems]="agent.error ? [agent.error] : []"
-        [link]="['/agents', agent.agent_id]"
-        [selectable]="canUninstall"
-        [selected]="isSelected(agent)"
-        [selecting]="selected.size > 0"
-        (selectedChange)="toggleSelected(agent)"
-      >
-        <!-- The card's own decisions: whether new chats start with
-             it, and what else can be done to it. -->
-        <app-switch
-          cardFoot
-          label="In new chats"
-          [disabled]="!!savingDefaultFor"
-          [ngModel]="isDefault(agent)"
-          (ngModelChange)="toggleDefault(agent)"
-        ></app-switch>
-        <button
-          cardFoot
-          class="icon-btn sm"
-          type="button"
-          [attr.aria-label]="'More for ' + agent.name"
-          [matMenuTriggerFor]="cardMenu"
-          [matMenuTriggerData]="{ agent: agent }"
+    <app-list label="agents" [rows]="view === 'list' ? 'table' : 'groups'" [loading]="loading" [foot]="foot">
+      <ng-container listToolbar *ngIf="agents.length">
+        <!-- With something ticked, the toolbar is what can be done to it. -->
+        <app-selection-bar
+          class="toolbar-fill"
+          *ngIf="selected.size; else toolbar"
+          [count]="selected.size"
+          [shown]="selectableShown.length"
+          (selectAll)="selectAllShown()"
+          (clear)="clearSelection()"
         >
-          <lucide-icon name="ellipsis-vertical" [size]="16" aria-hidden="true"></lucide-icon>
-        </button>
-      </app-agent-card>
-    </div>
+          <button class="btn danger sm" type="button" [disabled]="uninstallBusy" (click)="requestUninstallSelected()">
+            <lucide-icon name="trash-2" [size]="16" aria-hidden="true"></lucide-icon>
+            Uninstall
+          </button>
+        </app-selection-bar>
 
-    <mat-menu #cardMenu="matMenu" xPosition="before">
-      <ng-template matMenuContent let-agent="agent">
-        <a mat-menu-item [routerLink]="['/agents', agent.agent_id]">
-          <lucide-icon name="arrow-right" [size]="16" aria-hidden="true"></lucide-icon>
-          <span>Open</span>
-        </a>
-        <button mat-menu-item *ngIf="canInstall && updates.has(agent.agent_id)" (click)="update(agent)">
-          <lucide-icon name="refresh-cw" [size]="16" aria-hidden="true"></lucide-icon>
-          <span>Review update</span>
-        </button>
-        <button mat-menu-item *ngIf="canInstall" [disabled]="!!busyId" (click)="check(agent)">
-          <lucide-icon name="circle-check" [size]="16" aria-hidden="true"></lucide-icon>
-          <span>Check again</span>
-        </button>
-        <button mat-menu-item *ngIf="canUninstall" (click)="requestUninstall(agent)">
-          <lucide-icon name="trash-2" [size]="16" aria-hidden="true"></lucide-icon>
-          <span>Uninstall</span>
-        </button>
-      </ng-template>
-    </mat-menu>
+        <ng-template #toolbar>
+          <span class="search-field toolbar-search">
+            <lucide-icon name="search" [size]="16" aria-hidden="true"></lucide-icon>
+            <input
+              class="input"
+              type="search"
+              placeholder="Search agents"
+              aria-label="Search installed agents"
+              [ngModel]="query"
+              (ngModelChange)="search($event)"
+            />
+          </span>
+          <app-select class="agents-sort" label="Order" [choices]="sorts" [ngModel]="sort" (ngModelChange)="setSort($event)"></app-select>
+          <app-segmented class="toolbar-end agents-view" label="Show as" [choices]="views" [ngModel]="view" (ngModelChange)="setView($event)"></app-segmented>
+        </ng-template>
+      </ng-container>
 
-    <app-pager [page]="page" [pageSize]="pageSize" [total]="shownAgents.length" (pageChange)="page = $event"></app-pager>
+      <!-- ── Cards ─────────────────────────────────────────────────── -->
+      <div class="agent-grid" *ngIf="view === 'grid' && pagedAgents.length">
+        <app-agent-card
+          *ngFor="let agent of pagedAgents"
+          [name]="agent.name"
+          [icon]="iconOf(agent)"
+          [version]="'v' + agent.version"
+          [chip]="standing(agent).kind === 'ready' ? null : standing(agent)"
+          [description]="agent.manifest.agent.description || ''"
+          [stats]="stats(agent)"
+          [levels]="levels(agent)"
+          [problems]="agent.error ? [agent.error] : []"
+          [link]="['/agents', agent.agent_id]"
+          [selectable]="canUninstall"
+          [selected]="isSelected(agent)"
+          [selecting]="selected.size > 0"
+          (selectedChange)="toggleSelected(agent)"
+        >
+          <!-- The card's own decisions: whether new chats start with
+               it, and what else can be done to it. -->
+          <app-switch
+            cardFoot
+            label="In new chats"
+            [disabled]="!!savingDefaultFor"
+            [ngModel]="isDefault(agent)"
+            (ngModelChange)="toggleDefault(agent)"
+          ></app-switch>
+          <button
+            cardFoot
+            class="icon-btn sm"
+            type="button"
+            [attr.aria-label]="'More for ' + agent.name"
+            [matMenuTriggerFor]="cardMenu"
+            [matMenuTriggerData]="{ agent: agent }"
+          >
+            <lucide-icon name="ellipsis-vertical" [size]="16" aria-hidden="true"></lucide-icon>
+          </button>
+        </app-agent-card>
+      </div>
 
-    <app-empty
-      *ngIf="!agents.length"
-      icon="bot"
-      title="No agents installed"
-      line="An agent is a program this organization installed and can run. Chats work without them: they are how the assistant does something in a system of yours rather than only talking about it."
-    >
-      <a class="btn primary" routerLink="/agents/marketplace" *ngIf="canInstall">Open the Marketplace</a>
-    </app-empty>
-    <app-empty
-      *ngIf="agents.length && !shownAgents.length"
-      icon="search-x"
-      title="No agent matches"
-      line="Try another search, or show all of them."
-    >
-      <button class="btn" type="button" (click)="search(''); setFilter('all')">Show all</button>
-    </app-empty>
-  </app-list>
+      <!-- ── A dense table ─────────────────────────────────────────── -->
+      <table class="table agents-table" *ngIf="view === 'list' && pagedAgents.length">
+        <thead>
+          <tr>
+            <th class="cell-check" *ngIf="canUninstall"><span class="visually-hidden">Select</span></th>
+            <th scope="col">Agent</th>
+            <th scope="col" class="cell-minor">What it does</th>
+            <th scope="col">Status</th>
+            <th scope="col" class="cell-minor num">Functions</th>
+            <th scope="col" class="cell-minor">Network</th>
+            <th scope="col">In new chats</th>
+            <th scope="col"><span class="visually-hidden">More</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let agent of pagedAgents" [class.is-selected]="isSelected(agent)">
+            <td class="cell-check" *ngIf="canUninstall">
+              <mat-checkbox [checked]="isSelected(agent)" [aria-label]="'Select ' + agent.name" (change)="toggleSelected(agent)"></mat-checkbox>
+            </td>
+            <td class="cell-main">
+              <a class="agents-name" [routerLink]="['/agents', agent.agent_id]">
+                <app-agent-mark size="sm" [name]="agent.name" [icon]="iconOf(agent)"></app-agent-mark>
+                <span class="agents-name-words">{{ agent.name }}</span>
+                <span class="agents-version">v{{ agent.version }}</span>
+              </a>
+            </td>
+            <td class="cell-minor agents-about"><span [title]="agent.manifest.agent.description || ''">{{ agent.manifest.agent.description }}</span></td>
+            <td class="cell-fact"><span class="chip" [ngClass]="standing(agent).tone">{{ standing(agent).word }}</span></td>
+            <td class="cell-minor num">{{ agent.manifest.functions.length }}</td>
+            <td class="cell-minor agents-reach">{{ reach(agent) }}</td>
+            <td class="cell-fact">
+              <app-switch [label]="'In new chats: ' + agent.name" [labelHidden]="true" [disabled]="!!savingDefaultFor"
+                          [ngModel]="isDefault(agent)" (ngModelChange)="toggleDefault(agent)"></app-switch>
+            </td>
+            <td class="cell-actions">
+              <button class="icon-btn sm" type="button" [attr.aria-label]="'More for ' + agent.name"
+                      [matMenuTriggerFor]="cardMenu" [matMenuTriggerData]="{ agent: agent }">
+                <lucide-icon name="ellipsis-vertical" [size]="16" aria-hidden="true"></lucide-icon>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <app-pager class="agents-pager" [page]="page" [pageSize]="pageSize" [total]="shownAgents.length" (pageChange)="page = $event"></app-pager>
+
+      <mat-menu #cardMenu="matMenu" xPosition="before">
+        <ng-template matMenuContent let-agent="agent">
+          <a mat-menu-item [routerLink]="['/agents', agent.agent_id]">
+            <lucide-icon name="arrow-right" [size]="16" aria-hidden="true"></lucide-icon>
+            <span>Open</span>
+          </a>
+          <button mat-menu-item *ngIf="canInstall && updates.has(agent.agent_id)" (click)="update(agent)">
+            <lucide-icon name="refresh-cw" [size]="16" aria-hidden="true"></lucide-icon>
+            <span>Review update</span>
+          </button>
+          <button mat-menu-item *ngIf="canInstall" [disabled]="!!busyId" (click)="check(agent)">
+            <lucide-icon name="circle-check" [size]="16" aria-hidden="true"></lucide-icon>
+            <span>Check again</span>
+          </button>
+          <button mat-menu-item *ngIf="canUninstall" (click)="requestUninstall(agent)">
+            <lucide-icon name="trash-2" [size]="16" aria-hidden="true"></lucide-icon>
+            <span>Uninstall</span>
+          </button>
+        </ng-template>
+      </mat-menu>
+
+      <app-empty
+        *ngIf="!agents.length"
+        icon="bot"
+        title="No agents installed"
+        line="An agent is a program this organization installed and can run. Chats work without them: they are how the assistant does something in a system of yours rather than only talking about it."
+      >
+        <a class="btn primary" routerLink="/agents/marketplace" *ngIf="canInstall">Open the Marketplace</a>
+      </app-empty>
+      <app-empty
+        *ngIf="agents.length && !shownAgents.length"
+        icon="search-x"
+        title="No agent matches"
+        line="Try another search, or show all of them."
+      >
+        <button class="btn" type="button" (click)="showAll()">Show all</button>
+      </app-empty>
+    </app-list>
+  </div>
+
 </app-page>

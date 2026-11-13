@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, OnChanges, Output } from '@angular/core';
 
+import { Shown } from 'src/app/components/ui/paging';
 import { UpcomingRun } from 'src/app/models/chat-inspect';
 import { ActivityService, Schedule } from 'src/app/services/activity.service';
 import { ConfirmService } from 'src/app/services/confirm.service';
@@ -26,6 +27,9 @@ export class InspectorSchedulesComponent implements OnChanges {
 
   /** The schedules as shown: changed here at once, before the read again. */
   list: Schedule[] = [];
+  /** Ten of the chat's at a time; the next few of the others'. */
+  readonly chatShown = new Shown(10);
+  readonly upcomingShown = new Shown(5);
   readonly busy = new Set<string>();
   error = '';
 

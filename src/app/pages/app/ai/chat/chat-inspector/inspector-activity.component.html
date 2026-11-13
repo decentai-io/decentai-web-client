@@ -4,7 +4,7 @@
 }
 
 <ul class="insp-list" aria-label="Calls, newest first">
-  @for (row of shown; track row.key) {
+  @for (row of rowsShown.of(shown); track row.key) {
     <li>
       <div class="insp-row">
         <button class="act-toggle" type="button" (click)="toggle(row.key)" [attr.aria-expanded]="opened.has(row.key)">
@@ -82,6 +82,7 @@
     <li><app-empty icon="activity" [title]="emptyTitle" line="Each call shows here as the chat makes it."></app-empty></li>
   }
 </ul>
+<app-more [shown]="rowsShown.count(shown)" [total]="shown.length" label="Show older calls" (more)="rowsShown.more()"></app-more>
 
 @if (filterable && chatId) {
   <a class="btn ghost sm act-audit" routerLink="/audit" [queryParams]="{ chat: chatId }">

@@ -3,6 +3,7 @@ import { Refused } from 'src/app/services/request.service';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 
 import { dayDate } from 'src/app/components/ui/dates';
+import { Paging } from 'src/app/components/ui/paging';
 import { Choice } from 'src/app/components/ui/radio-keys';
 
 import { AuthService } from 'src/app/services/auth.service';
@@ -56,6 +57,9 @@ export class MembersComponent extends DataPageBase implements OnInit {
   busy = new Set<string>();
 
   query = '';
+  /** The people, and the invitations, a page at a time. */
+  readonly paging = new Paging(20);
+  readonly invitationPaging = new Paging(10);
   /** A dialog's button was pressed: what a field still needs is said under it. */
   tried = false;
   /** What is shown once was copied. */

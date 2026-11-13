@@ -1,5 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 
+import { Shown } from 'src/app/components/ui/paging';
 import { Choice } from 'src/app/components/ui/radio-keys';
 import { MonitoringService, TokenRow } from 'src/app/services/monitoring.service';
 import { compact, niceTop } from './activity-overview.component';
@@ -85,6 +86,10 @@ export class TokenUsageComponent implements OnInit {
   models: TokenTotal[] = [];
   agents: TokenTotal[] = [];
   people: TokenTotal[] = [];
+  /** Each table its ten largest, then ten more at a time. */
+  readonly modelsShown = new Shown(10);
+  readonly agentsShown = new Shown(10);
+  readonly peopleShown = new Shown(10);
   top = 0;
   columns: Column[] = [];
 

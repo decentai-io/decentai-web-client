@@ -152,11 +152,8 @@
       </div>
     </section>
 
-    <div class="record-older" *ngIf="before">
-      <button class="btn" type="button" [disabled]="loadingMore" (click)="loadMore()">
-        {{ loadingMore ? "Loading…" : "Load older" }}
-      </button>
-    </div>
+    <app-more [shown]="lines.length" [hasMore]="!!before" [loading]="loadingMore" label="Load older"
+              (more)="loadMore()"></app-more>
   </app-list>
 </app-page>
 

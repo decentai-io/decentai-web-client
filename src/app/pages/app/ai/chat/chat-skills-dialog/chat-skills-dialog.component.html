@@ -21,7 +21,7 @@
     <div class="skills-toolbar">
       <span class="search-field skills-search">
         <lucide-icon name="search" [size]="16" aria-hidden="true"></lucide-icon>
-        <input class="input" type="search" [(ngModel)]="query" placeholder="Search skills" aria-label="Search skills" />
+        <input class="input" type="search" [(ngModel)]="query" (ngModelChange)="shown.reset()" placeholder="Search skills" aria-label="Search skills" />
       </span>
       <span class="skills-count">{{ selectedCount }} of {{ skills.length }} on</span>
     </div>
@@ -30,12 +30,14 @@
       <span class="check-name">Every skill you may read</span>
       <span class="check-hint">Those written later too.</span>
     </mat-checkbox>
-    @for (skill of visibleSkills; track skill.id) {
+    @for (skill of shown.of(visibleSkills); track skill.id) {
       <mat-checkbox class="check-row" [checked]="choice.has(skill.id)" [disabled]="choice.all" (change)="choice.toggle(skill.id)">
         <span class="check-name">{{ skill.name }}</span>
         @if (skill.description) { <span class="check-hint">{{ skill.description }}</span> }
       </mat-checkbox>
     }
+    <app-more [shown]="shown.count(visibleSkills)" [total]="visibleSkills.length" label="Show more skills"
+              (more)="shown.more()"></app-more>
 
     @if (visibleSkills.length === 0) {
       <p class="dialog-note">No skill matches “{{ query }}”.</p>

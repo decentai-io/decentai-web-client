@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 
 import { Failure, RequestService } from './request.service';
-import { Shared } from './skills.service';
+import { readShared, Shared } from './skills.service';
 
 /** One tool a server offers, as a runtime last read it, whether the
  *  person's chats may call it, and its level: a chat whose trust is below
@@ -37,8 +37,7 @@ export class McpService {
   constructor(private request: RequestService) {}
 
   async list(): Promise<{ items: McpServer[]; handed: McpServer[] } & Failure> {
-    const r = await this.request.gateway('Mcp:Server:list', { limit: 100 });
-    return { items: r.items ?? [], handed: r.handed ?? [], error: r.error };
+    return readShared<McpServer>(this.request, 'Mcp:Server:list');
   }
 
   async get(id: string): Promise<McpServer | null> {

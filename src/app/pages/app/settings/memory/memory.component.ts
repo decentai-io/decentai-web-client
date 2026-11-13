@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Refused } from 'src/app/services/request.service';
 
+import { Paging } from 'src/app/components/ui/paging';
 import { AuthService } from 'src/app/services/auth.service';
 import { ConfirmService } from 'src/app/services/confirm.service';
 import { Memory, MemoryService } from 'src/app/services/memory.service';
@@ -29,6 +30,8 @@ export class MemoryComponent implements OnInit {
   /** How many memories are kept at once. */
   readonly limit = MemoryService.MOST;
   query = '';
+  /** Fifty at most are kept: twenty to a page. */
+  readonly paging = new Paging(20);
   readonly textLimit = MemoryService.TEXT;
 
   /** The memory being written. */

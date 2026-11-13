@@ -13,6 +13,7 @@ import { Subject } from 'rxjs';
 
 import { EmptyComponent } from 'src/app/components/ui/empty.component';
 import { FileIconComponent } from 'src/app/components/ui/file-icon.component';
+import { MoreComponent } from 'src/app/components/ui/more.component';
 import { SegmentedComponent } from 'src/app/components/ui/segmented.component';
 import { ChatInspection, wholeInspection } from 'src/app/models/chat-inspect';
 import { ChatEvent, DEFAULT_CHAT_SETTINGS } from 'src/app/models/chat-protocol';
@@ -167,7 +168,7 @@ describe('ChatInspectorComponent', () => {
       ],
       imports: [
         FormsModule, MatTooltipModule, NoopAnimationsModule, RouterModule, LucideAngularModule.pick(ICONS),
-        SegmentedComponent, EmptyComponent, FileIconComponent,
+        SegmentedComponent, EmptyComponent, FileIconComponent, MoreComponent,
       ],
       providers: [
         provideRouter([]),
