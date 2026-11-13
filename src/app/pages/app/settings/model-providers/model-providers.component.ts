@@ -1,13 +1,13 @@
 import { Component, EventEmitter, Input, Output, TemplateRef, ViewChild } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 
-import { Paging } from 'src/app/components/ui/paging';
+import { ServerPages } from 'src/app/components/ui/paging';
 import { Choice } from 'src/app/components/ui/radio-keys';
 import { AuthService } from 'src/app/services/auth.service';
 import { ConfirmService } from 'src/app/services/confirm.service';
 import { PeerGroup } from 'src/app/services/profile.service';
 import {
-  LlmConnection, LlmConnectionDraft, LlmModel, LlmProvider, SettingsLlmService,
+  LlmConnection, LlmConnectionDraft, LlmCounts, LlmModel, LlmProvider, SettingsLlmService,
 } from 'src/app/services/settings-llm.service';
 import { DataPageBase } from '../../data-page-base';
 
@@ -60,12 +60,19 @@ export class ModelProvidersComponent extends DataPageBase {
   @Input() connections: LlmConnection[] = [];
   @Input() providers: LlmProvider[] = [];
   @Input() groups: PeerGroup[] = [];
+  /** The pages the connections are, read by the page from the API
+   *  server, which searches them; null when they are all given. */
+  @Input() pages: ServerPages<LlmConnection> | null = null;
+  /** How many connections there are, unsearched; null: those given. */
+  @Input() connectionTotal: number | null = null;
+  /** The server's numbers of them, where it counts them. */
+  @Input() counts: LlmCounts | null = null;
   /** A connection was added, changed or removed: the page reads them again. */
   @Output() changed = new EventEmitter<void>();
+  /** The search changed: the page asks the server. */
+  @Output() searched = new EventEmitter<string>();
 
   query = '';
-  /** The providers a page at a time. */
-  readonly paging = new Paging(20);
   busyId = '';
 
   /** The add-and-edit form, which is shown on the dialog shell. */
@@ -84,22 +91,41 @@ export class ModelProvidersComponent extends DataPageBase {
 
   /** The counts under the list. */
   get foot(): string {
-    const count = this.connections.length;
+    const count = this.connectionCount;
     return `${count} provider${count === 1 ? '' : 's'}`;
   }
 
+  /** How many connections there are, whatever the search. */
+  get connectionCount(): number {
+    return this.counts?.connections ?? this.connectionTotal ?? this.connections.length;
+  }
+
   /** The numbers over the list: the default's name, the models people may
-   *  pick in all, and how many connections name none yet. */
+   *  pick in all, and how many connections name none yet. The server's,
+   *  where it counts them; else those of the rows read. */
   get defaultName(): string {
+    if (this.counts) return this.counts.default_name || 'None';
     return this.connections.find((connection) => connection.default)?.name ?? 'None';
   }
 
   get modelCount(): number {
+    if (this.counts) return this.counts.models;
     return this.connections.reduce((sum, connection) => sum + connection.models.length, 0);
   }
 
   get withoutModel(): number {
+    if (this.counts) return this.counts.without_models;
     return this.connections.filter((connection) => !connection.models.length).length;
+  }
+
+  /** A new search, asked of the server. */
+  onSearch(query: string): void {
+    this.query = query;
+    this.searched.emit(query);
+  }
+
+  clearSearch(): void {
+    this.onSearch('');
   }
 
   get canCreate(): boolean { return this.auth.can('settings:llm:create'); }
@@ -110,12 +136,9 @@ export class ModelProvidersComponent extends DataPageBase {
 
   // ── The list ────────────────────────────────────────────────────────
 
+  /** The rows shown: the page the server searched and read. */
   get visible(): LlmConnection[] {
-    const query = this.query.trim().toLowerCase();
-    if (!query) return this.connections;
-    return this.connections.filter((connection) =>
-      [connection.name, this.providerName(connection.provider), connection.address, ...connection.models]
-        .join(' ').toLowerCase().includes(query));
+    return this.connections;
   }
 
   providerName(id: string): string {

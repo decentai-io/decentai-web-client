@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 
+import { nextOf, pageAsk } from '../components/ui/paging';
 import { Failure, RequestService } from './request.service';
 
 /** The scope of a shared token or runtime: its runtimes may serve every
@@ -129,6 +130,54 @@ export function normalizeNode(raw: any): ExecutionNode {
   };
 }
 
+/** What the runtimes are narrowed by, on the API server: every word of
+ *  `q` in a name, an id, a note or a label; how they stand; whom they
+ *  serve. */
+export interface NodeQuery {
+  q?: string;
+  state?: 'connected' | 'away' | 'refused';
+  scope?: 'shared' | 'own';
+}
+
+/** The runtimes in numbers, whatever the search: the sandboxes, those
+ *  draining and the chats held counted over the connected ones. */
+export interface NodeCounts {
+  total: number;
+  connected: number;
+  refused: number;
+  sandboxes: number;
+  draining: number;
+  chats: number;
+  shared: number;
+  own: number;
+  /** The organization's own that are connected, where the server says. */
+  own_connected?: number;
+}
+
+/** A page of runtimes. */
+export interface NodePage extends Failure {
+  nodes: ExecutionNode[];
+  next: string | null;
+  total: number;
+  counts: NodeCounts | null;
+}
+
+/** What the tokens are narrowed by: `q` in an id, a kind or a label;
+ *  those that can enroll, or those spent. */
+export interface TokenFilters {
+  q?: string;
+  state?: 'live' | 'spent';
+}
+
+/** A page of tokens, newest first, and the nodes they enrolled. */
+export interface TokenPage extends Failure {
+  tokens: EnrollmentToken[];
+  enrolled: EnrolledNode[];
+  next: string | null;
+  total: number;
+  counts: { live: number; spent: number } | null;
+}
+
 /**
  * Client for the runtimes that serve the organization (Nodes:Node), and
  * the enrollment tokens that let one join (Nodes:Authority).
@@ -141,9 +190,14 @@ export class NodesService {
 
   /** The organization's tokens (and the shared ones, for the operator),
    *  and the nodes they enrolled. */
-  async tokens(): Promise<{ tokens: EnrollmentToken[]; enrolled: EnrolledNode[] } & Failure> {
-    const r = await this.request.gateway('Nodes:Authority:list');
-    return { tokens: r.tokens ?? [], enrolled: r.nodes ?? [], error: r.error };
+  async tokens(filters: TokenFilters = {}, after = '', limit = 100): Promise<TokenPage> {
+    const r = await this.request.gateway('Nodes:Authority:list', pageAsk(after, limit, { ...filters }));
+    const tokens: EnrollmentToken[] = r.tokens ?? [];
+    return {
+      tokens, enrolled: r.nodes ?? [], next: nextOf(r), total: Number(r.total ?? tokens.length) || 0,
+      counts: r.counts ? { live: Number(r.counts.live) || 0, spent: Number(r.counts.spent) || 0 } : null,
+      error: r.error,
+    };
   }
 
   /** A new token: its secret is in this answer and never again. */
@@ -164,9 +218,17 @@ export class NodesService {
 
   // ── Runtimes ────────────────────────────────────────────────────────
 
-  async nodes(): Promise<{ nodes: ExecutionNode[] } & Failure> {
-    const r = await this.request.gateway('Nodes:Node:list');
-    return { nodes: (r.nodes ?? []).map((raw: any) => normalizeNode(raw)), error: r.error };
+  async nodes(filters: NodeQuery = {}, after = '', limit = 100): Promise<NodePage> {
+    const r = await this.request.gateway('Nodes:Node:list', pageAsk(after, limit, { ...filters }));
+    const nodes: ExecutionNode[] = (r.nodes ?? []).map((raw: any) => normalizeNode(raw));
+    const counts = r.counts && typeof r.counts === 'object' ? {
+      total: Number(r.counts.total) || 0, connected: Number(r.counts.connected) || 0,
+      refused: Number(r.counts.refused) || 0, sandboxes: Number(r.counts.sandboxes) || 0,
+      draining: Number(r.counts.draining) || 0, chats: Number(r.counts.chats) || 0,
+      shared: Number(r.counts.shared) || 0, own: Number(r.counts.own) || 0,
+      ...(r.counts.own_connected !== undefined ? { own_connected: Number(r.counts.own_connected) || 0 } : {}),
+    } : null;
+    return { nodes, next: nextOf(r), total: Number(r.total ?? nodes.length) || 0, counts, error: r.error };
   }
 
   /** A name and a note for people. */

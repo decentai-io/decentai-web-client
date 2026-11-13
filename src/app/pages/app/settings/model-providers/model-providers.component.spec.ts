@@ -56,11 +56,28 @@ describe('ModelProvidersComponent', () => {
     return component;
   }
 
-  it('filters across the name, the provider and the address', () => {
+  it('sends the search to the page, which asks the server, and shows the rows it read', () => {
     const component = create([connection('Work'), connection('Home', { provider: 'together', address: 'https://api.together.xyz/v1' })]);
+    const searched: string[] = [];
+    component.searched.subscribe((query) => searched.push(query));
 
-    component.query = 'together';
-    expect(component.visible.map((c) => c.name)).toEqual(['Home']);
+    component.onSearch('together');
+    expect(searched).toEqual(['together']);
+    expect(component.query).toBe('together');
+    expect(component.visible.length).toBe(2);
+    component.clearSearch();
+    expect(searched).toEqual(['together', '']);
+  });
+
+  it('counts from the server where it counts, else from the rows given', () => {
+    const component = create([connection('Work', { default: true }), connection('Home', { models: [] })]);
+    expect([component.connectionCount, component.defaultName, component.modelCount, component.withoutModel])
+      .toEqual([2, 'Work', 1, 1]);
+
+    component.connectionTotal = 40;
+    component.counts = { connections: 40, models: 55, without_models: 3, default_name: 'Main' };
+    expect([component.connectionCount, component.defaultName, component.modelCount, component.withoutModel])
+      .toEqual([40, 'Main', 55, 3]);
   });
 
   it('says a row’s provider, where it is, its models, and whose chats may use it', () => {

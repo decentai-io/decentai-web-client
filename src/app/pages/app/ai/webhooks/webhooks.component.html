@@ -12,7 +12,7 @@
   </app-empty>
 
   <!-- The numbers that matter, on one line. -->
-  <ul class="ui-tiles" *ngIf="!loading && !opened && (webhooks.length || shared.length || handed.length)" aria-label="Webhooks in numbers">
+  <ul class="ui-tiles" *ngIf="!loading && !opened && (webhooks.length || sharedPages.total || handed.length)" aria-label="Webhooks in numbers">
     <li class="ui-tile">
       <span class="ui-tile-words">
         <span class="ui-tile-value">{{ webhooks.length }}<ng-container *ngIf="limit"> of {{ limit }}</ng-container></span>
@@ -31,9 +31,9 @@
         <span class="ui-tile-label">Signed</span>
       </span>
     </li>
-    <li class="ui-tile" *ngIf="shared.length">
+    <li class="ui-tile" *ngIf="sharedPages.total">
       <span class="ui-tile-words">
-        <span class="ui-tile-value">{{ shared.length }}</span>
+        <span class="ui-tile-value">{{ sharedPages.total }}</span>
         <span class="ui-tile-label">Shared with you</span>
       </span>
     </li>
@@ -132,7 +132,7 @@
         <ng-container listToolbar>
           <h2 class="webhook-list-title">Shared with you</h2>
         </ng-container>
-        <app-row *ngFor="let hook of sharedPaging.of(shared)" [class.is-current]="hook.webhook_id === openId" [class.is-resting]="!hook.enabled">
+        <app-row *ngFor="let hook of shared" [class.is-current]="hook.webhook_id === openId" [class.is-resting]="!hook.enabled">
           <lucide-icon rowMark name="webhook" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
           <a rowName class="webhook-row-name" [routerLink]="['/ai/webhooks', hook.webhook_id]"
              [attr.aria-current]="hook.webhook_id === openId ? 'true' : null">{{ hook.name }}</a>
@@ -147,8 +147,8 @@
             </span>
           </ng-container>
         </app-row>
-        <app-pager *ngIf="sharedPaging.more(shared)" [page]="sharedPaging.page" [pageSize]="sharedPaging.size"
-                   [total]="shared.length" (pageChange)="sharedPaging.page = $event"></app-pager>
+        <app-pager [page]="sharedPages.page" [pageSize]="sharedPages.size"
+                   [total]="sharedPages.total" (pageChange)="sharedPages.go($event)"></app-pager>
       </app-list>
     </div>
 

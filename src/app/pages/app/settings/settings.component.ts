@@ -1,27 +1,35 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 
+import { ServerPage, ServerPages } from 'src/app/components/ui/paging';
 import { AuthService } from 'src/app/services/auth.service';
 import { PeerGroup, ProfileService } from 'src/app/services/profile.service';
-import { LlmConnection, LlmProvider, SettingsLlmService } from 'src/app/services/settings-llm.service';
+import { LlmConnection, LlmCounts, LlmProvider, SettingsLlmService } from 'src/app/services/settings-llm.service';
 import { DataPageBase } from '../data-page-base';
 
 /**
  * Settings › Model providers: reads what the providers list is drawn
  * from (the organization's connections, the platform's catalog of
  * providers, and the groups a connection is shared with) and hands it to
- * <app-model-providers>, which is the page.
+ * <app-model-providers>, which is the page. The connections are paged
+ * and searched on the API server.
  */
 @Component({
   selector: 'app-settings',
   standalone: false,
   templateUrl: './settings.component.html',
 })
-export class SettingsComponent extends DataPageBase implements OnInit {
+export class SettingsComponent extends DataPageBase implements OnInit, OnDestroy {
   loading = true;
 
-  /** The connections the page shows: those this person may use, or,
-   *  for an administrator, every one of the organization. */
-  connections: LlmConnection[] = [];
+  /** The connections the page shows, twenty at a time: those this
+   *  person may use, or, for an administrator, every one of the
+   *  organization. */
+  readonly pages = new ServerPages<LlmConnection>(20, (after, limit) => this.read(after, limit));
+  /** How many there are, unsearched, and the server's numbers of them. */
+  all = 0;
+  counts: LlmCounts | null = null;
+  /** The search, sent to the server. */
+  query = '';
   /** The groups a connection may be shared with, Everyone first. */
   groups: PeerGroup[] = [];
 
@@ -38,12 +46,12 @@ export class SettingsComponent extends DataPageBase implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    const [connections, providers, peers] = await Promise.all([
-      this.list(),
+    const [, providers, peers] = await Promise.all([
+      this.pages.first(),
       this.service.providers(),
       this.profiles.peers(),
     ]);
-    this.connections = connections;
+    if (this.pages.error) this.fail(this.pages.error);
     this.providers = providers;
     this.groups = [
       ...(peers.everyone ? [{ group_id: peers.everyone, name: 'Everyone' }] : []),
@@ -52,12 +60,31 @@ export class SettingsComponent extends DataPageBase implements OnInit {
     this.loading = false;
   }
 
-  /** Read the connections again: one was added, changed or removed. */
-  async reload(): Promise<void> {
-    this.connections = await this.list();
+  ngOnDestroy(): void {
+    this.pages.cancel();
   }
 
-  private list(): Promise<LlmConnection[]> {
-    return this.service.list(this.auth.can('settings:llm:create'));
+  get connections(): LlmConnection[] {
+    return this.pages.rows;
+  }
+
+  /** Read the connections again: one was added, changed or removed. */
+  async reload(): Promise<void> {
+    await this.pages.reload();
+  }
+
+  /** A new search: from the first page, once the typing stops. */
+  search(query: string): void {
+    this.query = query;
+    this.pages.search();
+  }
+
+  private async read(after: string, limit: number): Promise<ServerPage<LlmConnection>> {
+    const page = await this.service.page(after, limit, { q: this.query, all: this.auth.can('settings:llm:create') });
+    if (!page.error) {
+      if (!this.query.trim()) this.all = page.total;
+      this.counts = page.counts;
+    }
+    return page;
   }
 }

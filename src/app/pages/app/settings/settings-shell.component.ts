@@ -59,7 +59,7 @@ export class SettingsShellComponent implements OnDestroy {
 
   constructor(auth: AuthService, private router: Router, readonly llm: SettingsLlmService) {
     const allowed = settingsPages.filter((page) => settingsPageOpen(page, (action) => auth.can(action)));
-    if (auth.can('settings:llm:list') && llm.count$.value === null) void llm.list();
+    if (auth.can('settings:llm:list') && llm.count$.value === null) void llm.count();
     this.groups = (['You', 'Organization'] as const)
       .map((name) => ({ name, pages: allowed.filter((page) => page.group === name) }))
       .filter((group) => group.pages.length > 0);

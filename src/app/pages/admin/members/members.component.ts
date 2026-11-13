@@ -1,14 +1,16 @@
-import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
-import { Refused } from 'src/app/services/request.service';
+import { Component, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 
 import { dayDate } from 'src/app/components/ui/dates';
-import { Paging } from 'src/app/components/ui/paging';
+import { SEARCH_WAIT, ServerPage, ServerPages } from 'src/app/components/ui/paging';
 import { Choice } from 'src/app/components/ui/radio-keys';
+import { Pick } from 'src/app/components/ui/search-picks.component';
 
 import { AuthService } from 'src/app/services/auth.service';
-import { Group, GroupService } from 'src/app/services/group.service';
-import { Invitation, Leaving, Member, MembersService } from 'src/app/services/members.service';
+import { GroupService } from 'src/app/services/group.service';
+import {
+  GroupName, Invitation, Leaving, Member, MemberCounts, MembersService,
+} from 'src/app/services/members.service';
 import { ConfirmService } from 'src/app/services/confirm.service';
 import { DataPageBase } from '../../app/data-page-base';
 
@@ -33,13 +35,17 @@ import { DataPageBase } from '../../app/data-page-base';
   templateUrl: './members.component.html',
   styleUrl: '../admin-shared.css',
 })
-export class MembersComponent extends DataPageBase implements OnInit {
+export class MembersComponent extends DataPageBase implements OnInit, OnDestroy {
   loading = true;
 
-  members: Member[] = [];
-  invitations: Invitation[] = [];
-  /** The groups a person can be placed in: Everyone holds them all already. */
-  groups: Group[] = [];
+  /** The people, twenty to a page, and the invitations, ten: each paged
+   *  and searched on the API server. */
+  readonly pages = new ServerPages<Member>(20, (after, limit) => this.readPeople(after, limit));
+  readonly invitationPages = new ServerPages<Invitation>(10, (after, limit) => this.readInvitations(after, limit));
+  /** The organization in numbers, whatever the search. */
+  counts: MemberCounts = { people: 0, administrators: 0, held: 0 };
+  /** The groups the rows read are in, by id, to name them. */
+  private groupNames = new Map<string, GroupName>();
 
   /** The person whose groups are being edited, or null. */
   editingId: string | null = null;
@@ -57,9 +63,6 @@ export class MembersComponent extends DataPageBase implements OnInit {
   busy = new Set<string>();
 
   query = '';
-  /** The people, and the invitations, a page at a time. */
-  readonly paging = new Paging(20);
-  readonly invitationPaging = new Paging(10);
   /** A dialog's button was pressed: what a field still needs is said under it. */
   tried = false;
   /** What is shown once was copied. */
@@ -85,23 +88,78 @@ export class MembersComponent extends DataPageBase implements OnInit {
   async ngOnInit(): Promise<void> {
     try {
       // Whether people are invited or added is the deployment's mail.
-      await Promise.all([this.reload(), this.auth.setupStatus()]);
-    } catch (failed) {
-      this.fail(Refused.words(failed));
+      await Promise.all([
+        this.pages.first(),
+        this.canReadInvitations ? this.invitationPages.first() : Promise.resolve(),
+        this.auth.setupStatus().catch(() => undefined),
+      ]);
+      const failed = this.pages.error || this.invitationPages.error;
+      if (failed) this.fail(failed);
     } finally {
       this.loading = false;
     }
   }
 
+  ngOnDestroy(): void {
+    this.pages.cancel();
+    if (this.successorTimer) clearTimeout(this.successorTimer);
+  }
+
+  private async readPeople(after: string, limit: number): Promise<ServerPage<Member>> {
+    const page = await this.members_.page(after, limit, { q: this.query });
+    if (!page.error) {
+      this.counts = page.counts;
+      this.learn(page.groups);
+    }
+    return page;
+  }
+
+  private async readInvitations(after: string, limit: number): Promise<ServerPage<Invitation>> {
+    const page = await this.members_.invitations(after, limit);
+    if (!page.error) this.learn(page.groups);
+    return page;
+  }
+
+  private learn(groups: GroupName[]): void {
+    for (const group of groups) this.groupNames.set(group.group_id, group);
+  }
+
+  /** The page shown, and the invitations, read again after a change. */
   private async reload(): Promise<void> {
-    const [members, invitations, groups] = await Promise.all([
-      this.members_.list(),
-      this.canReadInvitations ? this.members_.invitations() : Promise.resolve([]),
-      this.groupService.list().catch(() => []),
-    ]);
-    this.members = members;
-    this.invitations = invitations;
-    this.groups = groups.filter((group) => !group.everyone);
+    await Promise.all([this.pages.reload(), this.canReadInvitations ? this.invitationPages.reload() : Promise.resolve()]);
+  }
+
+  /** A new search: from the first page, once the typing stops. */
+  onSearch(query: string): void {
+    this.query = query;
+    this.pages.search();
+  }
+
+  clearSearch(): void {
+    this.query = '';
+    void this.pages.first();
+  }
+
+  /** The groups a person may be placed in, searched on the server:
+   *  Everyone holds them all already, so it is never offered. */
+  readonly searchGroups = async (q: string, after: string, limit: number): Promise<ServerPage<Pick>> => {
+    const page = await this.groupService.page(after, limit, q);
+    const kept = page.rows.filter((group) => !group.everyone);
+    if (!after) this.everyoneDropped = page.rows.length - kept.length;
+    for (const group of page.rows) this.learn([group]);
+    return {
+      rows: kept.map((group) => ({ id: group.group_id, name: group.name })),
+      next: page.next, total: Math.max(0, page.total - this.everyoneDropped), error: page.error,
+    };
+  };
+  private everyoneDropped = 0;
+
+  /** The chosen groups by name, as a dialog opens, for its picker: those
+   *  not on the page it read are shown first. */
+  chosenGroups: Pick[] = [];
+
+  private picksOf(ids: Iterable<string>): Pick[] {
+    return [...ids].map((id) => ({ id, name: this.groupNames.get(id)?.name ?? id }));
   }
 
   // ── What the current person may do ──────────────────────────────────
@@ -188,11 +246,13 @@ export class MembersComponent extends DataPageBase implements OnInit {
 
   // ── Reading a person ────────────────────────────────────────────────
 
-  /** The people the search leaves. */
+  /** The people of the page shown: the search is the server's. */
   get shown(): Member[] {
-    const query = this.query.trim().toLowerCase();
-    return this.members.filter((member) => !query
-      || `${member.name} ${member.email} ${this.groupNames(member.groups)}`.toLowerCase().includes(query));
+    return this.pages.rows;
+  }
+
+  get invitations(): Invitation[] {
+    return this.invitationPages.rows;
   }
 
   /** Whether the row's menu has anything in it for this person. */
@@ -208,23 +268,28 @@ export class MembersComponent extends DataPageBase implements OnInit {
 
   /** The person whose groups are open, by name. */
   get editingName(): string {
-    const member = this.members.find((each) => each.user_id === this.editingId);
+    const member = this.pages.rows.find((each) => each.user_id === this.editingId);
     return member?.name || member?.email || '';
   }
 
-  /** The numbers over the list: those in Administrators, and those held
-   *  back (disabled, or everything of theirs stopped). */
+  /** The numbers over the list, the server's, whatever the search: the
+   *  people, those in Administrators, and those held back (disabled, or
+   *  everything of theirs stopped). */
+  get peopleCount(): number {
+    return this.counts.people;
+  }
+
   get adminCount(): number {
-    return this.members.filter((member) => this.isAdmin(member)).length;
+    return this.counts.administrators;
   }
 
   get heldCount(): number {
-    return this.members.filter((member) => member.status === 'disabled' || member.stopped).length;
+    return this.counts.held;
   }
 
   /** Whether a person is in the Administrators group. */
   isAdmin(member: Member): boolean {
-    return member.groups.some((id) => this.groups.find((g) => g.group_id === id)?.administrators);
+    return member.groups.some((id) => this.groupNames.get(id)?.administrators);
   }
 
   /** A person's initials, for their row's mark: of the name, else the email. */
@@ -235,12 +300,7 @@ export class MembersComponent extends DataPageBase implements OnInit {
 
   /** A person's groups, by name, each a pill. */
   groupList(groupIds: string[]): string[] {
-    return groupIds.map((id) => this.groups.find((g) => g.group_id === id)?.name ?? id);
-  }
-
-  groupNames(groupIds: string[]): string {
-    if (!groupIds.length) return 'No groups';
-    return groupIds.map((id) => this.groups.find((g) => g.group_id === id)?.name ?? id).join(', ');
+    return groupIds.map((id) => this.groupNames.get(id)?.name ?? id);
   }
 
   // ── Group assignment ────────────────────────────────────────────────
@@ -248,6 +308,7 @@ export class MembersComponent extends DataPageBase implements OnInit {
   startEditGroups(member: Member): void {
     this.editingId = member.user_id;
     this.selected = new Set(member.groups);
+    this.chosenGroups = this.picksOf(member.groups);
     this.error = '';
     this.show(this.groupsDialog);
   }
@@ -326,21 +387,52 @@ export class MembersComponent extends DataPageBase implements OnInit {
   /** Who what they own can pass to: the remover first, then the rest. */
   successorChoices: Choice[] = [];
 
+  /** The search for a successor: the active people it finds are offered,
+   *  read from the server rather than every person at once. */
+  successorQuery = '';
+  private successorTimer: ReturnType<typeof setTimeout> | null = null;
+  private successorAsked = 0;
+
   async requestRemove(member: Member): Promise<void> {
     this.removing = member;
     this.leaving = null;
     this.successorId = '';
+    this.successorQuery = '';
+    this.successorChoices = [{ value: '', name: 'Me' }];
     this.error = '';
-    this.successorChoices = [
-      { value: '', name: 'Me' },
-      ...this.members
-        .filter((each) => each.status === 'active' && each.user_id !== member.user_id && !this.isSelf(each))
-        .map((each) => ({ value: each.user_id, name: each.name || each.email, hint: each.email })),
-    ];
     this.show(this.leavingDialog);
-    const preview = await this.members_.leaving(member.user_id);
+    const [preview] = await Promise.all([this.members_.leaving(member.user_id), this.findSuccessors()]);
     if (preview.error || !preview.counts) return this.fail(preview.error || 'Could not see what they own.');
     this.leaving = preview.counts;
+  }
+
+  /** A new search for a successor, once the typing stops. */
+  onSuccessorSearch(query: string): void {
+    this.successorQuery = query;
+    if (this.successorTimer) clearTimeout(this.successorTimer);
+    this.successorTimer = setTimeout(() => {
+      this.successorTimer = null;
+      void this.findSuccessors();
+    }, SEARCH_WAIT);
+  }
+
+  /** The active people the search finds, the remover first as "Me"; the
+   *  one chosen stays offered while the search changes. */
+  private async findSuccessors(): Promise<void> {
+    const member = this.removing;
+    if (!member) return;
+    const ask = ++this.successorAsked;
+    const page = await this.members_.page('', 20, { status: 'active', q: this.successorQuery });
+    if (ask !== this.successorAsked || this.removing !== member || page.error) return;
+    const kept = this.successorChoices.find((choice) => choice.value && choice.value === this.successorId);
+    const found: Choice[] = page.rows
+      .filter((each) => each.user_id !== member.user_id && !this.isSelf(each))
+      .map((each) => ({ value: each.user_id, name: each.name || each.email, hint: each.email }));
+    this.successorChoices = [
+      { value: '', name: 'Me' },
+      ...(kept && !found.some((choice) => choice.value === kept.value) ? [kept] : []),
+      ...found,
+    ];
   }
 
   /** What goes with them, and what passes on, in words a person reads. */
@@ -369,9 +461,9 @@ export class MembersComponent extends DataPageBase implements OnInit {
       const result = await this.members_.remove(member.user_id, this.successorId);
       if (result.error) return this.fail(result.error);
       this.dialogRef?.close();
-      const successor = this.members.find((each) => each.user_id === this.successorId);
+      const successor = this.successorChoices.find((each) => each.value && each.value === this.successorId);
       await this.reload();
-      this.flash(`${member.email} removed.${successor ? ` What they shared is now ${successor.email}'s.` : ''}`);
+      this.flash(`${member.email} removed.${successor ? ` What they shared is now ${successor.hint || successor.name}'s.` : ''}`);
     } finally {
       this.busy.delete(member.user_id);
     }
@@ -385,11 +477,8 @@ export class MembersComponent extends DataPageBase implements OnInit {
     this.inviteName = '';
     this.inviteEmail = '';
     this.inviteGroupIds = new Set<string>();
+    this.chosenGroups = [];
     this.error = '';
-  }
-
-  toggleInviteGroup(groupId: string): void {
-    if (!this.inviteGroupIds.delete(groupId)) this.inviteGroupIds.add(groupId);
   }
 
   /** Add a person and show the password to hand them. */

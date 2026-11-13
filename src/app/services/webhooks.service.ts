@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 
+import { nextOf, pageAsk } from '../components/ui/paging';
 import { Failure, RequestService } from './request.service';
 
 /** The JSON Schema a webhook's body is checked against. */
@@ -57,6 +58,32 @@ export interface WebhookExecution {
   reason: string;
 }
 
+/** The webhooks in numbers, unnarrowed: the person's own, those of
+ *  them that take calls and that want them signed, and those shared with
+ *  and handed to them. */
+export interface WebhookCounts {
+  webhooks: number;
+  on: number;
+  signed: number;
+  shared: number;
+  handed: number;
+}
+
+/** What the list answers: the person's own and those handed to them
+ *  whole, a page of those shared with them. */
+export interface WebhookList extends Failure {
+  webhooks: Webhook[];
+  shared: Webhook[];
+  handed: Webhook[];
+  /** How many webhooks a person may keep. */
+  limit: number;
+  /** The cursor of the shared ones' next page; null at their end. */
+  next: string | null;
+  /** How many shared ones there are, in all. */
+  total: number;
+  counts: WebhookCounts;
+}
+
 /**
  * Client for Settings:Webhook: a person's own webhooks, each waking a
  * chat of theirs, those shared with them, to watch, and those handed to
@@ -66,10 +93,26 @@ export interface WebhookExecution {
 export class WebhooksService {
   constructor(private request: RequestService) {}
 
-  async list(): Promise<{ webhooks: Webhook[]; shared: Webhook[]; handed: Webhook[]; limit: number } & Failure> {
-    const r = await this.request.gateway('Settings:Webhook:list');
+  /** The person's own webhooks and those handed to them, whole (a person
+   *  keeps 25 at most), and a page of those shared with them: `next` is
+   *  the cursor of the shared ones' next page. `q` narrows all three by
+   *  name or instruction; the counts are of everything, unnarrowed. */
+  async list(after = '', limit = 10, q = ''): Promise<WebhookList> {
+    const r = await this.request.gateway('Settings:Webhook:list', pageAsk(after, limit, { q }));
+    const shared: Webhook[] = r.shared ?? [];
+    const webhooks: Webhook[] = r.webhooks ?? [];
+    const handed: Webhook[] = r.handed ?? [];
+    const counts = r.counts ?? {};
     return {
-      webhooks: r.webhooks ?? [], shared: r.shared ?? [], handed: r.handed ?? [], limit: Number(r.limit) || 0,
+      webhooks, shared, handed, limit: Number(r.limit) || 0, next: nextOf(r),
+      total: Number(r.total ?? counts.shared ?? shared.length) || 0,
+      counts: {
+        webhooks: Number(counts.webhooks ?? webhooks.length) || 0,
+        on: Number(counts.on ?? webhooks.filter((hook) => hook.enabled).length) || 0,
+        signed: Number(counts.signed ?? webhooks.filter((hook) => hook.require_signature).length) || 0,
+        shared: Number(counts.shared ?? shared.length) || 0,
+        handed: Number(counts.handed ?? handed.length) || 0,
+      },
       error: r.error,
     };
   }

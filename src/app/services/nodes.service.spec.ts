@@ -22,6 +22,32 @@ describe('NodesService', () => {
     expect(page.enrolled.length).toBe(1);
   });
 
+  it('asks for a page of runtimes, filtered, after a cursor, and reads the counts', async () => {
+    const { service, sent } = create({
+      nodes: [{ node_id: 'r1' }], next: 'r1', total: 30,
+      counts: { total: 30, connected: 20, refused: 1, sandboxes: 9, draining: 2, chats: 5, shared: 4, own: 26 },
+    });
+
+    const page = await service.nodes({ q: 'gpu', state: 'connected', scope: 'own' }, 'r0', 20);
+
+    expect(sent[0]).toEqual({
+      endpoint: 'Nodes:Node:list', data: { limit: 20, after: 'r0', q: 'gpu', state: 'connected', scope: 'own' },
+    });
+    expect(page.next).toBe('r1');
+    expect(page.total).toBe(30);
+    expect(page.counts?.connected).toBe(20);
+  });
+
+  it('asks for the tokens that can enroll, and says the end', async () => {
+    const { service, sent } = create({ tokens: [], nodes: [], next: null, total: 0, counts: { live: 0, spent: 3 } });
+
+    const page = await service.tokens({ state: 'live' }, '', 10);
+
+    expect(sent[0].data).toEqual({ limit: 10, state: 'live' });
+    expect(page.next).toBeNull();
+    expect(page.counts).toEqual({ live: 0, spent: 3 });
+  });
+
   it('reads a refused list as empty, with the reason', async () => {
     const { service } = create({ error: 'Not allowed.' });
 

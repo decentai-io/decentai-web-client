@@ -10,7 +10,11 @@
 <app-model-providers
   *ngIf="!loading"
   [connections]="connections"
+  [pages]="pages"
+  [connectionTotal]="all"
+  [counts]="counts"
   [providers]="providers"
   [groups]="groups"
+  (searched)="search($event)"
   (changed)="reload()"
 ></app-model-providers>

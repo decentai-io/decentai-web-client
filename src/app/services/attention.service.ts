@@ -33,9 +33,10 @@ export class AttentionService {
   }
 
   async refresh(): Promise<void> {
-    const waiting = await this.activity.list();
+    // One card asked for: the server counts the chats a card waits in.
+    const waiting = await this.activity.list('', 1);
     // What cannot be read changes nothing shown.
-    if (!waiting.error) this.count$.next(new Set(waiting.cards.map((card) => card.chat_id)).size);
+    if (!waiting.error) this.count$.next(waiting.chats_waiting);
   }
 
   /** A page that already read the chats tells the count from them. */

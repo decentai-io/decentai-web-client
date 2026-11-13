@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 
+import { nextOf, pageAsk, ServerPage } from '../components/ui/paging';
 import { Person } from './auth.service';
-import { Failure, Refused, RequestService } from './request.service';
+import { Failure, RequestService } from './request.service';
 
 /** One of the organization's people. */
 export type Member = Person;
@@ -13,6 +14,44 @@ export interface Invitation {
   email: string;
   groups: string[];
   expires_at: string;
+}
+
+/** A group as a list names it: enough to name it on a row, and to say
+ *  whether it is Everyone or Administrators. */
+export interface GroupName {
+  group_id: string;
+  name: string;
+  everyone: boolean;
+  administrators: boolean;
+}
+
+/** The organization's people in numbers, whatever the search. */
+export interface MemberCounts {
+  people: number;
+  administrators: number;
+  /** Disabled, or everything of theirs stopped. */
+  held: number;
+}
+
+/** What the people are narrowed by, on the server. */
+export interface MemberFilters {
+  /** In a name, an email, or the name of a group they are in. */
+  q?: string;
+  /** That group's people; Everyone's is every person. */
+  group_id?: string;
+  status?: 'active' | 'disabled' | 'held';
+}
+
+/** A page of people, with the groups its people are in, so a row names
+ *  them, and the organization's numbers. */
+export interface MemberPage extends ServerPage<Member> {
+  counts: MemberCounts;
+  groups: GroupName[];
+}
+
+/** A page of invitations, and the groups they place people in. */
+export interface InvitationPage extends ServerPage<Invitation> {
+  groups: GroupName[];
 }
 
 /** What removing a person touches, kind by kind. */
@@ -34,17 +73,26 @@ export interface Leaving {
  * A person's access is exactly their groups; Everyone holds them without
  * being listed. Where the deployment sends mail, people join by
  * invitation; where it sends none, an administrator adds them with a
- * temporary password.
+ * temporary password. Both lists are paged and searched on the server.
  */
 @Injectable({ providedIn: 'root' })
 export class MembersService {
   constructor(private request: RequestService) {}
 
   // ── People ──────────────────────────────────────────────────────────
-  async list(): Promise<Member[]> {
-    const r = await this.request.gateway('IAM:User:list');
-    if (r.error) throw new Refused(r.error);  // the page says why, a picker falls back
-    return Array.isArray(r.users) ? r.users : [];
+  /** A page of the organization's people, searched and narrowed on the
+   *  server, in the order they joined. */
+  async page(after = '', limit = 20, filters: MemberFilters = {}): Promise<MemberPage> {
+    const r = await this.request.gateway('IAM:User:list', pageAsk(after, limit, { ...filters }));
+    return {
+      rows: Array.isArray(r.users) ? r.users : [], next: nextOf(r), total: Number(r.total) || 0, error: r.error,
+      counts: {
+        people: Number(r.counts?.people) || 0,
+        administrators: Number(r.counts?.administrators) || 0,
+        held: Number(r.counts?.held) || 0,
+      },
+      groups: Array.isArray(r.groups) ? r.groups : [],
+    };
   }
 
   setGroups(userId: string, groupIds: string[]) {
@@ -89,10 +137,13 @@ export class MembersService {
   }
 
   // ── Invitations ─────────────────────────────────────────────────────
-  async invitations(): Promise<Invitation[]> {
-    const r = await this.request.gateway('IAM:Invitation:list');
-    if (r.error) throw new Refused(r.error);
-    return Array.isArray(r.invitations) ? r.invitations : [];
+  /** A page of the invitations not yet accepted; `q` in the address. */
+  async invitations(after = '', limit = 10, q = ''): Promise<InvitationPage> {
+    const r = await this.request.gateway('IAM:Invitation:list', pageAsk(after, limit, { q }));
+    return {
+      rows: Array.isArray(r.invitations) ? r.invitations : [], next: nextOf(r), total: Number(r.total) || 0,
+      error: r.error, groups: Array.isArray(r.groups) ? r.groups : [],
+    };
   }
 
   invite(email: string, groupIds: string[]) {

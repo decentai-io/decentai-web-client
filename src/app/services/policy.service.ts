@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 
+import { nextOf, pageAsk, ServerPage } from '../components/ui/paging';
 import { Failure, Refused, RequestService } from './request.service';
 
 /** One statement of a policy. `ask` and `scopes` are for agents'
@@ -21,6 +22,17 @@ export interface Policy {
   built_in: boolean;
 }
 
+/** One action of the catalog, in the API server's words. */
+export interface PolicyCatalogAction {
+  action: string;
+  words: string;
+}
+
+/** A page of policies, and the catalog of actions they may name. */
+export interface PolicyPage extends ServerPage<Policy> {
+  catalog: PolicyCatalogAction[];
+}
+
 /**
  * Client for IAM:Policy, where permissions are written.
  *
@@ -33,9 +45,22 @@ export interface Policy {
 export class PolicyService {
   constructor(private request: RequestService) {}
 
-  async list(): Promise<Policy[]> {
-    const r = await this.request.gateway('IAM:Policy:list');
-    if (r.error) throw new Refused(r.error);  // the page says why, a picker falls back
+  /** A page of the policies, the built-in ones first; `q` in a name or
+   *  an action a statement names. The catalog of actions comes with it. */
+  async page(after = '', limit = 10, q = ''): Promise<PolicyPage> {
+    const r = await this.request.gateway('IAM:Policy:list', pageAsk(after, limit, { q }));
+    return {
+      rows: Array.isArray(r.policies) ? r.policies : [], next: nextOf(r), total: Number(r.total) || 0,
+      error: r.error, catalog: Array.isArray(r.catalog) ? r.catalog : [],
+    };
+  }
+
+  /** Just these policies, by id, the built-in ones too: a picker names
+   *  the ones chosen. */
+  async named(ids: string[]): Promise<Policy[]> {
+    if (!ids.length) return [];
+    const r = await this.request.gateway('IAM:Policy:list', { ids });
+    if (r.error) throw new Refused(r.error);
     return Array.isArray(r.policies) ? r.policies : [];
   }
 

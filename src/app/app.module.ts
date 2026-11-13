@@ -231,6 +231,7 @@ import { ListComponent } from './components/ui/list.component';
 import { PageComponent } from './components/ui/page.component';
 import { PagerComponent } from './components/ui/pager.component';
 import { MoreComponent } from './components/ui/more.component';
+import { SearchPicksComponent } from './components/ui/search-picks.component';
 import { PillsComponent } from './components/ui/pills.component';
 import { RecordRowComponent } from './components/ui/record-row.component';
 import { RowComponent } from './components/ui/row.component';
@@ -458,6 +459,7 @@ import { AgentCardComponent } from './pages/app/agents/agent-card.component';
     SelectionBarComponent,
     PagerComponent,
     MoreComponent,
+    SearchPicksComponent,
     PillsComponent,
 
     // The icon set (Lucide): only the icons named here are bundled.

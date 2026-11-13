@@ -1,3 +1,5 @@
+import { fakeAsync, flush, tick } from '@angular/core/testing';
+
 import { PoliciesComponent } from './policies.component';
 
 describe('PoliciesComponent', () => {
@@ -13,7 +15,7 @@ describe('PoliciesComponent', () => {
 
   async function createComponent(service: any = {}): Promise<PoliciesComponent> {
     const component = new PoliciesComponent(
-      { list: async () => [], ...service } as any,
+      { page: async () => ({ rows: [], next: null, total: 0, catalog: [] }), ...service } as any,
       { installed: async () => [AGENT] } as any,
       { can: () => true, catalog: ACTIONS, ensureLoaded: async () => undefined, refresh: async () => true } as any,
       // The editor's dialog and the question before a delete: not asked here.
@@ -94,7 +96,7 @@ describe('PoliciesComponent', () => {
   it('renames a policy whose name changed, then saves what it allows', async () => {
     const calls: string[] = [];
     const component = await createComponent({
-      list: async () => [policy([{ effect: 'allow', actions: ['iam:user:list'] }])],
+      page: async () => ({ rows: [policy([{ effect: 'allow', actions: ['iam:user:list'] }])], next: null, total: 1 }),
       rename: async (id: string, name: string) => { calls.push(`rename ${id} ${name}`); return {}; },
       update: async (id: string) => { calls.push(`update ${id}`); return {}; },
     });
@@ -138,13 +140,30 @@ describe('PoliciesComponent', () => {
     expect(component.statementsOf(many).length).toBe(7);
   });
 
-  it('finds a policy by what it says, in words', async () => {
-    const component = await createComponent({
-      list: async () => [policy([{ effect: 'allow', actions: ['iam:user:delete'] }])],
-    });
-    component.query = 'remove a person';
-    expect(component.shown.length).toBe(1);
-    component.query = 'webhooks';
-    expect(component.shown.length).toBe(0);
-  });
+  it('asks the server for the search, from the first page, once the typing stops', fakeAsync(() => {
+    const asked: { after: string; q: string }[] = [];
+    const rows = Array.from({ length: 10 }, (_, i) => ({ ...policy([]), policy_id: `p${i}` }));
+    let component!: PoliciesComponent;
+    void createComponent({
+      page: async (after: string, _limit: number, q: string) => {
+        asked.push({ after, q });
+        return after ? { rows: rows.slice(0, 2), next: null, total: 12 } : { rows, next: 'p9', total: q ? 1 : 12 };
+      },
+    }).then((made) => (component = made));
+    flush();
+    expect(component.pages.total).toBe(12);
+    void component.pages.go(2);
+    flush();
+    expect(component.pages.page).toBe(2);
+    expect(asked[asked.length - 1]).toEqual({ after: 'p9', q: '' });
+
+    component.onSearch('delete');
+    component.onSearch('remove');
+    tick(300);
+    flush();
+    expect(asked[asked.length - 1]).toEqual({ after: '', q: 'remove' });
+    expect(asked.filter((ask) => ask.q).length).toBe(1);
+    expect(component.pages.page).toBe(1);
+    expect(component.pages.total).toBe(1);
+  }));
 });

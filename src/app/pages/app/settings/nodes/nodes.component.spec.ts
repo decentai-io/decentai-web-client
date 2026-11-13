@@ -63,17 +63,35 @@ function nodes(): ExecutionNode[] {
   ];
 }
 
+/** Nodes:Node:list as the API server answers it: the nodes the filters
+ *  leave, and the counts of them all. */
+function answerNodes(all: ExecutionNode[], filters: any = {}) {
+  const scope = filters.scope === 'shared' ? '' : filters.scope === 'own' ? 'org_1' : 'all';
+  const shown = filterNodes(all, { query: filters.q ?? '', state: filters.state ?? 'all', scope });
+  const counts = overview(all, []);
+  return {
+    nodes: shown, next: null, total: shown.length,
+    counts: { ...counts, shared: all.filter((one) => !one.scope).length, own: all.filter((one) => one.scope).length },
+  };
+}
+
+/** Nodes:Authority:list as the API server answers it. */
+function answerTokens(all: EnrollmentToken[], filters: any = {}, enrolled: any[] = []) {
+  const shown = all.filter((one) => !filters.state || (tokenState(one) === 'live') === (filters.state === 'live'));
+  const live = all.filter((one) => tokenState(one) === 'live').length;
+  return { tokens: shown, enrolled, next: null, total: shown.length, counts: { live, spent: all.length - live } };
+}
+
 /** A fake of the services, every call recorded. */
 function fakeService(over: Record<string, any> = {}) {
   const calls: { name: string; args: unknown[] }[] = [];
   const record = (name: string, answer: (...args: any[]) => any) =>
     async (...args: unknown[]) => { calls.push({ name, args }); return answer(...args); };
   const service: any = {
-    nodes: record('nodes', () => ({ nodes: nodes() })),
-    tokens: record('tokens', () => ({
-      tokens: [token('a'), token('b', { withdrawn: true }), token('s', { metadata: {}, uses: null })],
-      enrolled: [{ _id: 'alpha', token: 'a' }],
-    })),
+    nodes: record('nodes', (filters: any = {}) => answerNodes(nodes(), filters)),
+    tokens: record('tokens', (filters: any = {}) => answerTokens(
+      [token('a'), token('b', { withdrawn: true }), token('s', { metadata: {}, uses: null })], filters,
+      [{ _id: 'alpha', token: 'a' }])),
     createToken: record('createToken', () => ({ id: 'tok_new', token: 'dct_secret' })),
     revokeToken: record('revokeToken', () => ({})),
     updateNode: record('updateNode', () => ({})),
@@ -154,7 +172,10 @@ describe('NodesComponent', () => {
       await component.ngOnInit();
 
       expect(component.nodes.map((n) => n.node_id)).toEqual(['alpha', 'beta', 'pool-1']);
-      expect(component.tokens.length).toBe(3);
+      // The tokens that can enroll, asked of the server a page at a time.
+      expect(component.tokens.length).toBe(2);
+      expect(called('tokens')[0].args).toEqual([{ state: 'live' }, '', 10]);
+      expect(called('nodes')[0].args).toEqual([{}, '', 20]);
       expect(component.placement).toBe('prefer_own');
       expect(component.ownConnected).toBe(1);
       expect(component.nodesFoot).toBe('2 connected · 3 in all');
@@ -195,8 +216,41 @@ describe('NodesComponent', () => {
       await component.ngOnInit();
 
       expect(component.visibleTokens.map((one) => one._id)).toEqual(['a', 's']);
-      component.showSpent = true;
-      expect(component.visibleTokens.map((one) => one._id)).toEqual(['a', 's', 'b']);
+      await component.setShowSpent(true);
+      expect(component.visibleTokens.map((one) => one._id)).toEqual(['a', 'b', 's']);
+      expect(component.tokensFoot).toBe('2 can enroll · 1 spent');
+    });
+
+    it('takes the counts from the server, whatever the page shows', async () => {
+      const { component } = create({
+        nodes: () => ({
+          nodes: [node('alpha')], next: 'alpha', total: 40,
+          counts: { total: 40, connected: 31, refused: 2, sandboxes: 60, draining: 4, chats: 90, shared: 10, own: 30, own_connected: 25 },
+        }),
+        tokens: () => ({ tokens: [token('a')], enrolled: [], next: null, total: 1, counts: { live: 7, spent: 12 } }),
+      });
+      await component.ngOnInit();
+
+      expect(component.counts).toEqual({ total: 40, connected: 31, refused: 2, sandboxes: 60, draining: 4, chats: 90, tokens: 7 });
+      expect(component.nodesFoot).toBe('31 connected · 40 in all');
+      expect(component.tokensFoot).toBe('7 can enroll · 12 spent');
+      expect(component.ownConnected).toBe(25);
+      expect(component.nodePages.hasNext).toBeTrue();
+    });
+
+    it('reads the next page of runtimes after the cursor the server gave', async () => {
+      const { component, called } = create({
+        nodes: (_filters: any, after: string) => (after
+          ? { nodes: [node('gamma')], next: null, total: 21 }
+          : { nodes: Array.from({ length: 20 }, (_, i) => node(`n${i}`)), next: 'n19', total: 21 }),
+      });
+      await component.ngOnInit();
+
+      await component.nodePages.go(2);
+      expect(called('nodes')[1].args).toEqual([{}, 'n19', 20]);
+      expect(component.nodes.map((one) => one.node_id)).toEqual(['gamma']);
+      await component.nodePages.go(1);
+      expect(called('nodes')[2].args).toEqual([{}, '', 20]);
     });
 
     it('counts what is connected, the sandboxes, the chats and the tokens that can enroll', async () => {
@@ -278,13 +332,18 @@ describe('NodesComponent', () => {
     });
 
     it('offers a scope filter only where there are two, and says what is shown', async () => {
-      const { component } = create();
+      const { component, called } = create();
       await component.ngOnInit();
 
       expect(component.scopeChoices.map((c) => c.name)).toEqual(['Any organization', 'Shared', 'This organization']);
       component.setFilter('state', 'refused');
+      await new Promise((resolve) => setTimeout(resolve));
       expect(component.filtering).toBeTrue();
+      expect(called('nodes')[called('nodes').length - 1].args[0]).toEqual({ state: 'refused' });
       expect(component.nodesFoot).toBe('1 shown · 2 connected · 3 in all');
+      component.setFilter('scope', '');
+      await new Promise((resolve) => setTimeout(resolve));
+      expect(called('nodes')[called('nodes').length - 1].args[0]).toEqual({ state: 'refused', scope: 'shared' });
       component.clearFilters();
       expect(component.filtering).toBeFalse();
     });
@@ -691,6 +750,8 @@ describe('NodesComponent, rendered', () => {
   it('says when no runtime matches the filters', async () => {
     await render();
     fixture.componentInstance.setFilter('query', 'nothing like it');
+    // The search waits for the typing to stop, then asks the server.
+    await new Promise((resolve) => setTimeout(resolve, 300));
     await settle();
 
     expect(text()).toContain('No node matches');
