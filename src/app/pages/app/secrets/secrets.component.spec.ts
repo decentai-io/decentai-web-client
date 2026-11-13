@@ -95,9 +95,12 @@ describe('SecretsComponent', () => {
     expect(calls.accepted).toEqual({ id: 'h', yes: true });
   });
 
-  it('gives a secret to more agents, through its update', async () => {
+  it('opens a secret to choose its agents in place, and saves them through its update', async () => {
     const { component, calls } = await create([secret('one')]);
+    const navigate = spyOn((component as any).router, 'navigate').and.resolveTo(true);
     component.openAgents(component.records[0]);
+    expect(navigate).toHaveBeenCalledWith(['/secrets', 'one'], { queryParamsHandling: 'preserve' });
+    expect(component.agentsTarget?.record_id).toBe('one');
     await component.saveAgents([{ agent: 'jira', resource: 'connection' }, { agent: 'gmail', resource: 'mailbox' }]);
 
     expect(calls.updated).toEqual({

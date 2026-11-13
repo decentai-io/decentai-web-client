@@ -21,11 +21,12 @@
   </div>
 </ng-container>
 
-<!-- Each function a card, its edge in its level's colour. -->
-<ul class="fn-cards" *ngIf="functions.length">
-  <li class="fn-card" *ngFor="let item of functions" [attr.data-index]="item.fn.level">
-    <div class="fn-card-head">
-      <span class="fn-card-titles">
+<!-- One function a row, in one frame: read by name, its level at the
+     right. -->
+<ul class="fn-list" *ngIf="functions.length">
+  <li class="fn-row" *ngFor="let item of functions">
+    <div class="fn-head">
+      <span class="fn-titles">
         <span class="fn-title">{{ item.fn.name || item.fn.id }}</span>
         <code class="fn-name" *ngIf="item.fn.name && item.fn.name !== item.fn.id">{{ item.fn.id }}</code>
       </span>

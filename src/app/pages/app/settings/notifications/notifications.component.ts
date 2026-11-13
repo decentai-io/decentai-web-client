@@ -3,6 +3,7 @@ import { Refused } from 'src/app/services/request.service';
 import { SwPush } from '@angular/service-worker';
 import { Subscription } from 'rxjs';
 
+import { ChatDoneService } from 'src/app/services/chat-done.service';
 import { NotificationSettings, NotificationsService } from 'src/app/services/notifications.service';
 
 /** How long "Saved" shows beside a switch that saves itself. */
@@ -11,7 +12,8 @@ const NOTE_FOR_MS = 2000;
 /**
  * Settings › Notifications: where a person hears that a chat needs them
  * after they closed it. This device (web push, turned on and off here),
- * an email when no device can be reached, and a test. Nothing here is a
+ * an email when no device can be reached, and a test; and, while the app
+ * is open, a word when a chat they set working is done (ChatDoneService). Nothing here is a
  * form: each control acts as it is used and says what happened beside
  * itself.
  */
@@ -39,12 +41,15 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   textError = '';
   /** What the test reached, or why it could not be sent. */
   testResult = '';
+  /** "Saved" beside the switch for a chat that is done. */
+  doneNote = '';
 
   private subscription?: Subscription;
 
   constructor(
     private notifications: NotificationsService,
     private swPush: SwPush,
+    private chatDone: ChatDoneService,
   ) {}
 
   ngOnInit(): Promise<void> {
@@ -222,6 +227,39 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   private saved(show: (note: string) => void): void {
     show('Saved');
     setTimeout(() => show(''), NOTE_FOR_MS);
+  }
+
+  // ── A chat that is done, while the app is open ──────────────────────
+
+  get doneOn(): boolean {
+    return this.chatDone.enabled;
+  }
+
+  /** Kept on this device. Turned on, the browser is asked once whether
+   *  the app may show system notifications; a no is kept to. */
+  async setDone(on: boolean): Promise<void> {
+    this.chatDone.enabled = on;
+    if (on && typeof Notification !== 'undefined' && Notification.permission === 'default') {
+      try {
+        await Notification.requestPermission();
+      } catch {
+        // Not asked: the app's own note and the tab's title still tell.
+      }
+    }
+    this.saved((note) => (this.doneNote = note));
+  }
+
+  testDone(): void {
+    this.chatDone.test();
+  }
+
+  /** The help under the switch: what is said, and where. */
+  get doneHelp(): string {
+    const said = 'Said in the app when a chat you set working is done while you are on another page. With this tab in '
+      + 'the background, the tab’s title counts them';
+    if (typeof Notification === 'undefined') return `${said}.`;
+    if (this.pushDenied) return `${said}; system notifications are blocked for this site in the browser.`;
+    return `${said}, and a system notification says it where the browser allows one.`;
   }
 
   /** The help under the text switch. */

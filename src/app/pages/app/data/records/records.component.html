@@ -1,16 +1,14 @@
 <app-page guide="records"
   title="Records"
   sentence="Notes, tasks and other records your agents keep for you."
-  icon="database"
-  [hue]="214"
   [wide]="true"
 >
   <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
   <p class="form-notice" role="status" *ngIf="notice">{{ notice }}</p>
   <app-handed [records]="handed" [say]="handedSay" [busy]="busyRef" (answer)="accept($event.record, $event.yes)"></app-handed>
 
-  <!-- The records in numbers, each a tile; whose they are narrows the list. -->
-  <ul class="ui-tiles data-tiles" *ngIf="records.length" aria-label="Your records in numbers">
+  <!-- The records in numbers, as one line; whose they are narrows the list. -->
+  <ul class="ui-tiles" *ngIf="records.length" aria-label="Your records in numbers">
     <li *ngFor="let tile of tiles; trackBy: byIcon">
       <button class="ui-tile" type="button" *ngIf="tile.show; else plainTile"
               [class.is-on]="show === tile.show" [attr.aria-pressed]="show === tile.show"
@@ -24,9 +22,6 @@
   </ul>
 
   <ng-template #tileInside let-tile>
-    <span class="ui-tile-icon">
-      <lucide-icon [name]="tile.icon" [size]="20" aria-hidden="true"></lucide-icon>
-    </span>
     <span class="ui-tile-words">
       <span class="ui-tile-value">{{ tile.value }}</span>
       <span class="ui-tile-label">{{ tile.label }}</span>
@@ -97,21 +92,18 @@
       <!-- The open kind: what it is, whose, how many, and what its
            agent says it is for. -->
       <div class="records-kind" *ngIf="activeKind as open">
-        <span class="ui-panel-icon is-hued"><lucide-icon name="table" [size]="16" aria-hidden="true"></lucide-icon></span>
-        <div class="records-kind-words">
-          <p class="records-kind-title">
-            {{ kindLabel }}
-            <span class="ui-pills">
-              <span class="ui-pill">
-                <lucide-icon name="bot" [size]="12" aria-hidden="true"></lucide-icon>{{ agentName(open.agent) }}
-              </span>
-              <span class="ui-pill is-accent">
-                <lucide-icon name="list" [size]="12" aria-hidden="true"></lucide-icon>{{ selectionRecords.length }} {{ selectionRecords.length === 1 ? "record" : "records" }}
-              </span>
+        <p class="records-kind-title">
+          {{ kindLabel }}
+          <span class="ui-pills">
+            <span class="ui-pill">
+              <lucide-icon name="bot" [size]="12" aria-hidden="true"></lucide-icon>{{ agentName(open.agent) }}
             </span>
-          </p>
-          <p class="records-kind-about" *ngIf="kindDescription">{{ kindDescription }}</p>
-        </div>
+            <span class="ui-pill">
+              <lucide-icon name="list" [size]="12" aria-hidden="true"></lucide-icon>{{ selectionRecords.length }} {{ selectionRecords.length === 1 ? "record" : "records" }}
+            </span>
+          </span>
+        </p>
+        <p class="records-kind-about" *ngIf="kindDescription">{{ kindDescription }}</p>
       </div>
 
       <!-- One kind: a table in the shape its agent declared. -->

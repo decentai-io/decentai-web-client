@@ -8,19 +8,18 @@
   text-align: center;
 }
 
+/* The kind's icon, in a quiet circle: the action under it is what
+   carries the colour. */
 .empty-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 64px;
-  height: 64px;
-  margin-bottom: 14px;
-  border-radius: 20px;
-  background:
-    radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
-    var(--accent-soft);
-  color: var(--accent-ink);
-  box-shadow: 0 0 0 8px var(--accent-wash), 0 0 0 16px color-mix(in srgb, var(--accent) 3%, transparent);
+  width: 56px;
+  height: 56px;
+  margin-bottom: 12px;
+  border-radius: var(--r-full);
+  background: var(--surface-2);
+  color: var(--ink-2);
 }
 
 .empty-title {
@@ -31,10 +30,10 @@
 }
 
 .empty-line {
-  max-width: 44ch;
+  max-width: 48ch;
   color: var(--ink-2);
   font-size: var(--t-base);
-  line-height: var(--lh-base);
+  line-height: 22px;
 }
 
 /* The main action first; a second one beside it, apart, and under it

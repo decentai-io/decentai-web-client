@@ -5,8 +5,6 @@
 
 <app-page
   [title]="ref ? 'Edit skill' : 'Write a skill'"
-  icon="square-pen"
-  [hue]="214"
   sentence="The assistant sees every skill's name and when it applies, and reads the skill itself only once it decides the skill applies."
 >
   <div class="form" *ngIf="loading" aria-busy="true" aria-label="Opening the skill">
@@ -39,11 +37,8 @@
 
     <!-- The skill itself: written as markdown, with how it reads one
          press away. -->
-    <section class="editor-body" aria-labelledby="skill-body-title">
-      <h2 class="form-section-title editor-section-title" id="skill-body-title">
-        <span class="ui-panel-icon is-hued"><lucide-icon name="book-open" [size]="16" aria-hidden="true"></lucide-icon></span>
-        The skill itself
-      </h2>
+    <section class="editor-section" aria-labelledby="skill-body-title">
+      <h2 class="form-section-title" id="skill-body-title">The skill itself</h2>
       <div class="editor-bar">
         <app-segmented name="tab" label="Write or preview" [choices]="tabs" [(ngModel)]="tab"></app-segmented>
         <div class="editor-marks" role="toolbar" aria-label="Formatting" *ngIf="tab === 'write'">
@@ -81,11 +76,8 @@
       <p class="editor-error" role="alert" *ngIf="textError">{{ textError }}</p>
     </section>
 
-    <section aria-labelledby="skill-share-title">
-      <h2 class="form-section-title editor-section-title" id="skill-share-title">
-        <span class="ui-panel-icon is-hued"><lucide-icon name="users" [size]="16" aria-hidden="true"></lucide-icon></span>
-        Who can use it
-      </h2>
+    <section class="editor-section" aria-labelledby="skill-share-title">
+      <h2 class="form-section-title" id="skill-share-title">Who can use it</h2>
       <app-sharing-selector
         label="Who can use it"
         [mode]="share.mode" (modeChange)="share.mode = $any($event)"

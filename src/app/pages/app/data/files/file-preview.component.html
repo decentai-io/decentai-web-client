@@ -1,6 +1,6 @@
-<!-- Its header band: the file's face, its name, and its facts as pills. -->
+<!-- Its title row: the file's icon, its name, and its facts as pills. -->
 <header class="preview-head">
-  <app-file-icon class="preview-face" [name]="name" [mime]="file.file?.type"></app-file-icon>
+  <app-file-icon [name]="name" [mime]="file.file?.type"></app-file-icon>
   <div class="preview-words">
     <h2 class="preview-name" *ngIf="draftName === null">
       {{ name }}
@@ -18,7 +18,7 @@
       <button class="btn sm" type="button" [disabled]="renaming" (click)="draftName = null">Cancel</button>
     </form>
     <p class="preview-rename-problem" role="alert" *ngIf="draftName !== null && renameProblem">{{ renameProblem }}</p>
-    <p class="ui-pills preview-facts">
+    <p class="ui-pills">
       <span class="ui-pill" *ngIf="source">
         <lucide-icon [name]="file.of ? 'bot' : 'user'" [size]="12" aria-hidden="true"></lucide-icon>{{ source }}
       </span>
@@ -52,7 +52,6 @@
 
 <div class="preview-body" [attr.aria-busy]="loading">
   <div class="ui-panel-head preview-body-head">
-    <span class="ui-panel-icon is-hued"><lucide-icon name="eye" [size]="16" aria-hidden="true"></lucide-icon></span>
     <h3 class="ui-panel-title">What it holds</h3>
   </div>
   <span class="sk sk-field" *ngIf="loading && kind !== 'pdf'"></span>

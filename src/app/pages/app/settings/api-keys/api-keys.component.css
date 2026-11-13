@@ -1,26 +1,13 @@
-/* The API keys page: tiles of its numbers, then the list. A key's
+/* The API keys page: its numbers as one line, then the list. A key's
    prefix reads as code beside its name, its dates are pills, and a
    refusal is said above the rows. The list, the rows and the buttons
    are the shared ones. */
 .keys-lead {
-  display: flex;
   flex: 1 1 280px;
-  align-items: center;
-  gap: 8px;
   min-width: 0;
   color: var(--ink-2);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
-}
-
-.keys-lead lucide-icon {
-  display: flex;
-  flex: none;
-  color: hsl(var(--hue, 262) 50% 45%);
-}
-
-:host-context(.dark) .keys-lead lucide-icon {
-  color: hsl(var(--hue, 262) 60% 75%);
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
 }
 
 .keys-prefix {
@@ -30,8 +17,8 @@
   background: var(--surface-2);
   color: var(--ink);
   font-family: var(--font-mono);
-  font-size: var(--t-xs);
-  line-height: var(--lh-xs);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
 }
 
 .keys-pills {
@@ -44,6 +31,6 @@
   border-radius: var(--r-md);
   background: var(--danger-soft);
   color: var(--danger-ink);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
 }

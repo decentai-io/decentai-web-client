@@ -118,6 +118,54 @@ export interface RememberedApproval {
   at: string;
 }
 
+/** What a row says of its group: may use the functions, asked first
+ *  each time, or may not. A deny wins, then an ask, then an allow. */
+export type AccessEffect = 'allow' | 'ask' | 'deny';
+
+/** One row of who may use an installed agent (api-server.md §5): one of
+ *  the organization's groups, an effect, every function (`["*"]`) or
+ *  some, and values for the scopes the agent declares. A row covers what
+ *  its functions call, too. */
+export interface AccessRow {
+  group_id: string;
+  effect: AccessEffect;
+  functions: string[];
+  /** A scope's values narrow the functions it scopes to those values;
+   *  a scope left out is not narrowed. */
+  scopes?: Record<string, string[]>;
+}
+
+/** One of the organization's groups, with how many people it holds. */
+export interface AccessGroup {
+  group_id: string;
+  name: string;
+  members: number;
+}
+
+/** One of the agent's functions, and the scopes that narrow it. */
+export interface AccessFunction {
+  id: string;
+  name: string;
+  level: number;
+  scoped_by: string[];
+}
+
+/** A policy that also names the agent's actions: changed on Policies. */
+export interface AccessPolicy {
+  policy_id: string;
+  name: string;
+  actions: string[];
+}
+
+/** Everything `Agents:Agent:access` answers with. */
+export interface AgentAccess {
+  access: AccessRow[];
+  groups: AccessGroup[];
+  functions: AccessFunction[];
+  scopes: { name: string; description: string }[];
+  policies: AccessPolicy[];
+}
+
 /**
  * Client for Agents:Agent: the agents a person may use, the sources an
  * administrator saved, and installing what a source offers. An agent is
@@ -193,6 +241,29 @@ export class AgentsService {
   /** Uninstall an agent; its records stay their people's. */
   uninstall(agentId: string) {
     return this.request.gateway<object>('Agents:Agent:delete', { agent_id: agentId });
+  }
+
+  // ── Who may use it ───────────────────────────────────────────────
+
+  /** Who may use an agent, by group, with the groups, its functions and
+   *  scopes, and the policies that also name it. Refused (`refused`) for
+   *  whoever may not install agents. */
+  async access(agentId: string): Promise<Partial<AgentAccess> & Failure> {
+    const r = await this.request.gateway<AgentAccess>('Agents:Agent:access', { agent_id: agentId });
+    if (r.error) return { error: r.error, code: r.code };
+    return {
+      access: Array.isArray(r.access) ? r.access : [],
+      groups: Array.isArray(r.groups) ? r.groups : [],
+      functions: Array.isArray(r.functions) ? r.functions : [],
+      scopes: Array.isArray(r.scopes) ? r.scopes : [],
+      policies: Array.isArray(r.policies) ? r.policies : [],
+    };
+  }
+
+  /** Choose who may use an agent: the rows, whole, at most 50. A refusal
+   *  names the row it is about. */
+  setAccess(agentId: string, access: AccessRow[]) {
+    return this.request.gateway<{ access: AccessRow[] }>('Agents:Agent:setaccess', { agent_id: agentId, access });
   }
 
   // ── Samples ──────────────────────────────────────────────────────

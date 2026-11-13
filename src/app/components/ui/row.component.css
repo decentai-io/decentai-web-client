@@ -25,32 +25,21 @@
 }
 
 :host(:hover) {
-  background: var(--accent-wash);
+  background: var(--surface-2);
 }
 
-/* The mark sits in a tile of the accent: the colour a list has. An
-   agent's own mark fills the tile with its own. */
+/* The mark sits in a neutral tile; an agent's own mark fills it with
+   the agent's hue, the one colour a row of agents has. */
 .row-mark {
   display: flex;
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-  transition: transform var(--dur-2) var(--ease);
-}
-
-:host(:hover) .row-mark {
-  transform: scale(1.04);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  :host(:hover) .row-mark {
-    transform: none;
-  }
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  color: var(--ink-2);
 }
 
 .row-mark:empty {
@@ -123,7 +112,7 @@
   .row-state {
     order: 1;
     flex: 1 1 100%;
-    padding-left: 52px;
+    padding-left: 48px;
   }
 }
 

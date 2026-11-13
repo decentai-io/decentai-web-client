@@ -1,8 +1,8 @@
-/* Audit. The page frame and its band, the tiles, the pills, the list
-   and the rows are the shared ones; here are the filter row, the days,
-   who did a thing, the way to its chat, and what a row opens to. */
+/* Audit. The page frame, the numbers line, the pills, the list and the
+   rows are the shared ones; here are the filter row, who did a thing,
+   the way to its chat, and what a row opens to. */
 
-/* A tile that is a button fills its place in the row. */
+/* A number that is a button fills its place in the line. */
 .ui-tiles > li {
   display: flex;
   min-width: 0;
@@ -33,22 +33,6 @@ button.ui-tile:disabled {
 
 .audit-scope {
   flex: none;
-}
-
-/* A day, with its icon in the page's hue. */
-.audit-day {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.audit-day lucide-icon {
-  display: flex;
-  color: hsl(var(--hue, 262) 50% 45%);
-}
-
-:host-context(.dark) .audit-day lucide-icon {
-  color: hsl(var(--hue, 262) 62% 76%);
 }
 
 /* As wide as its button whether or not the row has a chat, so the

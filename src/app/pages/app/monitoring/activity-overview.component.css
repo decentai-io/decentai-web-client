@@ -1,23 +1,12 @@
-/* Monitoring's Overview, and its Tokens beside it. The tiles, cards and
-   bar lists are this page's, in the language of the shared panels and
-   tiles (styles/controls.scss `.ui-*`): an icon tile in the page's hue
-   (--hue, from <app-page>) beside each number and each card's title.
-   The segmented control, chips, pills, table and empty state are the
-   shared ones. Chart colours: an emphasis pair, run through the dataviz
-   validator against each theme's surface — calls that succeeded in a
-   quiet neutral (3:1 on the surface), the ones that did not in the
-   danger hue; CVD separation >= 8.8 in both themes. The one series of a
-   bar list, and the Tokens chart's second, are in the page's hue. */
+/* Monitoring's Overview, and its Tokens beside it. Calm, as the shared
+   sections are (styles/controls.scss `.ui-*`): the numbers that matter
+   on one quiet line, each with a word over it and a line under it;
+   then sections, each a heading and the space around it. An icon only
+   where a number needs looking at. The segmented control, chips, pills,
+   table and empty state are the shared ones. Chart colours are the
+   chart tokens: the one series of a bar list is the focal --chart-1. */
 :host {
-  --ov-ok: #8a847b;
-  --ov-bad: var(--danger);
-  --ov-series: hsl(var(--hue, 262) 52% 56%);
   display: block;
-}
-
-:host-context(.dark) {
-  --ov-ok: #77716a;
-  --ov-series: hsl(var(--hue, 262) 68% 72%);
 }
 
 /* ── The filter row ─────────────────────────────────────────────── */
@@ -26,28 +15,20 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 16px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .ov-window {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--ink-3);
+  color: var(--ink-2);
   font-size: var(--t-sm);
   line-height: var(--lh-sm);
-}
-
-.ov-window lucide-icon {
-  display: flex;
-  flex: none;
 }
 
 /* A new window is read with the last one still in view, quieter. */
 .ov {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 40px;
   transition: opacity var(--dur-2) var(--ease);
 }
 
@@ -55,71 +36,50 @@
   opacity: 0.55;
 }
 
-/* ── The numbers ────────────────────────────────────────────────── */
-.ov-tiles {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 12px;
+/* ── The numbers: one quiet line ─────────────────────────────────── */
+.ov-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 48px;
 }
 
-.ov-tile {
+.ov-stat {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 16px 18px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
-  background:
-    linear-gradient(160deg, hsl(var(--hue, 262) 60% 97%), var(--surface) 55%);
-  box-shadow: var(--shadow-1);
+  gap: 2px;
+  min-width: 0;
 }
 
-:host-context(.dark) .ov-tile {
-  background:
-    linear-gradient(160deg, hsl(var(--hue, 262) 30% 15%), var(--surface) 55%);
-}
-
-/* The word, with the number's icon at the right. */
-.ov-tile dt {
+/* The word, with an icon only when the number needs looking at. */
+.ov-stat dt {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 4px;
+  gap: 6px;
   color: var(--ink-2);
   font-size: var(--t-sm);
-  font-weight: 500;
+  font-weight: 600;
   line-height: var(--lh-sm);
 }
 
-.ov-tile-icon {
+.ov-stat-icon {
   display: flex;
   flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 11px;
-  background: hsl(var(--hue, 262) 62% 93%);
-  color: hsl(var(--hue, 262) 50% 34%);
 }
 
-:host-context(.dark) .ov-tile-icon {
-  background: hsl(var(--hue, 262) 34% 22%);
-  color: hsl(var(--hue, 262) 62% 80%);
+.ov-stat.is-bad .ov-stat-icon {
+  color: var(--danger-ink);
 }
 
-.ov-tile-icon lucide-icon {
-  display: flex;
+.ov-stat.is-warn .ov-stat-icon {
+  color: var(--warn-ink);
 }
 
-/* Proportional figures: a tile's value stands alone. */
 .ov-value {
   color: var(--ink);
-  font-size: 28px;
-  font-weight: 650;
-  letter-spacing: -0.01em;
-  line-height: 1.15;
+  font-size: var(--t-lg);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: var(--lh-lg);
 }
 
 .ov-sub {
@@ -127,44 +87,20 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  color: var(--ink-3);
-  font-size: var(--t-xs);
-  line-height: var(--lh-xs);
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
 }
 
-/* A tile that needs looking at says so with its icon and its edge;
-   the words stay in text ink. */
-.ov-tile.is-bad {
-  border-color: color-mix(in srgb, var(--danger) 40%, var(--line));
+.ov-stat-sk {
+  width: 160px;
+  height: 64px;
+  border-radius: var(--r-md);
 }
 
-.ov-tile.is-bad .ov-tile-icon {
-  background: var(--danger-soft);
-  color: var(--danger-ink);
-}
-
-.ov-tile.is-warn {
-  border-color: color-mix(in srgb, var(--warn) 45%, var(--line));
-}
-
-.ov-tile.is-warn .ov-tile-icon {
-  background: var(--warn-soft);
-  color: var(--warn-ink);
-}
-
-.ov-tile-sk {
-  height: 116px;
-  border-radius: var(--r-lg);
-}
-
-/* ── A card: a panel with its icon tile ─────────────────────────── */
+/* ── A section: its title, a line under it, what it is about ────────── */
 .ov-card {
   min-width: 0;
-  padding: 22px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-1);
 }
 
 .ov-card-head {
@@ -172,28 +108,7 @@
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 8px 12px;
-  margin-bottom: 18px;
-}
-
-.ov-card-icon {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  background: hsl(var(--hue, 262) 62% 93%);
-  color: hsl(var(--hue, 262) 50% 34%);
-}
-
-:host-context(.dark) .ov-card-icon {
-  background: hsl(var(--hue, 262) 34% 22%);
-  color: hsl(var(--hue, 262) 62% 80%);
-}
-
-.ov-card-icon lucide-icon {
-  display: flex;
+  margin-bottom: 16px;
 }
 
 .ov-card-words {
@@ -213,9 +128,10 @@
 }
 
 .ov-card-note {
-  color: var(--ink-3);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  max-width: 68ch;
+  color: var(--ink-2);
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
 }
 
 .ov-legend {
@@ -237,16 +153,6 @@
   width: 10px;
   height: 10px;
   border-radius: 3px;
-}
-
-.ov-swatch.is-ok,
-.ov-seg.is-ok {
-  background: var(--ov-ok);
-}
-
-.ov-swatch.is-bad,
-.ov-seg.is-bad {
-  background: var(--ov-bad);
 }
 
 /* ── The chart: columns from one baseline ───────────────────────── */
@@ -355,14 +261,14 @@
   overflow: auto;
 }
 
-/* ── Two cards side by side, one under the other when narrow ────── */
+/* ── Two sections side by side, one under the other when narrow ── */
 .ov-pair {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-  gap: 16px;
+  gap: 40px;
 }
 
-/* ── A bar list: one series, the page's hue, the number at the tip ── */
+/* ── A bar list: one series, the focal colour, the number at the tip ─ */
 .ov-bars {
   display: flex;
   flex-direction: column;
@@ -375,8 +281,8 @@
   grid-template-columns: minmax(110px, 34%) 1fr auto auto;
   align-items: center;
   gap: 12px;
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
 }
 
 .ov-bar-name {
@@ -392,7 +298,7 @@
 
 .ov-bar-name code {
   overflow: hidden;
-  font-size: var(--t-xs);
+  font-size: var(--t-sm);
   text-overflow: ellipsis;
 }
 
@@ -407,7 +313,7 @@
   display: block;
   height: 100%;
   border-radius: var(--r-full);
-  background: var(--ov-series);
+  background: var(--chart-1);
 }
 
 .ov-bar-value {
@@ -420,21 +326,13 @@
 
 .ov-bar-extra {
   min-width: 72px;
-  color: var(--ink-3);
-  font-size: var(--t-xs);
   text-align: right;
 }
 
 .ov-quiet {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   color: var(--ink-2);
-  font-size: var(--t-sm);
-}
-
-.ov-quiet lucide-icon {
-  color: var(--accent-ink);
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
 }
 
 @media (max-width: 600px) {

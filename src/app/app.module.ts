@@ -257,6 +257,7 @@ import { ProfileComponent } from './pages/admin/profile/profile.component';
 import { AgentsComponent } from './pages/app/agents/agents.component';
 import { AgentDetailComponent } from './pages/app/agents/agent-detail.component';
 import { AgentFunctionsComponent } from './pages/app/agents/agent-functions.component';
+import { AgentAccessComponent } from './pages/app/agents/agent-access.component';
 import { MarketplaceComponent } from './pages/app/agents/marketplace/marketplace.component';
 import { SourceFormComponent } from './pages/app/agents/marketplace/source-form.component';
 import { InstallReviewComponent } from './pages/app/agents/marketplace/install-review.component';
@@ -295,6 +296,7 @@ import { RecordAgentsComponent } from './pages/app/data/record-agents.component'
 import { SecretsComponent } from './pages/app/secrets/secrets.component';
 import { SecretViewComponent } from './pages/app/secrets/secret-view.component';
 import { SecretFormComponent } from './pages/app/secrets/secret-form.component';
+import { SecretAgentsComponent } from './pages/app/secrets/secret-agents.component';
 import { SettingsComponent } from './pages/app/settings/settings.component';
 import { ChatDefaultsComponent } from './pages/app/settings/chat-defaults/chat-defaults.component';
 import { NotificationsComponent } from './pages/app/settings/notifications/notifications.component';
@@ -334,6 +336,7 @@ import { AgentCardComponent } from './pages/app/agents/agent-card.component';
     AgentsComponent,
     AgentDetailComponent,
     AgentFunctionsComponent,
+    AgentAccessComponent,
     MarketplaceComponent,
     SourceFormComponent,
     InstallReviewComponent,
@@ -442,6 +445,7 @@ import { AgentCardComponent } from './pages/app/agents/agent-card.component';
     RecordRowComponent,
     HandedComponent,
     RecordAgentsComponent,
+    SecretAgentsComponent,
     AgentCardComponent,
     EmptyComponent,
     SaveBarComponent,

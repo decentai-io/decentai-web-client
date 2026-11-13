@@ -1,4 +1,4 @@
-<app-page guide="audit" title="Audit" icon="scroll-text" [hue]="262"
+<app-page guide="audit" title="Audit"
           sentence="A permanent record of every change and every refusal, and what runtimes wrote down of the chats." [wide]="true">
   <app-segmented
     pageActions
@@ -11,11 +11,10 @@
 
   <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
 
-  <!-- The lines read, added up by how they ended: a tile narrows the
-       record to its outcome. -->
+  <!-- The lines read, added up by how they ended, on one line: a number
+       narrows the record to its outcome. -->
   <ul class="ui-tiles" *ngIf="lines.length || ended" aria-label="The lines shown, in numbers">
     <li class="ui-tile">
-      <span class="ui-tile-icon"><lucide-icon name="scroll-text" [size]="20" aria-hidden="true"></lucide-icon></span>
       <span class="ui-tile-words">
         <span class="ui-tile-value">{{ lines.length }}<ng-container *ngIf="before">+</ng-container></span>
         <span class="ui-tile-label">{{ lines.length === 1 ? "Line" : "Lines" }} shown, over {{ days.length }} {{ days.length === 1 ? "day" : "days" }}</span>
@@ -24,7 +23,6 @@
     <li>
       <button class="ui-tile" type="button" [class.is-on]="ended === 'success'" [attr.aria-pressed]="ended === 'success'"
               [disabled]="loading" (click)="toggleOutcome('success')">
-        <span class="ui-tile-icon"><lucide-icon name="circle-check" [size]="20" aria-hidden="true"></lucide-icon></span>
         <span class="ui-tile-words">
           <span class="ui-tile-value">{{ count("success") }}</span>
           <span class="ui-tile-label">Done</span>
@@ -34,7 +32,7 @@
     <li>
       <button class="ui-tile" type="button" [class.is-on]="ended === 'refused'" [attr.aria-pressed]="ended === 'refused'"
               [disabled]="loading" (click)="toggleOutcome('refused')">
-        <span class="ui-tile-icon" [class.is-warn]="count('refused')"><lucide-icon name="shield-alert" [size]="20" aria-hidden="true"></lucide-icon></span>
+        <span class="ui-tile-icon is-warn" *ngIf="count('refused')"><lucide-icon name="shield-alert" [size]="20" aria-hidden="true"></lucide-icon></span>
         <span class="ui-tile-words">
           <span class="ui-tile-value">{{ count("refused") }}</span>
           <span class="ui-tile-label">Refused</span>
@@ -44,7 +42,7 @@
     <li>
       <button class="ui-tile" type="button" [class.is-on]="ended === 'failed'" [attr.aria-pressed]="ended === 'failed'"
               [disabled]="loading" (click)="toggleOutcome('failed')">
-        <span class="ui-tile-icon" [class.is-danger]="count('failed')"><lucide-icon name="circle-x" [size]="20" aria-hidden="true"></lucide-icon></span>
+        <span class="ui-tile-icon is-danger" *ngIf="count('failed')"><lucide-icon name="circle-x" [size]="20" aria-hidden="true"></lucide-icon></span>
         <span class="ui-tile-words">
           <span class="ui-tile-value">{{ count("failed") }}</span>
           <span class="ui-tile-label">Failed</span>
@@ -98,10 +96,7 @@
     ></app-empty>
 
     <section *ngFor="let day of days">
-      <h2 class="record-day audit-day">
-        <lucide-icon name="calendar-days" [size]="14" aria-hidden="true"></lucide-icon>
-        {{ day.day }}
-      </h2>
+      <h2 class="record-day">{{ day.day }}</h2>
       <div role="list" [attr.aria-label]="day.day">
         <app-record-row
           *ngFor="let group of day.items"

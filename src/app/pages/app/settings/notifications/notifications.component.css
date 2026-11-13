@@ -1,10 +1,11 @@
-/* Notifications: this device as a band of its own, its bell in the
-   section's hue once it is on, its button at the right; under it, the
-   switches and the test as panels (styles/controls.scss `.ui-panel`). */
+/* Notifications: this device first, where it stands in words and its
+   button at the right; under it, the switches and the test as sections
+   (styles/controls.scss `.ui-panel`). */
 .notify-panels {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 40px;
+  max-width: 880px;
 }
 
 .notify-device {
@@ -14,43 +15,6 @@
   gap: 16px 20px;
 }
 
-.notify-device.is-on {
-  border-color: color-mix(in srgb, hsl(var(--hue, 262) 50% 50%) 25%, var(--line));
-  background:
-    radial-gradient(70% 140% at 0% 0%, hsl(var(--hue, 262) 70% 95%), transparent 65%),
-    var(--surface);
-}
-
-:host-context(.dark) .notify-device.is-on {
-  border-color: color-mix(in srgb, hsl(var(--hue, 262) 40% 50%) 28%, var(--line));
-  background:
-    radial-gradient(70% 140% at 0% 0%, hsl(var(--hue, 262) 40% 18%), transparent 65%),
-    var(--surface);
-}
-
-.notify-device-mark {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  background: var(--surface-2);
-  color: var(--ink-2);
-}
-
-.notify-device.is-on .notify-device-mark {
-  background: hsl(var(--hue, 262) 62% 92%);
-  color: hsl(var(--hue, 262) 58% 30%);
-}
-
-:host-context(.dark) .notify-device.is-on .notify-device-mark {
-  background: hsl(var(--hue, 262) 34% 22%);
-  color: hsl(var(--hue, 262) 62% 80%);
-}
-
-.notify-device-mark lucide-icon,
 .notify-device-actions lucide-icon,
 .notify-test lucide-icon {
   display: flex;
@@ -83,10 +47,11 @@
 }
 
 .notify-help {
+  max-width: 68ch;
   margin-top: 2px;
-  color: var(--ink-3);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  color: var(--ink-2);
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
 }
 
 .notify-help.is-error {
@@ -108,8 +73,8 @@
 
 .notify-result {
   color: var(--ink-2);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
 }
 
 @media (max-width: 560px) {

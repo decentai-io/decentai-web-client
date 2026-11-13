@@ -106,6 +106,50 @@
   color: var(--ink-3);
 }
 
+/* A card the person answered: a quiet line on their side, shaped like
+   their message but outlined, not filled — a decision, not words. */
+.turn-answer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  align-self: flex-end;
+  gap: 4px;
+  max-width: 80%;
+  text-align: right;
+}
+
+.turn-answer-asked {
+  margin: 0;
+  color: var(--ink-3);
+  font: 400 var(--t-xs) / var(--lh-xs) var(--font-sans);
+  overflow-wrap: anywhere;
+}
+
+.turn-answer-said {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg) var(--r-lg) var(--r-sm) var(--r-lg);
+  color: var(--ink-2);
+  font: 400 var(--t-sm) / var(--lh-sm) var(--font-sans);
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+.turn-answer-said lucide-icon {
+  display: flex;
+  flex: none;
+  color: var(--accent-ink);
+}
+
+/* Declined or expired: no colour, nothing went ahead. */
+.turn-answer.is-quiet .turn-answer-said lucide-icon {
+  color: var(--ink-3);
+}
+
 /* Under an answer: who wrote it and what it took. */
 .turn-foot {
   margin: -4px 0 0;

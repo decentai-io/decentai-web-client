@@ -309,6 +309,19 @@ describe('ChatInspectorComponent', () => {
     expect(text(all('.insp-section')[0])).toContain('None.');
   });
 
+  it('opens on the tab the page asks for, and says when the person picks another', async () => {
+    await render();
+    fixture.componentRef.setInput('tab', 'schedules');
+    await settle();
+    expect(text(root.querySelector('[role="tab"][aria-selected="true"]')!)).toBe('Schedules');
+    expect(text()).toContain('Every day at 09:00');
+
+    const picked: string[] = [];
+    fixture.componentInstance.tabChange.subscribe((tab) => picked.push(tab));
+    await open('Runs');
+    expect(picked).toEqual(['runs']);
+  });
+
   it('changes the setup in place, forgets a decision, and lists what it asked', async () => {
     await render();
     const changed: unknown[] = [];

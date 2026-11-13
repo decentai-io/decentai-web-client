@@ -1,5 +1,4 @@
-<app-page guide="admin#organizations" title="Organization" sentence="The boundary everything else lives inside: its people, groups, policies and data."
-          icon="building-2" [hue]="262">
+<app-page guide="admin#organizations" title="Organization" sentence="The boundary everything else lives inside: its people, groups, policies and data.">
   <div class="form" *ngIf="loading" aria-busy="true" aria-label="Reading the organization">
     <span class="sk sk-field"></span>
   </div>
@@ -10,7 +9,6 @@
     <!-- Its name, and when it began. -->
     <form class="ui-panel admin-panel" (ngSubmit)="save()" aria-labelledby="org-name-title">
       <div class="ui-panel-head">
-        <span class="admin-initials is-large" aria-hidden="true">{{ (org.name || '?').charAt(0).toUpperCase() }}</span>
         <h2 class="ui-panel-title" id="org-name-title">{{ org.name }}</h2>
         <span class="ui-pill" *ngIf="created"><lucide-icon name="calendar" [size]="12" aria-hidden="true"></lucide-icon>Created {{ created }}</span>
         <span class="ui-pill" *ngIf="!canRename"><lucide-icon name="lock" [size]="12" aria-hidden="true"></lucide-icon>Read only</span>
@@ -29,7 +27,6 @@
       <h2 class="admin-section-title" id="org-places-title">Inside it</h2>
       <div class="ui-cards admin-cards">
         <a class="ui-card admin-card" *ngFor="let place of places" [routerLink]="place.link">
-          <span class="ui-panel-icon is-hued"><lucide-icon [name]="place.icon" [size]="16" aria-hidden="true"></lucide-icon></span>
           <span class="admin-card-words">
             <span class="admin-card-name">{{ place.name }}</span>
             <span class="admin-card-line">{{ place.line }}</span>

@@ -24,16 +24,14 @@
   color: var(--warn-ink);
 }
 
-.editor-body .form-section-title,
-section > .form-section-title {
-  margin-bottom: 8px;
+/* A section of the form: its heading, and more room above it than
+   between two fields. */
+.editor-section {
+  margin-top: 12px;
 }
 
-/* A section's title with its icon tile, as a panel's head. */
-.editor-section-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.editor-section > .form-section-title {
+  margin-bottom: 8px;
 }
 
 /* The tabs, the marks, and the example at the right. */
@@ -78,8 +76,8 @@ section > .form-section-title {
 }
 
 .editor-nothing {
-  color: var(--ink-3);
-  font-size: var(--t-sm);
+  color: var(--ink-2);
+  font-size: var(--t-base);
 }
 
 .editor-foot {

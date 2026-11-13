@@ -208,7 +208,7 @@ export class MembersComponent extends DataPageBase implements OnInit {
     return member?.name || member?.email || '';
   }
 
-  /** The tiles over the list: those in Administrators, and those held
+  /** The numbers over the list: those in Administrators, and those held
    *  back (disabled, or everything of theirs stopped). */
   get adminCount(): number {
     return this.members.filter((member) => this.isAdmin(member)).length;

@@ -167,39 +167,39 @@ export function levelBar(manifest: Manifest | null | undefined):
 }
 
 /** One of the numbers at the head of an agent's page or review. */
-export interface AgentTile {
-  icon: string;
+export interface AgentCount {
   value: string;
   label: string;
   /** Worth a second look: an outside action, the open web. */
   warn?: boolean;
 }
 
-/** The numbers a careful reader counts first: its functions, how many
- *  only read, how many act outside the platform, the hosts it reaches,
- *  and what it keeps. */
-export function agentTiles(manifest: Manifest | null | undefined): AgentTile[] {
+/** The few numbers a careful reader counts first, as one line: its
+ *  functions, how many act outside the platform (when any do), where it
+ *  connects, and what it keeps (when it keeps anything). The page under
+ *  them says the rest. */
+export function agentCounts(manifest: Manifest | null | undefined): AgentCount[] {
   const functions = manifest?.functions || [];
-  const reads = functions.filter((fn) => (fn.level ?? 0) === 0).length;
   const outside = functions.filter((fn) => fn.level === 3).length;
   const network = networkOf(manifest);
   const hosts = network.hosts.length + network.from_secrets.length;
   const kept = resourcesOf(manifest).reduce((sum, group) => sum + group.items.length, 0);
-  return [
-    { icon: 'list-checks', value: String(functions.length), label: functions.length === 1 ? 'function' : 'functions' },
-    { icon: 'eye', value: String(reads), label: 'only read' },
-    { icon: 'zap', value: String(outside), label: 'act outside', warn: outside > 0 },
-    network.any
-      ? { icon: 'globe', value: 'Any', label: 'public address', warn: true }
-      : { icon: hosts ? 'globe' : 'lock', value: hosts ? String(hosts) : 'None', label: hosts === 1 ? 'host it reaches' : 'hosts it reaches' },
-    { icon: 'database', value: String(kept), label: kept === 1 ? 'thing it keeps' : 'things it keeps' },
+  const counts: AgentCount[] = [
+    { value: String(functions.length), label: functions.length === 1 ? 'function' : 'functions' },
   ];
+  if (outside) {
+    counts.push({ value: String(outside), label: outside === 1 ? 'acts outside the platform' : 'act outside the platform', warn: true });
+  }
+  counts.push(network.any
+    ? { value: 'Any', label: 'public address', warn: true }
+    : hosts ? { value: String(hosts), label: hosts === 1 ? 'host it reaches' : 'hosts it reaches' } : { value: 'No', label: 'network' });
+  if (kept) counts.push({ value: String(kept), label: kept === 1 ? 'thing it keeps' : 'things it keeps' });
+  return counts;
 }
 
 /** One thing an agent keeps, as its row says it. */
 export interface KeptItem {
   kind: 'secrets' | 'data' | 'files';
-  icon: string;
   word: string;
   label: string;
   about: string;
@@ -208,11 +208,9 @@ export interface KeptItem {
 
 /** Every secret, record and file a manifest keeps, one row each. */
 export function keptItems(manifest: Manifest | null | undefined): KeptItem[] {
-  const icons = { secrets: 'key-round', data: 'database', files: 'folder' } as const;
   const words = { secrets: 'secret', data: 'record', files: 'file' } as const;
   return resourcesOf(manifest).flatMap((group) => group.items.map((item) => ({
     kind: group.kind,
-    icon: icons[group.kind],
     word: words[group.kind],
     label: item.label || item.id,
     about: item.description || '',

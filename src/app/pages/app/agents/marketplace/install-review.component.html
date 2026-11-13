@@ -1,10 +1,9 @@
-<!-- One agent, read before installing. Alone: its numbers as tiles, then
-     two columns: what the agent says it is for, by example and in its own
-     words, and what it may do, wide; and the facts installing agrees to
-     (how far it may go, where it connects, what it keeps, what it runs
-     on) in panels of their own beside it, in view while the rest is
-     read. Among several: the same, compact, each agent a card of its
-     own, with the functions folded. -->
+<!-- One agent, read before installing. Alone: its numbers as one line,
+     then a main column, what the agent says it is for, by example and in
+     its own words, and what it may do; and beside it a narrow column of
+     the facts installing agrees to (how far it may go, where it connects,
+     what it keeps, what it runs on), in view while the rest is read.
+     Among several: the same, compact, with the functions folded. -->
 <header class="reading-head" *ngIf="brief">
   <app-agent-mark [name]="name" [icon]="icon"></app-agent-mark>
   <div class="reading-head-words">
@@ -33,45 +32,39 @@
   </ul>
 </section>
 
-<!-- Its numbers, each a tile: what a careful reader counts first. -->
-<ul class="agent-tiles" [class.is-brief]="brief" [attr.aria-label]="name + ' in numbers'">
-  <li class="agent-tile" *ngFor="let tile of tiles">
-    <span class="agent-tile-icon" [class.is-warn]="tile.warn">
-      <lucide-icon [name]="tile.icon" [size]="brief ? 16 : 20" aria-hidden="true"></lucide-icon>
-    </span>
-    <span class="agent-tile-words">
-      <span class="agent-tile-value">{{ tile.value }}</span>
-      <span class="agent-tile-label">{{ tile.label }}</span>
+<!-- The few numbers a careful reader counts first. -->
+<ul class="ui-tiles reading-counts" [attr.aria-label]="name + ' in numbers'">
+  <li class="ui-tile" *ngFor="let count of counts" [class.is-warn]="count.warn">
+    <span class="ui-tile-words">
+      <span class="ui-tile-value">{{ count.value }}</span>
+      <span class="ui-tile-label">{{ count.label }}</span>
     </span>
   </li>
 </ul>
 
-<!-- ── Alone: two columns ─────────────────────────────────────────── -->
+<!-- ── Alone: a main column and the facts beside it ───────────────── -->
 <div class="reading-grid" *ngIf="!brief">
   <div class="reading-main">
     <!-- What a person would say to it: the shortest way to see what it
          is for. -->
-    <section class="agent-panel" *ngIf="manifest.agent.examples?.length" [attr.aria-labelledby]="id + '-try'">
-      <div class="agent-panel-head">
-        <span class="agent-panel-icon is-hued"><lucide-icon name="message-square-text" [size]="16" aria-hidden="true"></lucide-icon></span>
-        <h2 class="agent-panel-title" [id]="id + '-try'">What you could ask it</h2>
+    <section class="ui-panel" *ngIf="manifest.agent.examples?.length" [attr.aria-labelledby]="id + '-try'">
+      <div class="ui-panel-head">
+        <h2 class="ui-panel-title" [id]="id + '-try'">What you could ask it</h2>
       </div>
-      <ul class="try-grid">
-        <li class="try-card" *ngFor="let example of manifest.agent.examples">
-          <span class="try-card-title">
-            <lucide-icon name="sparkles" [size]="12" aria-hidden="true"></lucide-icon>
-            {{ example.title }}
+      <ul class="try-list">
+        <li class="try-item" *ngFor="let example of manifest.agent.examples">
+          <span class="try-words">
+            <span class="try-prompt">“{{ example.prompt }}”</span>
+            <span class="try-title">{{ example.title }}</span>
           </span>
-          <span class="try-prompt">“{{ example.prompt }}”</span>
         </li>
       </ul>
     </section>
 
     <!-- The agent's own account of itself. Folded to its first screen. -->
-    <section class="agent-panel" *ngIf="offer.readme" [attr.aria-labelledby]="id + '-readme'">
-      <div class="agent-panel-head">
-        <span class="agent-panel-icon"><lucide-icon name="book-open" [size]="16" aria-hidden="true"></lucide-icon></span>
-        <h2 class="agent-panel-title" [id]="id + '-readme'">About, from its publisher</h2>
+    <section class="ui-panel" *ngIf="offer.readme" [attr.aria-labelledby]="id + '-readme'">
+      <div class="ui-panel-head">
+        <h2 class="ui-panel-title" [id]="id + '-readme'">About, from its publisher</h2>
       </div>
       <div class="reading-readme" [class.is-folded]="readmeLong && !readmeOpen">
         <markdown [data]="readme"></markdown>
@@ -82,46 +75,33 @@
       </button>
     </section>
 
-    <section class="agent-panel" *ngIf="manifest.functions.length" [attr.aria-labelledby]="id + '-does'">
-      <div class="agent-panel-head">
-        <span class="agent-panel-icon"><lucide-icon name="list-checks" [size]="16" aria-hidden="true"></lucide-icon></span>
-        <h2 class="agent-panel-title" [id]="id + '-does'">What it may do</h2>
-        <span class="agent-panel-aside">{{ manifest.functions.length }} {{ manifest.functions.length === 1 ? "function" : "functions" }}</span>
+    <section class="ui-panel" *ngIf="manifest.functions.length" [attr.aria-labelledby]="id + '-does'">
+      <div class="ui-panel-head">
+        <h2 class="ui-panel-title" [id]="id + '-does'">What it may do</h2>
+        <span class="ui-panel-aside">{{ manifest.functions.length }} {{ manifest.functions.length === 1 ? "function" : "functions" }}</span>
       </div>
       <app-agent-functions [manifest]="manifest" [legend]="false"></app-agent-functions>
     </section>
   </div>
 
   <aside class="reading-side" [attr.aria-label]="'What installing ' + name + ' agrees to'">
-    <section class="agent-panel" *ngIf="bar.length" [attr.aria-labelledby]="id + '-levels'">
-      <div class="agent-panel-head">
-        <span class="agent-panel-icon"><lucide-icon name="gauge" [size]="16" aria-hidden="true"></lucide-icon></span>
-        <h2 class="agent-panel-title" [id]="id + '-levels'">How far it may go</h2>
-      </div>
+    <section class="reading-part" *ngIf="bar.length" [attr.aria-labelledby]="id + '-levels'">
+      <h2 class="reading-part-title" [id]="id + '-levels'">How far it may go</h2>
       <ng-container *ngTemplateOutlet="levels"></ng-container>
     </section>
 
-    <section class="agent-panel" [attr.aria-labelledby]="id + '-network'">
-      <div class="agent-panel-head">
-        <span class="agent-panel-icon"><lucide-icon name="globe" [size]="16" aria-hidden="true"></lucide-icon></span>
-        <h2 class="agent-panel-title" [id]="id + '-network'">Where it connects</h2>
-      </div>
+    <section class="reading-part" [attr.aria-labelledby]="id + '-network'">
+      <h2 class="reading-part-title" [id]="id + '-network'">Where it connects</h2>
       <ng-container *ngTemplateOutlet="hosts"></ng-container>
     </section>
 
-    <section class="agent-panel" [attr.aria-labelledby]="id + '-keeps'">
-      <div class="agent-panel-head">
-        <span class="agent-panel-icon"><lucide-icon name="database" [size]="16" aria-hidden="true"></lucide-icon></span>
-        <h2 class="agent-panel-title" [id]="id + '-keeps'">What it keeps</h2>
-      </div>
+    <section class="reading-part" [attr.aria-labelledby]="id + '-keeps'">
+      <h2 class="reading-part-title" [id]="id + '-keeps'">What it keeps</h2>
       <ng-container *ngTemplateOutlet="keeps"></ng-container>
     </section>
 
-    <section class="agent-panel" [attr.aria-labelledby]="id + '-runs'">
-      <div class="agent-panel-head">
-        <span class="agent-panel-icon"><lucide-icon name="server" [size]="16" aria-hidden="true"></lucide-icon></span>
-        <h2 class="agent-panel-title" [id]="id + '-runs'">What it runs on</h2>
-      </div>
+    <section class="reading-part" [attr.aria-labelledby]="id + '-runs'">
+      <h2 class="reading-part-title" [id]="id + '-runs'">What it runs on</h2>
       <ng-container *ngTemplateOutlet="runs"></ng-container>
     </section>
   </aside>
@@ -129,31 +109,23 @@
 
 <!-- ── Among several: compact, the functions folded ───────────────── -->
 <div class="reading-brief" *ngIf="brief">
-  <section class="reading-brief-part" *ngIf="bar.length" [attr.aria-labelledby]="id + '-levels'">
-    <h3 class="reading-brief-title" [id]="id + '-levels'">
-      <lucide-icon name="gauge" [size]="14" aria-hidden="true"></lucide-icon>How far it may go
-    </h3>
+  <section class="reading-part" *ngIf="bar.length" [attr.aria-labelledby]="id + '-levels'">
+    <h3 class="reading-part-title" [id]="id + '-levels'">How far it may go</h3>
     <ng-container *ngTemplateOutlet="levels"></ng-container>
   </section>
 
-  <section class="reading-brief-part" [attr.aria-labelledby]="id + '-network'">
-    <h3 class="reading-brief-title" [id]="id + '-network'">
-      <lucide-icon name="globe" [size]="14" aria-hidden="true"></lucide-icon>Where it connects
-    </h3>
+  <section class="reading-part" [attr.aria-labelledby]="id + '-network'">
+    <h3 class="reading-part-title" [id]="id + '-network'">Where it connects</h3>
     <ng-container *ngTemplateOutlet="hosts"></ng-container>
   </section>
 
-  <section class="reading-brief-part" [attr.aria-labelledby]="id + '-keeps'">
-    <h3 class="reading-brief-title" [id]="id + '-keeps'">
-      <lucide-icon name="database" [size]="14" aria-hidden="true"></lucide-icon>What it keeps
-    </h3>
+  <section class="reading-part" [attr.aria-labelledby]="id + '-keeps'">
+    <h3 class="reading-part-title" [id]="id + '-keeps'">What it keeps</h3>
     <ng-container *ngTemplateOutlet="keeps"></ng-container>
   </section>
 
-  <section class="reading-brief-part" [attr.aria-labelledby]="id + '-runs'">
-    <h3 class="reading-brief-title" [id]="id + '-runs'">
-      <lucide-icon name="server" [size]="14" aria-hidden="true"></lucide-icon>What it runs on
-    </h3>
+  <section class="reading-part" [attr.aria-labelledby]="id + '-runs'">
+    <h3 class="reading-part-title" [id]="id + '-runs'">What it runs on</h3>
     <ng-container *ngTemplateOutlet="runs"></ng-container>
   </section>
 </div>
@@ -187,25 +159,20 @@
     <code class="is-wide" *ngIf="network.any"><lucide-icon name="globe" [size]="12" aria-hidden="true"></lucide-icon>any public address</code>
     <code class="is-none" *ngIf="!network.any && !network.hosts.length && !network.from_secrets.length"><lucide-icon name="lock" [size]="12" aria-hidden="true"></lucide-icon>nothing outside the platform</code>
     <code *ngFor="let host of network.hosts">{{ host }}</code>
-    <code class="is-credential" *ngFor="let field of network.from_secrets">
+    <code *ngFor="let field of network.from_secrets">
       <lucide-icon name="key-round" [size]="12" aria-hidden="true"></lucide-icon>
       {{ credentialHost(field) }}
     </code>
   </div>
-  <p class="agent-panel-note">{{ networkNote }}</p>
+  <p class="reading-note">{{ networkNote }}</p>
 </ng-template>
 
 <ng-template #keeps>
-  <p class="agent-panel-note reading-nothing" *ngIf="!kept.length">Nothing: it keeps no secret, record or file.</p>
+  <p class="reading-note reading-nothing" *ngIf="!kept.length">Nothing: it keeps no secret, record or file.</p>
   <ul class="reading-items" *ngIf="kept.length">
     <li *ngFor="let item of kept">
-      <span class="reading-item-icon" [attr.data-kind]="item.kind">
-        <lucide-icon [name]="item.icon" [size]="15" aria-hidden="true"></lucide-icon>
-      </span>
-      <span class="reading-item-words">
-        <strong>{{ item.label }}<span class="reading-item-kind">{{ item.word }}</span></strong>
-        <span class="reading-item-about" *ngIf="item.about" [title]="item.about">{{ item.about }}</span>
-      </span>
+      <strong>{{ item.label }}<span class="reading-item-kind">{{ item.word }}</span></strong>
+      <span class="reading-item-about" *ngIf="item.about" [title]="item.about">{{ item.about }}</span>
     </li>
   </ul>
 </ng-template>
@@ -213,14 +180,12 @@
 <!-- Every machine it has a program for, and the base it relies on: a
      runtime runs it only where both are there. -->
 <ng-template #runs>
-  <div class="reading-machines">
-    <span class="reading-machine" *ngFor="let machine of machines">
-      <lucide-icon name="server" [size]="13" aria-hidden="true"></lucide-icon>{{ machine }}
-    </span>
+  <p class="reading-machines">
+    <ng-container *ngIf="machines.length">{{ machines.join(", ") }}</ng-container>
     <span class="reading-download-none" *ngIf="!machines.length">No program: it can't run anywhere.</span>
-  </div>
-  <p class="agent-panel-note" *ngIf="offer.base">It relies on the sandbox base <code>{{ offer.base }}</code>.</p>
-  <p class="agent-panel-note">
+  </p>
+  <p class="reading-note" *ngIf="offer.base">It relies on the sandbox base <code>{{ offer.base }}</code>.</p>
+  <p class="reading-note">
     From <span class="reading-address">{{ source.url }}</span>. Each file is kept only if it matches the
     digest its catalog names, and is never fetched from there again.
   </p>

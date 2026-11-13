@@ -1,14 +1,14 @@
 /* Connected apps. The list, the rows, the fields and the dialog are the
-   shared ones; here are the tiles' and the redirect panel's room, the
-   rows still waiting, a row's facts as pills, and the sentences inside
-   the form. */
+   shared ones; here are the redirect section's room, the rows still
+   waiting, a row's facts as pills, and the sentences inside the form. */
 .apps-redirect {
-  margin-bottom: 24px;
+  margin-bottom: 40px;
 }
 
-/* A provider not connected yet: its mark quieter than a connected one's. */
+/* A provider not connected yet: its mark quieter than a connected
+   one's; its chip says it waits. */
 .apps-waiting-mark {
-  color: var(--warn-ink);
+  color: var(--ink-3);
 }
 
 .apps-facts {
@@ -27,7 +27,7 @@
 .apps-address,
 .apps-code {
   font-family: var(--font-mono);
-  font-size: var(--t-xs);
+  font-size: var(--t-sm);
 }
 
 .apps-code {
@@ -37,9 +37,10 @@
 
 .apps-steps,
 .apps-addresses {
+  max-width: 68ch;
   color: var(--ink-2);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
 }
 
 /* A long list of agents wraps inside its pill rather than being cut. */

@@ -19,7 +19,7 @@ const HUES = [152, 172, 196, 214, 234, 262, 286, 318];
 
 /** The hue an agent's name comes to: the same name, the same hue,
  *  every time and on every device. */
-export function hueOf(name: string): number {
+function hueOf(name: string): number {
   let sum = 0;
   for (const letter of name.toLowerCase()) sum = (sum * 31 + letter.charCodeAt(0)) % 9973;
   return HUES[sum % HUES.length];

@@ -1,7 +1,7 @@
-/* The agent card: a surface wearing the agent's hue (--hue, its mark's)
-   as a wash across its head; the mark, the words, the pills and the
-   level bar are one link, the foot holds the card's own controls. Cards
-   sit in `.agent-grid` (agent-shared.css). */
+/* The agent card: a neutral surface, the agent's hue on its mark only;
+   the mark, the words, the counts and the level bar are one link, the
+   foot holds the card's own controls. Cards sit in `.agent-grid`
+   (agent-shared.css). */
 :host {
   position: relative;
   display: flex;
@@ -10,35 +10,20 @@
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
-  background:
-    linear-gradient(180deg, hsl(var(--hue, 152) 70% 95%) 0, var(--surface) 92px);
-  box-shadow: var(--shadow-1);
+  background: var(--surface);
   transition:
     border-color var(--dur-1) var(--ease),
-    box-shadow var(--dur-2) var(--ease),
-    transform var(--dur-2) var(--ease);
-}
-
-:host-context(.dark) {
-  background:
-    linear-gradient(180deg, hsl(var(--hue, 152) 35% 17%) 0, var(--surface) 92px);
+    box-shadow var(--dur-2) var(--ease);
 }
 
 :host(:hover) {
-  border-color: color-mix(in srgb, hsl(var(--hue, 152) 55% 45%) 45%, var(--line));
+  border-color: var(--line-strong);
   box-shadow: var(--shadow-2);
-  transform: translateY(-3px);
 }
 
 :host(.is-selected) {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent), var(--shadow-2);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  :host(:hover) {
-    transform: none;
-  }
 }
 
 .card-main {
@@ -65,14 +50,8 @@
 }
 
 .card-head app-agent-mark {
-  width: 44px;
-  height: 44px;
-  border-radius: 13px;
-  box-shadow: 0 4px 12px -6px hsl(var(--hue, 152) 50% 30% / 0.45), inset 0 0 0 1px rgb(255 255 255 / 0.5);
-}
-
-:host-context(.dark) .card-head app-agent-mark {
-  box-shadow: 0 6px 14px -6px rgb(0 0 0 / 0.6), inset 0 0 0 1px rgb(255 255 255 / 0.06);
+  width: 40px;
+  height: 40px;
 }
 
 .card-title {
@@ -116,11 +95,11 @@
   min-height: 42px;
 }
 
-/* What it counts, as small pills with their icons. */
+/* What it counts, as one quiet line with their icons. */
 .card-stats {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 4px 14px;
   margin-top: auto;
 }
 
@@ -129,13 +108,10 @@
   align-items: center;
   gap: 5px;
   max-width: 100%;
-  padding: 3px 9px;
   overflow: hidden;
-  border-radius: var(--r-full);
-  background: var(--surface-2);
   color: var(--ink-2);
-  font-size: var(--t-xs);
-  line-height: var(--lh-xs);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -148,9 +124,9 @@
 
 .card-facts {
   margin-top: auto;
-  color: var(--ink-3);
-  font-size: var(--t-xs);
-  line-height: var(--lh-xs);
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
   overflow-wrap: anywhere;
 }
 
@@ -160,8 +136,7 @@
 }
 
 .card-levels .lvl-bar {
-  height: 5px;
-  gap: 2px;
+  height: 4px;
 }
 
 .card-error {
@@ -183,7 +158,6 @@
   min-height: 54px;
   padding: 8px 18px;
   border-top: 1px solid var(--line);
-  background: color-mix(in srgb, var(--surface-2) 45%, var(--surface));
 }
 
 .card-foot:empty {
@@ -194,15 +168,15 @@
    holds the focus, and once something is ticked. */
 .card-check {
   position: absolute;
-  top: 16px;
-  left: 16px;
+  top: 18px;
+  left: 18px;
   z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 13px;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-md);
   background: var(--surface);
   box-shadow: var(--shadow-1);
   opacity: 0;

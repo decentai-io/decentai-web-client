@@ -1,11 +1,12 @@
-/* The Safety page: a panel a concern (styles/controls.scss `.ui-panel`),
-   what reaches outside three side by side. The box the organization's
-   rules are written in runs as wide as a form reads, with its counter
-   under it at the right, quiet until the last tenth. */
+/* The Safety page: a section a concern (styles/controls.scss
+   `.ui-panel`), one under another. The box the organization's rules
+   are written in runs as wide as a form reads, with its counter under
+   it at the right, quiet until the last tenth. */
 .safety-panels {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 40px;
+  max-width: 880px;
 }
 
 /* Who may change it, said with a lock. */
@@ -19,13 +20,13 @@
   display: flex;
 }
 
-/* A panel's one line of what it is about, under its title. */
+/* A section's one line of what it is about, under its title. */
 .safety-lead {
-  max-width: 72ch;
-  margin: -6px 0 16px;
+  max-width: 68ch;
+  margin: -4px 0 16px;
   color: var(--ink-2);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  font-size: var(--t-base);
+  line-height: 22px;
 }
 
 .rules-text {

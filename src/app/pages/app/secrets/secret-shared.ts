@@ -1,4 +1,5 @@
-import { AppRecord, RecordField, RecordShape } from 'src/app/services/records.service';
+import { AppRecord, RecordField, RecordOf, RecordShape } from 'src/app/services/records.service';
+import { agentLabel } from '../data/record-page';
 
 /**
  * What the list, a secret's own page and its form all read off a secret,
@@ -75,4 +76,62 @@ export function shownFields(secret: AppRecord, shape: RecordShape | null): Shown
   return fields.map((field) => isEncrypted(field)
     ? { label: field.label || field.name, value: '', hidden: true, set: field.name in values }
     : { label: field.label || field.name, value: String(keys[field.name] ?? ''), hidden: false, set: field.name in keys });
+}
+
+// ── The agents that may use a secret ──────────────────────────────────
+
+/** An agent a secret may be given to, for one of its resources. */
+export interface AgentChoice {
+  /** `<agent>/<resource>`. */
+  key: string;
+  of: RecordOf;
+  name: string;
+  /** The resource it would serve, or that it was made for it. */
+  hint: string;
+  /** The agent the secret was made for: it always stays. */
+  own: boolean;
+}
+
+export function choiceKey(of: RecordOf): string {
+  return `${of.agent}/${of.resource}`;
+}
+
+/** Whether a secret of one resource fits another, as the API server
+ *  checks it: every field the other requires is there, by the same name
+ *  and type. An account is only offered for an account of the same
+ *  provider, and a typed secret for a typed one. An unknown resource is
+ *  the server's to judge. */
+export function fits(own: RecordShape | null, other: RecordShape): boolean {
+  if (!own) return true;
+  if ((own.oauth?.provider || '') !== (other.oauth?.provider || '')) return false;
+  const have = new Map((own.fields || []).map((field) => [field.name, field.type]));
+  return (other.fields || []).every((field) => !field.required || have.get(field.name) === field.type);
+}
+
+/** The agents a secret of `own` may be given to: the one it is made for
+ *  first, then every other secret resource it fits, by agent name, and
+ *  any it already serves that is not offered any more. */
+export function agentChoices(own: RecordOf | null, shapes: RecordShape[], serving: RecordOf[] = []): AgentChoice[] {
+  const ownShape = own ? shapes.find((shape) => shape.agent === own.agent && shape.id === own.resource) ?? null : null;
+  const choices = new Map<string, AgentChoice>();
+  const add = (of: RecordOf, shape: RecordShape | undefined) => {
+    const key = choiceKey(of);
+    const isOwn = !!own && own.agent === of.agent && own.resource === of.resource;
+    if (!choices.has(key)) {
+      choices.set(key, {
+        key, of, own: isOwn,
+        name: shape?.agent_name || agentLabel(of.agent),
+        hint: isOwn ? 'Made for it' : shape?.label || of.resource,
+      });
+    }
+  };
+  if (own) add(own, ownShape ?? undefined);
+  const others = shapes
+    .filter((shape) => fits(ownShape, shape))
+    .sort((a, b) => a.agent_name.localeCompare(b.agent_name) || (a.label || a.id).localeCompare(b.label || b.id));
+  for (const shape of others) add({ agent: shape.agent, resource: shape.id }, shape);
+  for (const of of serving) {
+    add(of, shapes.find((shape) => shape.agent === of.agent && shape.id === of.resource));
+  }
+  return [...choices.values()];
 }

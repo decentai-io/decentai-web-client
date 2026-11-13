@@ -1,82 +1,27 @@
-/* One record, read: its header band, its actions, its fields as names
-   and values in a panel, its content by type in panels, and its foot. The chips, the buttons,
-   the table and the code tile are the shared ones. */
+/* One record, read: its title row, its actions, its fields as names
+   and values, its content by type, each a section with its heading,
+   and its foot. The chips, the buttons, the table and the code tile
+   are the shared ones. */
 :host {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
   min-width: 0;
 }
 
-/* ── Its header band ───────────────────────────────────────────────
-   Across the top of the opened panel (.side-opened, 20px in): a wash
-   of the section's hue (--hue), the kind's tile lifted off it, the
-   kind, the name, and its facts as pills. */
+/* ── Its title row: the name, the kind under it, the facts ─────────── */
 .record-head {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
-  margin: -20px -20px 0;
-  padding: 22px 20px 20px;
-  border-bottom: 1px solid color-mix(in srgb, hsl(var(--hue, 214) 50% 50%) 14%, var(--line));
-  border-radius: calc(var(--r-lg) - 1px) calc(var(--r-lg) - 1px) 0 0;
-  background:
-    radial-gradient(90% 160% at 0% 0%, hsl(var(--hue, 214) 70% 91% / 0.85), transparent 62%),
-    radial-gradient(60% 140% at 100% 100%, hsl(calc(var(--hue, 214) + 40) 70% 94% / 0.6), transparent 60%),
-    var(--surface);
-}
-
-:host-context(.dark) .record-head {
-  border-bottom-color: color-mix(in srgb, hsl(var(--hue, 214) 40% 50%) 20%, var(--line));
-  background:
-    radial-gradient(90% 160% at 0% 0%, hsl(var(--hue, 214) 45% 21% / 0.9), transparent 62%),
-    radial-gradient(60% 140% at 100% 100%, hsl(calc(var(--hue, 214) + 40) 40% 17% / 0.6), transparent 60%),
-    var(--surface);
-}
-
-.record-face {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  background: hsl(var(--hue, 214) 62% 93%);
-  color: hsl(var(--hue, 214) 58% 28%);
-  box-shadow: 0 6px 16px -8px hsl(var(--hue, 214) 50% 30% / 0.45), inset 0 0 0 1px rgb(255 255 255 / 0.5);
-}
-
-:host-context(.dark) .record-face {
-  background: hsl(var(--hue, 214) 34% 20%);
-  color: hsl(var(--hue, 214) 62% 80%);
-  box-shadow: 0 8px 18px -8px rgb(0 0 0 / 0.6), inset 0 0 0 1px rgb(255 255 255 / 0.06);
-}
-
-.record-face lucide-icon {
-  display: flex;
+  gap: 12px;
 }
 
 .record-words {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   min-width: 0;
-}
-
-/* The kind, over the name, as an eyebrow. */
-.record-kind {
-  color: hsl(var(--hue, 214) 50% 32%);
-  font-size: var(--t-xs);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  line-height: var(--lh-xs);
-  text-transform: uppercase;
-}
-
-:host-context(.dark) .record-kind {
-  color: hsl(var(--hue, 214) 60% 76%);
 }
 
 .record-name {
@@ -87,13 +32,14 @@
   overflow-wrap: anywhere;
 }
 
-.record-line {
-  margin-top: 4px;
+.record-kind {
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
 }
 
-/* The pills sit on the wash: a surface under each, so they read. */
-.record-line .ui-pill:not(.is-accent) {
-  background: color-mix(in srgb, var(--surface) 80%, transparent);
+.record-line {
+  margin-top: 8px;
 }
 
 .record-actions {
@@ -106,17 +52,9 @@
   display: none;
 }
 
-/* A part of the record: a quiet panel with its icon and its label. */
+/* A part of the record: a heading and the space around it. */
 .record-panel {
-  min-width: 0;
-  padding: 16px 18px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  background: var(--surface);
-}
-
-.record-panel-head {
-  margin-bottom: 12px;
+  margin-top: 16px;
 }
 
 /* A field's label at the left, its value at the right. */
@@ -124,8 +62,8 @@
   display: grid;
   grid-template-columns: minmax(96px, max-content) minmax(0, 1fr);
   gap: 10px 20px;
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
 }
 
 .record-fields dt {
@@ -213,8 +151,8 @@
   padding-top: 12px;
   border-top: 1px solid var(--line);
   color: var(--ink-2);
-  font-size: var(--t-xs);
-  line-height: var(--lh-xs);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
 }
 
 .record-foot-when {

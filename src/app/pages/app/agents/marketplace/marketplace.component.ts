@@ -11,7 +11,6 @@ import {
 } from 'src/app/services/agents.service';
 import { ConfirmService } from 'src/app/services/confirm.service';
 import { DataPageBase } from '../../data-page-base';
-import { hueOf } from 'src/app/components/ui/agent-mark.component';
 import { CardChip, CardLevel } from '../agent-card.component';
 import { AgentStat, agentFacts, agentStats, iconOf, levelBar } from '../agent-shared';
 import { SourceDraft } from './source-form.component';
@@ -558,11 +557,6 @@ export class MarketplaceComponent extends DataPageBase implements OnInit, OnDest
   namesOf(offers: CatalogOffer[]): string {
     const names = offers.map((offer) => this.nameOf(offer));
     return names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names.join('');
-  }
-
-  /** The hue an agent's name gives its mark: its review's header wears it. */
-  hueOfOffer(offer: CatalogOffer): number {
-    return hueOf(this.nameOf(offer));
   }
 
   /** What was installed before, for an update to be read against. */

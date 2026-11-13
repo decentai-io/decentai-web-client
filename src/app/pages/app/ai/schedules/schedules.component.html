@@ -1,7 +1,5 @@
 <app-page guide="schedules"
   title="Schedules"
-  icon="calendar-clock"
-  [hue]="186"
   sentence="What waits for you in your chats, and what they keep on the clock: when each schedule runs, what it does, and how its runs went."
   [wide]="true"
 >
@@ -21,13 +19,12 @@
     </button>
   </p>
 
-  <!-- The numbers that matter, each a tile: a state's tile narrows the
-       list to it. -->
+  <!-- The numbers that matter, on one line: a state's number narrows
+       the list to it. -->
   <ul class="ui-tiles" *ngIf="schedules.length && !opened" aria-label="Schedules in numbers">
     <li>
       <button class="ui-tile" type="button" [class.is-on]="state === 'active'" [attr.aria-pressed]="state === 'active'"
               (click)="toggleState('active')">
-        <span class="ui-tile-icon"><lucide-icon name="calendar-check" [size]="20" aria-hidden="true"></lucide-icon></span>
         <span class="ui-tile-words">
           <span class="ui-tile-value">{{ count('active') }}</span>
           <span class="ui-tile-label">Active</span>
@@ -37,7 +34,6 @@
     <li>
       <button class="ui-tile" type="button" [class.is-on]="state === 'paused'" [attr.aria-pressed]="state === 'paused'"
               (click)="toggleState('paused')">
-        <span class="ui-tile-icon"><lucide-icon name="pause" [size]="20" aria-hidden="true"></lucide-icon></span>
         <span class="ui-tile-words">
           <span class="ui-tile-value">{{ count('paused') }}</span>
           <span class="ui-tile-label">Paused</span>
@@ -57,7 +53,7 @@
     <li>
       <a class="ui-tile" *ngIf="upcoming as soon; else nothingNext" [routerLink]="['/ai/schedules', soon.schedule_id]"
          queryParamsHandling="preserve">
-        <span class="ui-tile-icon" [class.is-warn]="stopped"><lucide-icon name="timer" [size]="20" aria-hidden="true"></lucide-icon></span>
+        <span class="ui-tile-icon is-warn" *ngIf="stopped"><lucide-icon name="timer" [size]="20" aria-hidden="true"></lucide-icon></span>
         <span class="ui-tile-words">
           <span class="ui-tile-value">{{ upcomingWhen }}</span>
           <span class="ui-tile-label schedules-tile-what">Next: {{ what(soon) }}</span>
@@ -65,7 +61,6 @@
       </a>
       <ng-template #nothingNext>
         <span class="ui-tile">
-          <span class="ui-tile-icon"><lucide-icon name="timer" [size]="20" aria-hidden="true"></lucide-icon></span>
           <span class="ui-tile-words">
             <span class="ui-tile-value">—</span>
             <span class="ui-tile-label">Nothing coming up</span>
@@ -79,7 +74,6 @@
        where it is answered. -->
   <section class="ui-panel schedules-cards" *ngIf="cards.length && !opened" aria-labelledby="schedules-cards-title">
     <div class="ui-panel-head">
-      <span class="ui-panel-icon is-hued"><lucide-icon name="shield-check" [size]="16" aria-hidden="true"></lucide-icon></span>
       <h2 class="ui-panel-title" id="schedules-cards-title">Approvals</h2>
       <span class="ui-pill is-warn">{{ cards.length }} waiting</span>
       <a class="btn ghost sm" routerLink="/ai/waiting">

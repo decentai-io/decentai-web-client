@@ -17,9 +17,8 @@
   <!-- What no agent may reach, whatever it declares. -->
   <section class="ui-panel" aria-labelledby="safety-sites-title">
     <div class="ui-panel-head">
-      <span class="ui-panel-icon is-hued"><lucide-icon name="shield-alert" [size]="16" aria-hidden="true"></lucide-icon></span>
       <h2 class="ui-panel-title" id="safety-sites-title">Sites no agent may reach</h2>
-      <span class="ui-pill" [class.is-warn]="draft.value.blocked_hosts.length > 0">
+      <span class="ui-pill">
         <lucide-icon name="globe" [size]="12" aria-hidden="true"></lucide-icon>
         {{ draft.value.blocked_hosts.length }} blocked
       </span>
@@ -42,7 +41,6 @@
   <!-- What every chat is told. -->
   <section class="ui-panel" aria-labelledby="safety-rules-title">
     <div class="ui-panel-head">
-      <span class="ui-panel-icon is-hued"><lucide-icon name="scroll-text" [size]="16" aria-hidden="true"></lucide-icon></span>
       <h2 class="ui-panel-title" id="safety-rules-title">Your organization's rules for the assistant</h2>
     </div>
     <p class="safety-lead">
@@ -65,11 +63,10 @@
     </app-field>
   </section>
 
-  <!-- What may reach outside: three panels side by side. -->
+  <!-- What may reach outside, a section each. -->
   <div class="ui-panels">
     <section class="ui-panel" aria-labelledby="safety-mcp-title">
       <div class="ui-panel-head">
-        <span class="ui-panel-icon"><lucide-icon name="server" [size]="16" aria-hidden="true"></lucide-icon></span>
         <h2 class="ui-panel-title" id="safety-mcp-title">MCP servers</h2>
       </div>
       <p class="safety-lead">Remote tool servers people add for their own chats. A tool runs on its server, not here.</p>
@@ -80,7 +77,6 @@
 
     <section class="ui-panel" aria-labelledby="safety-webhooks-title">
       <div class="ui-panel-head">
-        <span class="ui-panel-icon"><lucide-icon name="webhook" [size]="16" aria-hidden="true"></lucide-icon></span>
         <h2 class="ui-panel-title" id="safety-webhooks-title">Webhooks</h2>
       </div>
       <p class="safety-lead">Addresses other services post events to, each answered by the assistant in a chat.</p>
@@ -91,7 +87,6 @@
 
     <section class="ui-panel" aria-labelledby="safety-notify-title">
       <div class="ui-panel-head">
-        <span class="ui-panel-icon"><lucide-icon name="bell" [size]="16" aria-hidden="true"></lucide-icon></span>
         <h2 class="ui-panel-title" id="safety-notify-title">Notifications</h2>
       </div>
       <p class="safety-lead">

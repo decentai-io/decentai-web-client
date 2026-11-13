@@ -2,8 +2,9 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
 import {
-  Card, ChatEvent, ChatMessage, ChatSettings, ChatSnapshot, Doing, RunInfo, WorkItem,
+  Card, CardClosed, ChatEvent, ChatMessage, ChatSettings, ChatSnapshot, Doing, RunInfo, WorkItem,
 } from 'src/app/models/chat-protocol';
+import { AnsweredCard, answeredCard } from 'src/app/pages/app/ai/chat/chat-answers';
 import { TRUST_CHOICES } from 'src/app/pages/app/ai/chat/chat-defaults';
 
 /** A piece of the assistant's work as last told, with its agent's latest
@@ -12,15 +13,17 @@ export interface WorkEntry extends WorkItem {
   line?: string;
 }
 
-/** A message of the person's or a webhook's, the work it led to and what
- *  the assistant said after it; or a schedule's or webhook's run, with its
- *  work and its report (`run`). None began a turn the assistant spoke
- *  first in. */
+/** A message of the person's or a webhook's, or a card they answered, the
+ *  work it led to and what the assistant said after it; or a schedule's or
+ *  webhook's run, with its work and its report (`run`). None began a turn
+ *  the assistant spoke first in. */
 export interface ChatTurn {
   key: string;
   /** When it began. */
   at: string;
   userMessage: ChatMessage | null;
+  /** The card whose answer began it. */
+  answer: AnsweredCard | null;
   run: RunInfo | null;
   assistantMessages: ChatMessage[];
   work: WorkEntry[];
@@ -46,6 +49,12 @@ export interface InlineChatError {
   retryable: boolean;
 }
 
+/** A card as its events told it: opened with its request, closed with its answer. */
+export interface AskedCard {
+  card?: Card;
+  closed?: CardClosed & { at: string };
+}
+
 /** The page's view of one conversation. */
 export interface ChatViewState {
   loading: boolean;
@@ -61,6 +70,9 @@ export interface ChatViewState {
   /** What each of its threads is doing, by thread: '' the chat's own. */
   doing: Record<string, Doing>;
   notes: ChatNote[];
+  /** Every card the page has heard of, by id: what it asked, and how it
+   *  closed once it has. */
+  asked: Record<string, AskedCard>;
   /** The words the assistant is writing, before its message lands. */
   saying: string;
   /** The number of the last event taken. */
@@ -70,7 +82,7 @@ export interface ChatViewState {
 
 const initialState = (): ChatViewState => ({
   loading: true, messages: [], turns: [], timeline: [], cards: [], working: false, work: {}, doing: {}, notes: [],
-  saying: '', latestEventSeq: 0, errors: [],
+  asked: {}, saying: '', latestEventSeq: 0, errors: [],
 });
 
 /** The id a message is shown under while it is on its way. */
@@ -101,6 +113,7 @@ export class ChatStateService {
     const kept = this.value.loading ? [] : this.value.messages.filter((message) => !known.has(message.message_id));
     this.patch({
       loading: false, messages: this.sorted([...snapshot.messages, ...kept]), cards: snapshot.cards,
+      asked: snapshot.cards.reduce((asked, card) => this.ask(asked, card.card_id, { card }), this.value.asked),
       working: snapshot.chat.working, saying: snapshot.chat.working ? this.value.saying : '',
       latestEventSeq: Math.max(this.value.latestEventSeq, snapshot.events),
     });
@@ -129,10 +142,18 @@ export class ChatStateService {
   }
 
   /** What an event leaves in the conversation: a piece of work, an agent's
-   *  line on its call, or a note. Taken twice, it is there once. */
+   *  line on its call, a card asked or closed, or a note. Taken twice, it
+   *  is there once. */
   remember(event: ChatEvent): void {
     if (event.event === 'work') return this.work(event.data);
     if (event.event === 'progress') return this.progress(event.data.work, event.data.line);
+    if (event.event === 'card_opened') {
+      return this.patch({ asked: this.ask(this.value.asked, event.data.card_id, { card: event.data }) });
+    }
+    if (event.event === 'card_closed') {
+      const closed = { ...event.data, at: event.data.at || event.at };
+      return this.patch({ asked: this.ask(this.value.asked, event.data.card_id, { closed }) });
+    }
     const note = this.noteOf(event);
     if (note && !this.value.notes.some((held) => held.id === note.id)) {
       this.patch({ notes: [...this.value.notes, note].sort((a, b) => time(a.at) - time(b.at)) });
@@ -204,7 +225,7 @@ export class ChatStateService {
 
   addCard(card: Card): void {
     if (card.status !== 'open' || this.value.cards.some((held) => held.card_id === card.card_id)) return;
-    this.patch({ cards: [...this.value.cards, card] });
+    this.patch({ cards: [...this.value.cards, card], asked: this.ask(this.value.asked, card.card_id, { card }) });
   }
 
   closeCard(cardId: string): void {
@@ -233,14 +254,20 @@ export class ChatStateService {
   }
 
   /** The changes, and the turns and the timeline again where the messages,
-   *  the work or the notes changed. */
+   *  the work, the notes or the cards changed. */
   private patch(changes: Partial<ChatViewState>): void {
     const next = { ...this.value, ...changes };
-    if ('messages' in changes || 'work' in changes || 'notes' in changes) {
-      next.turns = this.buildTurns(next.messages, Object.values(next.work));
+    if ('messages' in changes || 'work' in changes || 'notes' in changes || 'asked' in changes) {
+      const answered = Object.values(next.asked).flatMap(({ card, closed }) => (closed ? [answeredCard(closed, card)] : []));
+      next.turns = this.buildTurns(next.messages, Object.values(next.work), answered);
       next.timeline = this.buildTimeline(next.turns, next.notes);
     }
     this.state$.next(next);
+  }
+
+  /** What is held of a card, with more told of it. */
+  private ask(asked: Record<string, AskedCard>, cardId: string, told: AskedCard): Record<string, AskedCard> {
+    return { ...asked, [cardId]: { ...asked[cardId], ...told } };
   }
 
   /** In the chat's one order; one on its way last. */
@@ -250,16 +277,19 @@ export class ChatStateService {
 
   /** Turns are a reading aid, not a record. A person's or a webhook's
    *  message begins one, and the assistant's words after it are its, a
-   *  webhook's run's on the webhook's own. A schedule's run is a turn of
-   *  its own, by its thread. Work goes to its run, or else to the turn it
-   *  began in, by time. A message on its way keeps the key the page gave
-   *  it, and its work with it, when the server's message takes its place. */
-  private buildTurns(messages: ChatMessage[], work: WorkEntry[]): ChatTurn[] {
+   *  webhook's run's on the webhook's own. So does a card the person
+   *  answered, where it closed: what the assistant said before it and
+   *  after it are two answers, the person's decision the border between
+   *  them. A schedule's run is a turn of its own, by its thread. Work goes
+   *  to its run, or else to the turn it began in, by time. A message on
+   *  its way keeps the key the page gave it, and its work with it, when
+   *  the server's message takes its place. */
+  private buildTurns(messages: ChatMessage[], work: WorkEntry[], answered: AnsweredCard[]): ChatTurn[] {
     const turns: ChatTurn[] = [];
     const runs = new Map<string, ChatTurn>();
     const bySeq = new Map<number, ChatTurn>();
     const added = (key: string, at: string, userMessage: ChatMessage | null): ChatTurn => {
-      const made: ChatTurn = { key, at, userMessage, run: null, assistantMessages: [], work: [] };
+      const made: ChatTurn = { key, at, userMessage, answer: null, run: null, assistantMessages: [], work: [] };
       turns.push(made);
       return made;
     };
@@ -268,7 +298,7 @@ export class ChatStateService {
       if (webhook) return webhook;
       let held = runs.get(run.thread);
       if (!held) {
-        held = { key: `run:${run.thread}`, at, userMessage: null, run, assistantMessages: [], work: [] };
+        held = { key: `run:${run.thread}`, at, userMessage: null, answer: null, run, assistantMessages: [], work: [] };
         runs.set(run.thread, held);
       } else if (at && time(at) < time(held.at)) {
         held.at = at;
@@ -277,7 +307,18 @@ export class ChatStateService {
     };
     /** The chat's own turns: not a webhook's, whose run speaks for it. */
     const chatTurns = (): ChatTurn[] => turns.filter((one) => one.userMessage?.actor !== 'webhook');
+    // Cards closed before the first message shown come with the older messages, once those are read.
+    const first = messages.length ? time(messages[0].at) : Infinity;
+    const answers = answered.filter((one) => time(one.at) >= first).sort((a, b) => time(a.at) - time(b.at));
+    /** The cards answered by a time, each a turn of its own, in order. */
+    const answeredBy = (at: number): void => {
+      while (answers.length && time(answers[0].at) <= at) {
+        const answer = answers.shift()!;
+        added(`card:${answer.card_id}`, answer.at, null).answer = answer;
+      }
+    };
     for (const message of messages) {
+      answeredBy(time(message.at));
       if (message.actor !== 'assistant') {
         bySeq.set(message.seq, added(message.client_id || message.message_id, message.at, message));
       } else if (message.run) {
@@ -287,6 +328,7 @@ export class ChatStateService {
         (own[own.length - 1] ?? added(message.message_id, message.at, null)).assistantMessages.push(message);
       }
     }
+    answeredBy(Infinity);
     for (const entry of [...work].sort((a, b) => time(a.started) - time(b.started))) {
       if (entry.run) {
         ofRun(entry.run, entry.started || '').work.push(entry);

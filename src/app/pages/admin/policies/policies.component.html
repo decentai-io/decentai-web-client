@@ -1,66 +1,62 @@
-<app-page guide="access" title="Policies" sentence="A policy says what is allowed, denied, or asked of the chat's person first. Groups give their people policies." [wide]="true"
-          icon="scroll-text" [hue]="262">
-  <p class="form-notice is-error" role="alert" *ngIf="error && !editing">{{ error }}</p>
-  <p class="form-notice" role="status" *ngIf="notice">{{ notice }}</p>
+<app-page guide="access" title="Policies" sentence="Policies say what groups may do in the platform itself: its people, settings, records and chats. A group gives its people its policies." [wide]="true">
+  <div class="policies-column">
+    <!-- Who may use an agent is not here: it is chosen on the agent. -->
+    <p class="policies-lead">
+      Who may use an agent is chosen on that agent's page, under Access, and goes with it when it is uninstalled.
+      <a routerLink="/agents">Installed agents</a>
+    </p>
+    <p class="form-notice is-error" role="alert" *ngIf="error && !editing">{{ error }}</p>
+    <p class="form-notice" role="status" *ngIf="notice">{{ notice }}</p>
 
-  <!-- The numbers at a glance: the policies, the platform's own, and
-       those written here. -->
-  <ul class="ui-tiles" aria-label="Policies in numbers" *ngIf="!loading && policies.length">
-    <li class="ui-tile">
-      <span class="ui-tile-icon"><lucide-icon name="scroll-text" [size]="20" aria-hidden="true"></lucide-icon></span>
-      <span class="ui-tile-words">
-        <span class="ui-tile-value">{{ policies.length }}</span>
-        <span class="ui-tile-label">{{ policies.length === 1 ? "Policy" : "Policies" }}</span>
-      </span>
-    </li>
-    <li class="ui-tile">
-      <span class="ui-tile-icon"><lucide-icon name="lock" [size]="20" aria-hidden="true"></lucide-icon></span>
-      <span class="ui-tile-words">
-        <span class="ui-tile-value">{{ builtInCount }}</span>
-        <span class="ui-tile-label">Built in</span>
-      </span>
-    </li>
-    <li class="ui-tile">
-      <span class="ui-tile-icon"><lucide-icon name="pencil-line" [size]="20" aria-hidden="true"></lucide-icon></span>
-      <span class="ui-tile-words">
-        <span class="ui-tile-value">{{ policies.length - builtInCount }}</span>
-        <span class="ui-tile-label">Written here</span>
-      </span>
-    </li>
-  </ul>
+    <app-list label="Policies" [loading]="loading">
+      <ng-container listToolbar *ngIf="policies.length">
+        <span class="search-field toolbar-search">
+          <lucide-icon name="search" [size]="16" aria-hidden="true"></lucide-icon>
+          <input class="input" type="search" placeholder="Search policies" aria-label="Search policies" [(ngModel)]="query" />
+        </span>
+        <ng-container *ngTemplateOutlet="addButton"></ng-container>
+      </ng-container>
 
-  <app-list label="Policies" [loading]="loading">
-    <ng-container listToolbar *ngIf="policies.length">
-      <span class="search-field toolbar-search">
-        <lucide-icon name="search" [size]="16" aria-hidden="true"></lucide-icon>
-        <input class="input" type="search" placeholder="Search policies" aria-label="Search policies" [(ngModel)]="query" />
-      </span>
-      <ng-container *ngTemplateOutlet="addButton"></ng-container>
-    </ng-container>
+      <app-row *ngFor="let policy of shown">
+        <button rowName class="admin-name" type="button" *ngIf="canUpdate && !policy.built_in; else plainName" (click)="startEdit(policy)">{{ policy.name }}</button>
+        <ng-template #plainName><span rowName>{{ policy.name }}</span></ng-template>
+        <span rowChips class="ui-pill" *ngIf="policy.built_in"
+              matTooltip="The platform's own: it changes with every upgrade, and can be copied but not edited">Built in</span>
 
-    <app-row *ngFor="let policy of shown">
-      <lucide-icon rowMark [name]="policy.built_in ? 'shield-check' : 'scroll-text'" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
-      <button rowName class="admin-name" type="button" *ngIf="canUpdate && !policy.built_in; else plainName" (click)="startEdit(policy)">{{ policy.name }}</button>
-      <ng-template #plainName><span rowName>{{ policy.name }}</span></ng-template>
-      <span rowChips class="chip" *ngIf="policy.built_in"
-            matTooltip="The platform's own: it changes with every upgrade, and can be copied but not edited"><lucide-icon name="lock" [size]="12" aria-hidden="true"></lucide-icon>Built in</span>
-      <span rowChips class="chip warn" *ngIf="asksOrDenies(policy)"><lucide-icon name="shield-question" [size]="12" aria-hidden="true"></lucide-icon>Asks or denies</span>
-      <ng-container rowMeta>{{ summarise(policy) }}</ng-container>
-      <button rowState class="icon-btn sm" type="button" *ngIf="canCreate || (!policy.built_in && (canUpdate || canDelete))"
-              [attr.aria-label]="'More for ' + policy.name" [disabled]="isBusy(policy.policy_id)"
-              [matMenuTriggerFor]="policyMenu" [matMenuTriggerData]="{ policy: policy }">
-        <lucide-icon name="ellipsis-vertical" [size]="16" aria-hidden="true"></lucide-icon>
-      </button>
-    </app-row>
+        <!-- What it says, statement by statement, in words. -->
+        <ul class="pol-statements" [attr.aria-label]="'What ' + policy.name + ' says'">
+          <li class="pol-statement" *ngFor="let line of statementsOf(policy)">
+            <span class="pol-effect" [class.is-ask]="line.asks">{{ line.effect }}</span>
+            <span class="pol-items">{{ line.items.join("; ") }}</span>
+            <span class="pol-scopes" *ngIf="line.scopes">, {{ line.scopes }}</span>
+          </li>
+        </ul>
+        <button class="btn ghost sm pol-more" type="button" *ngIf="hiddenCount(policy) || expanded.has(policy.policy_id)"
+                [attr.aria-expanded]="expanded.has(policy.policy_id)" (click)="toggleWhole(policy)">
+          {{ expanded.has(policy.policy_id) ? "Show less" : "And " + hiddenCount(policy) + " more" }}
+        </button>
+        <!-- Agents named here are better chosen on their own page. -->
+        <p class="pol-agents" *ngIf="agentsNamed(policy).length">
+          Who may use
+          <ng-container *ngFor="let agent of agentsNamed(policy); let last = last; let first = first">{{ !first && last ? " and " : !first ? ", " : "" }}<a [routerLink]="['/agents', agent.agent_id, 'access']">{{ agent.name }}</a></ng-container>
+          is better chosen on {{ agentsNamed(policy).length === 1 ? "its page" : "their pages" }}.
+        </p>
+        <button rowState class="icon-btn sm" type="button" *ngIf="canCreate || (!policy.built_in && (canUpdate || canDelete))"
+                [attr.aria-label]="'More for ' + policy.name" [disabled]="isBusy(policy.policy_id)"
+                [matMenuTriggerFor]="policyMenu" [matMenuTriggerData]="{ policy: policy }">
+          <lucide-icon name="ellipsis-vertical" [size]="16" aria-hidden="true"></lucide-icon>
+        </button>
+      </app-row>
 
-    <app-empty *ngIf="!loading && !policies.length" icon="scroll-text" title="No policies yet"
-               line="A policy says what is allowed. Groups give them.">
-      <ng-container *ngTemplateOutlet="addButton"></ng-container>
-    </app-empty>
-    <app-empty *ngIf="policies.length && !shown.length" icon="search-x" title="No policy matches" line="Try another search.">
-      <button class="btn" type="button" (click)="query = ''">Clear the search</button>
-    </app-empty>
-  </app-list>
+      <app-empty *ngIf="!loading && !policies.length" icon="scroll-text" title="No policies yet"
+                 line="A policy says what a group may do in the platform. Groups give their people policies.">
+        <ng-container *ngTemplateOutlet="addButton"></ng-container>
+      </app-empty>
+      <app-empty *ngIf="policies.length && !shown.length" icon="search-x" title="No policy matches" line="Try another search.">
+        <button class="btn" type="button" (click)="query = ''">Clear the search</button>
+      </app-empty>
+    </app-list>
+  </div>
 
   <ng-template #addButton>
     <button class="btn primary toolbar-end" type="button" *ngIf="canCreate" (click)="startCreate()">
@@ -94,11 +90,11 @@
                    [(ngModel)]="formName" />
           </app-field>
 
-          <!-- What it allows, service by service, then agent by agent:
-               using an agent is allowing its functions. -->
+          <!-- What it allows, service by service. Agents are chosen on
+               their own pages; the document can still name them. -->
           <fieldset class="admin-picks" *ngIf="!advanced">
             <legend>Allows<span class="admin-count">{{ totalSelected }} allowed</span></legend>
-            <p class="dialog-note">A whole service or agent stays allowed as actions are added to it.</p>
+            <p class="dialog-note">A whole service stays allowed as actions are added to it. Who may use an agent is chosen on the agent's page, under Access.</p>
             <details class="fold" *ngFor="let group of catalog" [open]="openAtStart.has(group.key)">
               <summary>{{ group.label }}<span class="admin-count">{{ selectedCount(group) }} of {{ group.actions.length }}</span></summary>
               <mat-checkbox class="check-row" [checked]="isGroupOn(group)" [indeterminate]="isGroupPartial(group)"

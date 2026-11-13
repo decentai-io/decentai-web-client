@@ -3,11 +3,8 @@
   All nodes
 </button>
 
-<!-- ── Who it is and how it stands: a band in the section's hue ─────── -->
+<!-- ── Who it is and how it stands, the actions at the right ────────── -->
 <header class="detail-head">
-  <span class="detail-mark" [class.is-live]="state === 'connected'" [class.is-refused]="state === 'refused'" aria-hidden="true">
-    <lucide-icon name="server" [size]="22" [strokeWidth]="1.75"></lucide-icon>
-  </span>
   <div class="detail-words">
     <h2 class="detail-name" id="node-detail-title">{{ label }}</h2>
     <div class="detail-chips">
@@ -89,7 +86,6 @@
 <div class="detail-panels">
 <section class="ui-panel" aria-labelledby="node-about-title">
   <div class="ui-panel-head">
-    <span class="ui-panel-icon is-hued"><lucide-icon name="info" [size]="16" aria-hidden="true"></lucide-icon></span>
     <h3 class="ui-panel-title" id="node-about-title">About</h3>
   </div>
   <dl class="detail-facts">
@@ -120,7 +116,6 @@
 <!-- ── Its sandboxes ────────────────────────────────────────────────── -->
 <section class="ui-panel" aria-labelledby="node-sandboxes-title">
   <div class="ui-panel-head">
-    <span class="ui-panel-icon is-hued"><lucide-icon name="package" [size]="16" aria-hidden="true"></lucide-icon></span>
     <h3 class="ui-panel-title" id="node-sandboxes-title">
       Sandboxes <span class="detail-count">{{ node.sandboxes.length }}</span>
     </h3>
@@ -200,7 +195,6 @@
 <!-- ── The chats it holds ───────────────────────────────────────────── -->
 <section class="ui-panel" aria-labelledby="node-chats-title">
   <div class="ui-panel-head">
-    <span class="ui-panel-icon is-hued"><lucide-icon name="message-square-text" [size]="16" aria-hidden="true"></lucide-icon></span>
     <h3 class="ui-panel-title" id="node-chats-title">
       Chats <span class="detail-count">{{ node.held_chats + node.held_elsewhere }}</span>
     </h3>

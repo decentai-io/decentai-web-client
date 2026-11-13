@@ -1,10 +1,7 @@
-<!-- Its band: the kind's mark, when it comes round, how it stands. -->
-<header class="opened-band">
-  <span class="opened-mark" aria-hidden="true">
-    <lucide-icon [name]="mark" [size]="22" [strokeWidth]="1.75"></lucide-icon>
-  </span>
+<!-- Its head: what kind it is, when it comes round, how it stands. -->
+<header class="opened-head">
   <div class="opened-words">
-    <p class="opened-eyebrow">
+    <p class="opened-kind">
       {{ mark === "zap" ? "Runs a function" : "Wakes the assistant" }}
     </p>
     <h2 class="opened-title">{{ cadence }}</h2>
@@ -62,10 +59,9 @@
   </button>
 </div>
 
-<section class="opened-block" aria-labelledby="schedule-next-title" *ngIf="state !== 'done'">
-  <div class="opened-block-head">
-    <span class="opened-block-icon"><lucide-icon name="timer" [size]="14" aria-hidden="true"></lucide-icon></span>
-    <h3 class="opened-block-title" id="schedule-next-title">Next</h3>
+<section class="ui-panel opened-section" aria-labelledby="schedule-next-title" *ngIf="state !== 'done'">
+  <div class="ui-panel-head">
+    <h3 class="ui-panel-title" id="schedule-next-title">Next</h3>
   </div>
   <p class="schedule-upcoming" *ngIf="nextAt">
     <span class="schedule-upcoming-when">{{ moment(nextAt) }}</span>
@@ -84,10 +80,9 @@
   </p>
 </section>
 
-<section class="opened-block" aria-labelledby="schedule-trust-title">
-  <div class="opened-block-head">
-    <span class="opened-block-icon"><lucide-icon name="shield-check" [size]="14" aria-hidden="true"></lucide-icon></span>
-    <h3 class="opened-block-title" id="schedule-trust-title">Trust</h3>
+<section class="ui-panel opened-section" aria-labelledby="schedule-trust-title">
+  <div class="ui-panel-head">
+    <h3 class="ui-panel-title" id="schedule-trust-title">Trust</h3>
   </div>
   <p class="schedule-note">
     Its runs act at this trust with nobody watching: a call above it waits for your approval, however long you take.
@@ -98,10 +93,9 @@
   <ng-template #trustWords><p class="schedule-upcoming"><span class="schedule-upcoming-when">{{ trustName }}</span></p></ng-template>
 </section>
 
-<section class="opened-block" aria-labelledby="schedule-runs-title">
-  <div class="opened-block-head">
-    <span class="opened-block-icon"><lucide-icon name="history" [size]="14" aria-hidden="true"></lucide-icon></span>
-    <h3 class="opened-block-title" id="schedule-runs-title">Runs</h3>
+<section class="ui-panel opened-section" aria-labelledby="schedule-runs-title">
+  <div class="ui-panel-head">
+    <h3 class="ui-panel-title" id="schedule-runs-title">Runs</h3>
     <app-segmented *ngIf="runs.length" label="Which runs" [choices]="runFilters" [(ngModel)]="runFilter"></app-segmented>
   </div>
   <p class="schedule-note" *ngIf="!runs.length">It has not run yet.</p>

@@ -1,12 +1,11 @@
 import { Component, Input } from '@angular/core';
 import { MarkdownService } from 'ngx-markdown';
 
-import { hueOf } from 'src/app/components/ui/agent-mark.component';
 import { headingsDown } from 'src/app/components/ui/markdown-levels';
 import { AgentSource, CatalogOffer, Manifest } from 'src/app/services/agents.service';
 import { ChatMarkdownService } from '../../ai/chat/chat-message/chat-markdown.service';
 import {
-  AgentNetwork, AgentTile, KeptItem, agentTiles, credentialHost, iconOf, keptItems, levelBar, levelLabel,
+  AgentCount, AgentNetwork, KeptItem, agentCounts, credentialHost, iconOf, keptItems, levelBar, levelLabel,
   levelMeaning, levelTally, networkNote, networkOf, resourcesOf,
 } from '../agent-shared';
 
@@ -43,8 +42,6 @@ let created = 0;
   // A README is somebody else's markdown: what it would load from
   // elsewhere is taken out, as in a chat.
   providers: [{ provide: MarkdownService, useClass: ChatMarkdownService }],
-  // The review wears the hue its agent's name gives its mark.
-  host: { '[style.--hue]': 'hue' },
 })
 export class InstallReviewComponent {
   @Input({ required: true }) source!: AgentSource;
@@ -68,10 +65,6 @@ export class InstallReviewComponent {
 
   get name(): string {
     return this.manifest.agent.name || this.manifest.agent.id;
-  }
-
-  get hue(): number {
-    return hueOf(this.name);
   }
 
   get icon(): string {
@@ -101,15 +94,15 @@ export class InstallReviewComponent {
   readonly meaningOf = levelMeaning;
 
   /** The numbers at its head, the same array until the manifest changes. */
-  get tiles(): AgentTile[] {
-    if (this.tilesOf !== this.manifest) {
-      this.tilesOf = this.manifest;
-      this.tilesShown = agentTiles(this.manifest);
+  get counts(): AgentCount[] {
+    if (this.countsOf !== this.manifest) {
+      this.countsOf = this.manifest;
+      this.countsShown = agentCounts(this.manifest);
     }
-    return this.tilesShown;
+    return this.countsShown;
   }
-  private tilesOf: Manifest | null = null;
-  private tilesShown: AgentTile[] = [];
+  private countsOf: Manifest | null = null;
+  private countsShown: AgentCount[] = [];
 
   get resources() {
     return resourcesOf(this.manifest);

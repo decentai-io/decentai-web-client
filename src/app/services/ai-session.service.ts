@@ -132,6 +132,13 @@ export class AiSessionService {
     return this.ai('AI:Chat:stop', { chat_id: chatId, ...(work ? { work } : {}) });
   }
 
+  /** Run one of an agent's functions in the chat now, as the person: it
+   *  passes the same gate as the assistant's calls and shows as the chat's
+   *  work. Refused for an agent the chat may not use, or no such function. */
+  call(chatId: string, agent: string, fn: string, inputs: Record<string, unknown> = {}) {
+    return this.ai('AI:Chat:call', { chat_id: chatId, agent, function: fn, inputs });
+  }
+
   // ── A chat's conversation ─────────────────────────────────────
 
   /** The chat, its last messages, its open cards, and the number of its

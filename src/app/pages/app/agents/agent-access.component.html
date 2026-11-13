@@ -1,0 +1,116 @@
+<div class="ui-panels">
+  <section class="ui-panel" aria-labelledby="access-title">
+    <div class="ui-panel-head">
+      <h2 class="ui-panel-title" id="access-title">Who may use it</h2>
+    </div>
+    <p class="agent-text">
+      Choose here which groups may use {{ agentName || "this agent" }}, and how. The choice is kept with the
+      agent: uninstalling it removes the choice too, and installing it again starts with nobody.
+    </p>
+
+    <!-- While the rows are read. -->
+    <div class="access-loading" *ngIf="state === 'loading'" aria-busy="true" aria-label="Reading who may use it">
+      <span class="sk"></span>
+      <span class="sk"></span>
+    </div>
+
+    <ng-container *ngIf="state === 'failed'">
+      <p class="form-notice is-error" role="alert">{{ loadProblem }}</p>
+      <div class="agent-actions">
+        <button class="btn sm" type="button" (click)="read()">Try again</button>
+      </div>
+    </ng-container>
+
+    <!-- Not the person's to choose: who does, and what the agent can be
+         narrowed by. -->
+    <ng-container *ngIf="state === 'refused'">
+      <p class="ui-panel-note">Whoever may install agents chooses which groups may use it.</p>
+      <ng-container *ngIf="declaredScopes.length">
+        <h3 class="agent-subhead">Authorization scopes</h3>
+        <dl class="agent-facts">
+          <ng-container *ngFor="let scope of declaredScopes">
+            <dt><code>{{ scope.name }}</code></dt>
+            <dd>{{ scope.description }}</dd>
+          </ng-container>
+        </dl>
+      </ng-container>
+    </ng-container>
+
+    <ng-container *ngIf="state === 'ready'">
+      <p class="ui-panel-note access-empty" *ngIf="!rows.length">
+        No group may use it yet<ng-container *ngIf="policies.length">, except as the policies below say</ng-container>.
+        Add a group to let its people use it.
+      </p>
+
+      <ol class="access-rows" *ngIf="rows.length" aria-label="Groups and what they may do">
+        <li class="access-row" *ngFor="let row of rows; trackBy: byKey">
+          <div class="access-row-head">
+            <span class="access-group">
+              {{ groupName(row) }}
+              <span class="access-members" *ngIf="members(row)">{{ members(row) }}</span>
+            </span>
+            <button class="icon-btn sm" type="button" [disabled]="saving"
+                    [attr.aria-label]="'Remove ' + groupName(row)" (click)="remove(row)">
+              <lucide-icon name="x" [size]="16" aria-hidden="true"></lucide-icon>
+            </button>
+          </div>
+
+          <app-segmented [label]="'What ' + groupName(row) + ' may do'" [choices]="effects"
+                         [(ngModel)]="row.effect"></app-segmented>
+          <p class="access-hint">{{ effectWords[row.effect] }}</p>
+
+          <app-segmented class="access-reach" [label]="'Which functions, for ' + groupName(row)" [choices]="reach"
+                         [ngModel]="row.every ? 'all' : 'some'" (ngModelChange)="setReach(row, $event)"></app-segmented>
+          <p class="access-hint" *ngIf="row.every">Every function, those a later version adds too, and what each calls.</p>
+
+          <div class="access-functions" *ngIf="!row.every" role="group" [attr.aria-label]="'Functions for ' + groupName(row)">
+            <mat-checkbox class="check-row" *ngFor="let fn of functions"
+                          [checked]="isChosen(row, fn)" (change)="toggle(row, fn)">
+              <span class="check-name">{{ fn.name }}</span>
+              <span class="check-hint">{{ levelLabel(fn.level) }}</span>
+            </mat-checkbox>
+          </div>
+
+          <!-- Only where the agent declares scopes and these functions are
+               narrowed by them. -->
+          <div class="access-scopes" *ngIf="scopesOf(row).length">
+            <app-field *ngFor="let scope of scopesOf(row)" [label]="'Only for these values of ' + scope.name"
+                       [help]="(scope.description ? scope.description + ' ' : '') + 'Left empty, any value.'">
+              <app-token-list [placeholder]="scope.name" [listLabel]="scope.name + ' values'"
+                              [ngModel]="row.scopes[scope.name] || []"
+                              (ngModelChange)="setScope(row, scope.name, $event)"></app-token-list>
+            </app-field>
+          </div>
+        </li>
+      </ol>
+
+      <div class="access-add" *ngIf="addable.length">
+        <app-select label="Add a group" placeholder="Add a group" [choices]="addable" [disabled]="saving"
+                    [ngModel]="''" (ngModelChange)="add($event)"></app-select>
+      </div>
+
+      <p class="ui-panel-note">
+        Where rows disagree, Don't allow wins, then Ask first. A group without a row can't use it.
+      </p>
+
+      <p class="form-notice is-error access-problem" role="alert" *ngIf="problem">{{ problem }}</p>
+      <div class="agent-actions">
+        <button class="btn primary" type="button" [disabled]="!changed || saving" (click)="save()">
+          {{ saving ? "Saving…" : "Save" }}
+        </button>
+        <button class="btn ghost" type="button" *ngIf="changed" [disabled]="saving" (click)="discard()">Discard changes</button>
+      </div>
+
+      <!-- Policies still name agents' actions: said quietly, changed
+           where policies are. -->
+      <p class="ui-panel-note access-policies" *ngIf="policies.length">
+        {{ policies.length === 1 ? "This policy also names" : "These policies also name" }} this agent, and count with
+        the rows here:
+        <ng-container *ngFor="let policy of policies; let last = last">
+          <a *ngIf="canReadPolicies; else plainPolicy" routerLink="/admin/policies">{{ policy.name }}</a>
+          <ng-template #plainPolicy><span>{{ policy.name }}</span></ng-template>{{ last ? "." : ", " }}
+        </ng-container>
+      </p>
+    </ng-container>
+  </section>
+</div>

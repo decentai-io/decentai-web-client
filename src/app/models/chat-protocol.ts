@@ -172,6 +172,16 @@ export type CardAnswer =
   /** A question declined: the agent hears `null`. */
   | Record<string, never>;
 
+/** A card closed: answered, or expired. A server of round 3 says what was
+ *  decided, as kept on the card and never a secret value (`null`: it
+ *  expired unanswered); an older one says only which card. */
+export interface CardClosed {
+  card_id: string;
+  kind?: Card['kind'];
+  answer?: Record<string, unknown> | null;
+  at?: string;
+}
+
 /** One call or task of the assistant, as it starts and as it ends. */
 export interface WorkItem {
   id: string;
@@ -251,7 +261,7 @@ export type ChatEvent = { seq: number; at: string } & (
   /** Never replayed; `screen: null` closes it. */
   | { event: 'screen'; data: { agent: string; call: string; screen: Screen | null } }
   | { event: 'card_opened'; data: Card }
-  | { event: 'card_closed'; data: { card_id: string } }
+  | { event: 'card_closed'; data: CardClosed }
   | { event: 'stopped'; data: Record<string, never> }
   | { event: 'runtime_unavailable'; data: Record<string, never> }
   | { event: 'schedule_added'; data: { schedule_id: string; what: { prompt?: string; function?: string } } }

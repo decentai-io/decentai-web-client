@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 // Managing agents: what is installed, and where agents come from. Who
-// may use one is the organization's policies (admin). Split from `ai` —
+// may use one is chosen on its Access tab. Split from `ai` —
 // chats and memory are things a person USES; this is how agents are
 // MANAGED.
 //

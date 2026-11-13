@@ -1,16 +1,14 @@
 <app-page guide="records"
   title="Files"
   sentence="Files you upload, attach to chats, or receive from your agents."
-  icon="folder-open"
-  [hue]="214"
   [wide]="true"
 >
   <p class="form-notice is-error" *ngIf="error" role="alert">{{ error }}</p>
   <p class="form-notice" *ngIf="notice" role="status">{{ notice }}</p>
   <app-handed [records]="handed" [say]="handedSay" [busy]="busyRef" (answer)="accept($event.record, $event.yes)"></app-handed>
 
-  <!-- The files in numbers, each a tile; whose they are narrows the list. -->
-  <ul class="ui-tiles data-tiles" *ngIf="records.length" aria-label="Your files in numbers">
+  <!-- The files in numbers, as one line; whose they are narrows the list. -->
+  <ul class="ui-tiles" *ngIf="records.length" aria-label="Your files in numbers">
     <li *ngFor="let tile of tiles; trackBy: byIcon">
       <button class="ui-tile" type="button" *ngIf="tile.show; else plainTile"
               [class.is-on]="show === tile.show" [attr.aria-pressed]="show === tile.show"
@@ -24,9 +22,6 @@
   </ul>
 
   <ng-template #tileInside let-tile>
-    <span class="ui-tile-icon">
-      <lucide-icon [name]="tile.icon" [size]="20" aria-hidden="true"></lucide-icon>
-    </span>
     <span class="ui-tile-words">
       <span class="ui-tile-value">{{ tile.value }}</span>
       <span class="ui-tile-label">{{ tile.label }}</span>
@@ -88,7 +83,7 @@
       <!-- Shown while files are dragged over the list: where they go,
            and how large one may be. -->
       <p class="files-drop" *ngIf="dropping" aria-hidden="true">
-        <span class="files-drop-icon"><lucide-icon name="cloud-upload" [size]="24" aria-hidden="true"></lucide-icon></span>
+        <lucide-icon class="files-drop-icon" name="cloud-upload" [size]="24" aria-hidden="true"></lucide-icon>
         Drop files to upload
         <span>Up to {{ uploadLimitMb }} MB each</span>
       </p>
@@ -235,20 +230,11 @@
           >
             <ng-container *ngTemplateOutlet="upload"></ng-container>
           </app-empty>
-          <!-- The three ways a file arrives, each a small card. -->
+          <!-- The three ways a file arrives, in three short lines. -->
           <ul class="data-hints" aria-label="Where files come from">
-            <li class="data-hint">
-              <span class="ui-panel-icon is-hued"><lucide-icon name="cloud-upload" [size]="16" aria-hidden="true"></lucide-icon></span>
-              <span><strong>Upload</strong> or drop one on this page</span>
-            </li>
-            <li class="data-hint">
-              <span class="ui-panel-icon is-hued"><lucide-icon name="paperclip" [size]="16" aria-hidden="true"></lucide-icon></span>
-              <span><strong>Attach</strong> one to a chat</span>
-            </li>
-            <li class="data-hint">
-              <span class="ui-panel-icon is-hued"><lucide-icon name="bot" [size]="16" aria-hidden="true"></lucide-icon></span>
-              <span><strong>An agent</strong> makes one for you</span>
-            </li>
+            <li><strong>Upload</strong> or drop one on this page</li>
+            <li><strong>Attach</strong> one to a chat</li>
+            <li><strong>An agent</strong> makes one for you</li>
           </ul>
         </ng-template>
       </ng-container>

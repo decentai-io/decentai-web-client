@@ -3,8 +3,7 @@
 
 <!-- The other direction, pointed to: what other services send in. -->
 <p class="hook-pointer" *ngIf="mayListWebhooks">
-  <span class="hook-pointer-icon" aria-hidden="true"><lucide-icon name="webhook" [size]="16"></lucide-icon></span>
-  <span>For events other services send to you, see <a class="hook-link" routerLink="/ai/webhooks">AI › Webhooks</a>.</span>
+  For events other services send to you, see <a class="hook-link" routerLink="/ai/webhooks">AI › Webhooks</a>.
 </p>
 
 <app-empty *ngIf="loadError" icon="cloud-off" title="Notifications could not be loaded" [line]="loadError">
@@ -15,21 +14,19 @@
      paused. -->
 <ul class="ui-tiles" aria-label="Notifications out in numbers" *ngIf="!loadError && !loading && addresses.length">
   <li class="ui-tile">
-    <span class="ui-tile-icon"><lucide-icon name="send" [size]="20" aria-hidden="true"></lucide-icon></span>
     <span class="ui-tile-words">
       <span class="ui-tile-value">{{ addresses.length }} <small class="hook-of">of {{ limit }}</small></span>
       <span class="ui-tile-label">Addresses</span>
     </span>
   </li>
   <li class="ui-tile">
-    <span class="ui-tile-icon"><lucide-icon name="circle-check" [size]="20" aria-hidden="true"></lucide-icon></span>
     <span class="ui-tile-words">
       <span class="ui-tile-value">{{ addresses.length - pausedCount }}</span>
       <span class="ui-tile-label">Sending</span>
     </span>
   </li>
   <li class="ui-tile">
-    <span class="ui-tile-icon" [class.is-danger]="pausedCount > 0"><lucide-icon name="pause" [size]="20" aria-hidden="true"></lucide-icon></span>
+    <span class="ui-tile-icon is-danger" *ngIf="pausedCount > 0"><lucide-icon name="pause" [size]="20" aria-hidden="true"></lucide-icon></span>
     <span class="ui-tile-words">
       <span class="ui-tile-value">{{ pausedCount }}</span>
       <span class="ui-tile-label">Paused</span>
@@ -55,7 +52,7 @@
       <span class="hook-url" [matTooltip]="address.url">{{ address.url }}</span>
       <!-- What it sends, as pills: the format, the events, the reply. -->
       <span class="ui-pills hook-facts">
-        <span class="ui-pill is-accent"><lucide-icon name="file-code" [size]="12" aria-hidden="true"></lucide-icon>{{ formatName(address.format) }}</span>
+        <span class="ui-pill"><lucide-icon name="file-code" [size]="12" aria-hidden="true"></lucide-icon>{{ formatName(address.format) }}</span>
         <span class="ui-pill" [matTooltip]="eventsInFull(address)"><lucide-icon name="zap" [size]="12" aria-hidden="true"></lucide-icon>{{ eventsWord(address) }}</span>
         <span class="ui-pill" *ngIf="address.include_reply"><lucide-icon name="message-square-text" [size]="12" aria-hidden="true"></lucide-icon>with the reply</span>
       </span>

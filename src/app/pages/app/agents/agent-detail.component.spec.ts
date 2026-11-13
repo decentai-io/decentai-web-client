@@ -31,7 +31,7 @@ describe('AgentDetailComponent', () => {
     } as any;
   }
 
-  function create(service: any = {}, can = (_action: string) => true) {
+  function create(service: any = {}, canInstall = false) {
     const component = new AgentDetailComponent(
       { navigate: jasmine.createSpy('navigate') } as any,
       {
@@ -43,10 +43,12 @@ describe('AgentDetailComponent', () => {
         forget: async () => ({}),
         ...service,
       } as any,
-      { can } as any,
     );
     component.agent = agent();
-    component.ngOnChanges({ agent: new SimpleChange(null, component.agent, true) });
+    component.canInstall = canInstall;
+    component.ngOnChanges({
+      agent: new SimpleChange(null, component.agent, true), canInstall: new SimpleChange(false, canInstall, true),
+    });
     return component;
   }
 
@@ -105,8 +107,15 @@ describe('AgentDetailComponent', () => {
     expect(component.tab).toBe('overview');
   });
 
-  it('points to the policies only for whoever may read them', () => {
-    expect(create().canReadPolicies).toBeTrue();
-    expect(create({}, () => false).canReadPolicies).toBeFalse();
+  it('offers the Access tab only to whoever may install agents, and shows no tab it does not offer', () => {
+    const reader = create();
+    expect(reader.tabs.map((tab) => tab.value)).toEqual(['overview', 'functions']);
+    reader.tab = 'access';
+    expect(reader.shownTab).toBe('overview');
+
+    const installer = create({}, true);
+    expect(installer.tabs.map((tab) => tab.name)).toEqual(['Overview', 'Functions 3', 'Access']);
+    installer.tab = 'access';
+    expect(installer.shownTab).toBe('access');
   });
 });

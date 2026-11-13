@@ -1,18 +1,10 @@
 <div class="side-layout settings-layout">
-  <!-- Wide screens: the pages, always in view, each with its icon in a
-       tile that takes the section's hue when it is the open one. -->
+  <!-- Wide screens: the pages, always in view, the open one in the
+       accent. -->
   <nav class="settings-nav" aria-label="Settings">
-    <p class="settings-nav-head">
-      <span class="settings-nav-mark" aria-hidden="true">
-        <lucide-icon name="settings" [size]="16"></lucide-icon>
-      </span>
-      Settings
-    </p>
+    <p class="settings-nav-head">Settings</p>
     <ng-container *ngFor="let group of groups">
-      <p class="side-label settings-group">
-        <lucide-icon [name]="group.name === 'You' ? 'user' : 'building-2'" [size]="12" aria-hidden="true"></lucide-icon>
-        {{ group.name }}
-      </p>
+      <p class="side-label">{{ group.name }}</p>
       <a
         *ngFor="let page of group.pages"
         class="side-item settings-item"
@@ -21,7 +13,7 @@
         ariaCurrentWhenActive="page"
       >
         <span class="settings-item-icon" aria-hidden="true">
-          <lucide-icon [name]="iconOf(page)" [size]="15"></lucide-icon>
+          <lucide-icon [name]="iconOf(page)" [size]="16"></lucide-icon>
         </span>
         <span class="settings-item-name">{{ page.name }}</span>
         <ng-container *ngIf="page.path === 'providers' && (llm.count$ | async) as count">
@@ -67,14 +59,11 @@
     </mat-menu>
 
     <!-- Wide, as the Organization section's other pages are: the side
-         column already takes the room a narrow page would leave. The
-         open page's icon heads its band, in the section's violet. -->
+         column already takes the room a narrow page would leave. -->
     <app-page
       [title]="current?.name || 'Settings'"
       [sentence]="current?.sentence || ''"
       [wide]="true"
-      [icon]="current ? iconOf(current) : 'settings'"
-      [hue]="hue"
     >
       <router-outlet></router-outlet>
     </app-page>

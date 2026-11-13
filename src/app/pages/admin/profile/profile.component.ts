@@ -53,12 +53,6 @@ export class ProfileComponent implements OnInit {
     this.loading = false;
   }
 
-  /** Initials for the mark beside the name: of the name, else the email. */
-  initials(named: string): string {
-    const words = named.split('@')[0].split(/[\s._-]+/).filter(Boolean);
-    return words.slice(0, 2).map((word) => word[0]).join('').toUpperCase() || '?';
-  }
-
   get canRename(): boolean {
     return this.auth.can('account:profile:update');
   }

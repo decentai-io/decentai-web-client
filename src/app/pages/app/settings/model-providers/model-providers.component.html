@@ -5,21 +5,18 @@
      back on, the models people may pick, and those naming none yet. -->
 <ul class="ui-tiles" aria-label="Model providers in numbers" *ngIf="connections.length">
   <li class="ui-tile">
-    <span class="ui-tile-icon"><lucide-icon name="cloud" [size]="20" aria-hidden="true"></lucide-icon></span>
     <span class="ui-tile-words">
       <span class="ui-tile-value">{{ connections.length }}</span>
       <span class="ui-tile-label">{{ connections.length === 1 ? "Connection" : "Connections" }}</span>
     </span>
   </li>
-  <li class="ui-tile">
-    <span class="ui-tile-icon" [class.is-warn]="defaultName === 'None'"><lucide-icon name="star" [size]="20" aria-hidden="true"></lucide-icon></span>
+  <li class="ui-tile" [class.is-warn]="defaultName === 'None'">
     <span class="ui-tile-words">
       <span class="ui-tile-value" [title]="defaultName">{{ defaultName }}</span>
       <span class="ui-tile-label">Default</span>
     </span>
   </li>
   <li class="ui-tile">
-    <span class="ui-tile-icon"><lucide-icon name="brain-circuit" [size]="20" aria-hidden="true"></lucide-icon></span>
     <span class="ui-tile-words">
       <span class="ui-tile-value">{{ modelCount }}</span>
       <span class="ui-tile-label">{{ modelCount === 1 ? "Model to pick" : "Models to pick" }}</span>

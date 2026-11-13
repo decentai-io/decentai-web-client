@@ -1,124 +1,143 @@
 /* What the agents' pages say the same way: an agent's title row, the
-   level of a function, where an agent connects, and the grid of cards.
-   Loaded by the Installed page, the agent's page, the marketplace and
-   its review. */
+   level of a function, where an agent connects, the prompts to try, and
+   the grid of cards. Loaded by the Installed page, the agent's page, the
+   marketplace and its review. Sections, numbers and pills are the
+   shared ones (styles/controls.scss `.ui-*`). */
+
+.agent-back {
+  margin: 0 0 16px -8px;
+}
 
 /* ── An agent's title row ──────────────────────────────────────────────
-   On its own page and at the head of its review: the way back, the
-   mark, the name with its version and chip, where the code came from,
-   and what can be done at the right. */
-.agent-back {
-  margin: 0 0 12px -8px;
+   On its own page and at the head of its review: the mark (the one
+   place the agent's hue is), the serif name with its version and chip,
+   what it is for, where it came from, and what can be done, at the
+   right. Plain: no band, no wash. */
+.agent-hero {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px 20px;
+  margin-bottom: 16px;
 }
 
-/* ── The title row ─────────────────────────────────────────────────── */
-.agent-head {
+.agent-hero-words {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 12px 16px;
-  margin-bottom: 20px;
-}
-
-.agent-head-words {
-  flex: 1 1 280px;
+  flex-direction: column;
+  gap: 6px;
   min-width: 0;
 }
 
-.agent-head-name {
+.agent-hero-name {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 12px;
   color: var(--ink);
-  font-size: var(--t-lg);
+  font-size: var(--t-xl);
   font-weight: 600;
-  line-height: var(--lh-lg);
+  letter-spacing: -0.01em;
+  line-height: var(--lh-xl);
 }
 
 /* The version and the chip are in the sans face beside a serif name. */
-.agent-head-version {
-  color: var(--ink-3);
+.agent-hero-name .chip,
+.agent-hero-version {
   font-family: var(--font-sans);
+  letter-spacing: 0;
+}
+
+.agent-hero-version {
+  color: var(--ink-3);
   font-size: var(--t-sm);
   font-weight: 400;
-}
-
-.agent-head-name .chip {
-  font-family: var(--font-sans);
-}
-
-.agent-head-source {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 6px;
-  margin-top: 4px;
-  color: var(--ink-2);
-  font-size: var(--t-sm);
   line-height: var(--lh-sm);
 }
 
-.agent-head-source a {
-  color: inherit;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.agent-head-source code {
-  font-family: var(--font-mono);
-  font-size: var(--t-xs);
-}
-
-.agent-head-actions {
-  display: flex;
-  flex: none;
-  gap: 8px;
-}
-
-.agent-description {
-  max-width: 72ch;
-  color: var(--ink);
+.agent-hero-about {
+  max-width: 64ch;
+  color: var(--ink-2);
   font-size: var(--t-read);
   line-height: var(--lh-read);
 }
 
-.agent-section-title {
-  margin-bottom: 8px;
-  color: var(--ink);
-  font-size: var(--t-md);
-  font-weight: 600;
-  line-height: var(--lh-md);
+/* Where it came from and its tags: one quiet line. */
+.agent-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  color: var(--ink-3);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
 }
 
-@media (max-width: 700px) {
-  .agent-head-actions {
-    flex: 1 1 100%;
+.agent-hero-meta code {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  overflow-wrap: anywhere;
+}
+
+.agent-hero-tags {
+  display: contents;
+}
+
+.agent-hero-tags span {
+  padding: 0 8px;
+  border-radius: var(--r-full);
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+
+.agent-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 860px) {
+  .agent-hero {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .agent-hero-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
   }
 }
 
+@media (max-width: 520px) {
+  .agent-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .agent-hero-name {
+    font-size: var(--t-lg);
+    line-height: var(--lh-lg);
+  }
+}
+
+/* The numbers under the title row sit close to it. */
+.agent-counts {
+  margin-bottom: 24px;
+}
+
 /* ── The four levels' colours ─────────────────────────────────────────
-   One colour a level, used by its chip's dot, its share of the level
-   bar and the edge of a function's card: reading is the accent, an
-   ordinary change a calm blue, a wider change the warning amber, and an
-   outside action the ink itself, the heaviest thing on the page. */
+   Colour where a level matters: the two inside levels are greys, a
+   wider change is the warning amber, and an outside action is the ink
+   itself, the heaviest thing on the page. */
 :host {
-  --lvl-0: var(--accent);
-  --lvl-1: hsl(214 64% 48%);
+  --lvl-0: var(--line-strong);
+  --lvl-1: var(--ink-3);
   --lvl-2: var(--warn);
   --lvl-3: var(--ink);
 }
 
-:host-context(.dark) {
-  --lvl-1: hsl(214 80% 66%);
-}
-
 /* ── Permission level, said the same way everywhere ───────────────────
-   The review and the Functions tab answer one question: how much of
-   this runs without asking. The two lower levels are neutral chips with
-   their colour in the dot; a wider change takes a strong outline; an
-   outside action, the one that reaches what the platform does not
-   control, is the one solid chip. */
+   The two lower levels are plain chips; a wider change takes the
+   amber's outline; an outside action, the one that reaches what the
+   platform does not control, is the one solid chip. */
 .lvl {
   display: inline-flex;
   align-items: center;
@@ -140,10 +159,6 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: currentColor;
-}
-
-.lvl[data-level="Reads"] .lvl-dot {
   background: var(--lvl-0);
 }
 
@@ -167,10 +182,13 @@
   color: var(--bg);
 }
 
+.lvl[data-level="Outside action"] .lvl-dot {
+  background: currentColor;
+}
+
 /* ── Where an agent connects ──────────────────────────────────────────
-   Shown at approval and on the agent's page. A host is a plain chip;
-   one read from a credential is in the accent; "any website" takes the
-   weight an outside action does. */
+   Shown at approval and on the agent's page: a host is a plain chip,
+   and "any public address" is the one in the warning's colour. */
 .host-chips {
   display: flex;
   flex-wrap: wrap;
@@ -193,32 +211,31 @@
 }
 
 .host-chips code.is-wide {
-  border-color: var(--ink);
-  background: var(--ink);
-  color: var(--bg);
+  border-color: transparent;
+  background: var(--warn-soft);
+  color: var(--warn-ink);
 }
 
 .host-chips code.is-none {
   color: var(--ink-2);
 }
 
-.host-chips code.is-credential {
-  border-color: transparent;
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-}
-
 .host-chips lucide-icon {
   display: flex;
+  color: var(--ink-3);
+}
+
+.host-chips .is-wide lucide-icon {
+  color: inherit;
 }
 
 /* ── The level bar: how much of it runs without asking, at a glance ───
    One bar, each level's share of the functions in its colour, and a
-   legend under it: the count, the level, and what it means. */
+   legend under it: the count and the level, and what it means. */
 .lvl-bar {
   display: flex;
-  gap: 3px;
-  height: 10px;
+  gap: 2px;
+  height: 8px;
   overflow: hidden;
   border-radius: var(--r-full);
   background: var(--surface-2);
@@ -238,20 +255,18 @@
 .lvl-legend {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 14px;
+  gap: 12px;
+  margin-top: 16px;
   list-style: none;
 }
 
-/* The swatch, the count and the level's word; what it means under them,
-   so a narrow column does not squeeze it into a strip. */
 .lvl-legend li {
   display: grid;
   grid-template-columns: 10px minmax(0, 1fr);
   align-items: baseline;
-  gap: 2px 10px;
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  gap: 2px 12px;
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
 }
 
 .lvl-swatch {
@@ -259,7 +274,6 @@
   height: 10px;
   border-radius: 3px;
   background: var(--lvl-0);
-  transform: translateY(1px);
 }
 
 .lvl-swatch[data-index="1"] { background: var(--lvl-1); }
@@ -269,11 +283,10 @@
 .lvl-legend-name {
   color: var(--ink);
   font-weight: 600;
-  white-space: nowrap;
 }
 
 .lvl-legend-name em {
-  margin-right: 4px;
+  margin-right: 6px;
   font-style: normal;
   font-variant-numeric: tabular-nums;
 }
@@ -283,383 +296,57 @@
   color: var(--ink-2);
 }
 
-/* ── An agent's header band ────────────────────────────────────────────
-   On its own page and at the head of its review: a wash of the hue its
-   name gives it (--hue, the mark's), the mark large, the name, where it
-   came from, what it is for, and what can be done, at the right. */
-.agent-hero {
-  position: relative;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: start;
-  gap: 16px 24px;
-  margin-bottom: 20px;
-  padding: 28px;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, hsl(var(--hue, 152) 50% 50%) 18%, var(--line));
+/* ── What to say to it: the prompts, one under another ───────────────
+   A list in a frame, a hairline between; each the prompt as it would
+   be typed, and what it is for, under it. */
+.try-list {
+  border: 1px solid var(--line);
   border-radius: var(--r-lg);
-  background:
-    radial-gradient(90% 140% at 0% 0%, hsl(var(--hue, 152) 70% 90% / 0.85), transparent 62%),
-    radial-gradient(60% 120% at 100% 100%, hsl(calc(var(--hue, 152) + 40) 70% 93% / 0.7), transparent 60%),
-    var(--surface);
-  box-shadow: var(--shadow-1);
-}
-
-:host-context(.dark) .agent-hero {
-  border-color: color-mix(in srgb, hsl(var(--hue, 152) 40% 50%) 22%, var(--line));
-  background:
-    radial-gradient(90% 140% at 0% 0%, hsl(var(--hue, 152) 45% 22% / 0.9), transparent 62%),
-    radial-gradient(60% 120% at 100% 100%, hsl(calc(var(--hue, 152) + 40) 40% 18% / 0.7), transparent 60%),
-    var(--surface);
-}
-
-/* The mark, larger than anywhere else, lifted off the wash. */
-.agent-hero app-agent-mark {
-  width: 64px;
-  height: 64px;
-  border-radius: 18px;
-  box-shadow: 0 6px 18px -8px hsl(var(--hue, 152) 50% 30% / 0.45), inset 0 0 0 1px rgb(255 255 255 / 0.5);
-  font-size: var(--t-lg);
-}
-
-/* In the dark the ring would read as an outline: a faint one, and a
-   deeper shadow. */
-:host-context(.dark) .agent-hero app-agent-mark {
-  box-shadow: 0 8px 20px -8px rgb(0 0 0 / 0.6), inset 0 0 0 1px rgb(255 255 255 / 0.06);
-}
-
-.agent-hero-words {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-}
-
-.agent-hero-eyebrow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 8px;
-  color: var(--ink-2);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
-}
-
-.agent-hero-eyebrow lucide-icon {
-  display: flex;
-}
-
-.agent-hero-eyebrow code {
-  font-family: var(--font-mono);
-  font-size: var(--t-xs);
-  overflow-wrap: anywhere;
-}
-
-.agent-hero-name {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 12px;
-  color: var(--ink);
-  font-size: var(--t-xl);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  line-height: var(--lh-xl);
-}
-
-.agent-hero-name .chip,
-.agent-hero-version {
-  font-family: var(--font-sans);
-  letter-spacing: 0;
-}
-
-.agent-hero-version {
-  padding: 2px 8px;
-  border-radius: var(--r-full);
-  background: color-mix(in srgb, var(--surface) 70%, transparent);
-  color: var(--ink-2);
-  font-size: var(--t-xs);
-  font-weight: 500;
-  line-height: var(--lh-xs);
-}
-
-.agent-hero-about {
-  max-width: 70ch;
-  margin-top: 2px;
-  color: var(--ink);
-  font-size: var(--t-read);
-  line-height: var(--lh-read);
-}
-
-.agent-hero-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 6px;
-}
-
-.agent-hero-tags span {
-  padding: 2px 10px;
-  border-radius: var(--r-full);
-  background: color-mix(in srgb, var(--surface) 75%, transparent);
-  color: var(--ink-2);
-  font-size: var(--t-xs);
-  line-height: var(--lh-xs);
-}
-
-.agent-hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-@media (max-width: 860px) {
-  .agent-hero {
-    grid-template-columns: auto minmax(0, 1fr);
-    padding: 20px;
-  }
-
-  .agent-hero-actions {
-    grid-column: 1 / -1;
-    justify-content: flex-start;
-  }
-}
-
-@media (max-width: 520px) {
-  .agent-hero {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .agent-hero-name {
-    font-size: var(--t-lg);
-    line-height: var(--lh-lg);
-  }
-}
-
-/* ── The numbers that matter, as tiles ────────────────────────────────
-   Functions, how far they may go, where it connects, what it keeps:
-   each a big number with an icon in the agent's hue and a word under. */
-.agent-tiles {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 12px;
-  margin-bottom: 24px;
+  background: var(--surface);
   list-style: none;
 }
 
-.agent-tile {
+.try-item {
   display: flex;
   align-items: center;
-  gap: 14px;
-  min-width: 0;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  background: var(--surface);
-  box-shadow: var(--shadow-1);
+  gap: 16px;
+  padding: 14px 16px;
 }
 
-button.agent-tile {
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition: border-color var(--dur-1) var(--ease), transform var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+.try-item + .try-item {
+  border-top: 1px solid var(--line);
 }
 
-button.agent-tile:hover {
-  border-color: color-mix(in srgb, hsl(var(--hue, 152) 50% 45%) 45%, var(--line));
-  box-shadow: var(--shadow-2);
-  transform: translateY(-1px);
-}
-
-.agent-tile-icon {
+.try-words {
   display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: hsl(var(--hue, 152) 62% 93%);
-  color: hsl(var(--hue, 152) 58% 28%);
-}
-
-:host-context(.dark) .agent-tile-icon {
-  background: hsl(var(--hue, 152) 34% 20%);
-  color: hsl(var(--hue, 152) 62% 78%);
-}
-
-.agent-tile-icon.is-warn,
-:host-context(.dark) .agent-tile-icon.is-warn {
-  background: var(--warn-soft);
-  color: var(--warn-ink);
-}
-
-.agent-tile-words {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.agent-tile-value {
-  overflow: hidden;
-  color: var(--ink);
-  font-size: var(--t-lg);
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-  line-height: var(--lh-lg);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.agent-tile-label {
-  color: var(--ink-2);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
-}
-
-/* On a phone, two to a row and smaller: five tall tiles one under
-   another are a screen of their own. */
-@media (max-width: 560px) {
-  .agent-tiles {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-  }
-
-  .agent-tile {
-    gap: 10px;
-    padding: 10px 12px;
-  }
-
-  .agent-tile-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 10px;
-  }
-
-  .agent-tile-value {
-    font-size: var(--t-md);
-    line-height: var(--lh-md);
-  }
-
-  .agent-tile-label {
-    font-size: var(--t-xs);
-    line-height: var(--lh-xs);
-  }
-}
-
-/* ── A section of an agent's page or review ───────────────────────────
-   A card: an icon tile, a title, and what is beside it at the right. */
-.agent-panel {
-  min-width: 0;
-  padding: 22px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-1);
-}
-
-.agent-panel-head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 18px;
-}
-
-.agent-panel-icon {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  background: var(--surface-2);
-  color: var(--ink-2);
-}
-
-.agent-panel-title {
   flex: 1;
-  min-width: 0;
-  color: var(--ink);
-  font-size: var(--t-md);
-  font-weight: 600;
-  line-height: var(--lh-md);
-}
-
-.agent-panel-aside {
-  flex: none;
-  color: var(--ink-3);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
-}
-
-.agent-panel-note {
-  max-width: 72ch;
-  margin-top: 12px;
-  color: var(--ink-2);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
-}
-
-/* ── What to say to it: prompts as speech, ready to send ──────────────── */
-.try-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 12px;
-  list-style: none;
-}
-
-.try-card {
-  position: relative;
-  display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 2px;
   min-width: 0;
-  padding: 16px 16px 14px;
-  border: 1px solid color-mix(in srgb, hsl(var(--hue, 152) 50% 45%) 20%, var(--line));
-  border-radius: 14px 14px 14px 4px;
-  background: linear-gradient(160deg, hsl(var(--hue, 152) 60% 96%), var(--surface) 70%);
-}
-
-:host-context(.dark) .try-card {
-  border-color: color-mix(in srgb, hsl(var(--hue, 152) 40% 50%) 22%, var(--line));
-  background: linear-gradient(160deg, hsl(var(--hue, 152) 35% 16%), var(--surface) 70%);
-}
-
-.try-card-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: hsl(var(--hue, 152) 50% 30%);
-  font-size: var(--t-xs);
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  line-height: var(--lh-xs);
-  text-transform: uppercase;
-}
-
-:host-context(.dark) .try-card-title {
-  color: hsl(var(--hue, 152) 60% 75%);
-}
-
-.try-card-title lucide-icon {
-  display: flex;
 }
 
 .try-prompt {
-  flex: 1;
   color: var(--ink);
   font-size: var(--t-base);
-  line-height: var(--lh-read);
+  line-height: 22px;
 }
 
-.try-card .btn {
-  align-self: flex-start;
-  margin-top: 4px;
-  background: var(--surface);
+.try-title {
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
+}
+
+.try-item .btn {
+  flex: none;
+}
+
+@media (max-width: 560px) {
+  .try-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
 }
 
 /* ── The grid of agent cards (agent-card.component) ──────────────────

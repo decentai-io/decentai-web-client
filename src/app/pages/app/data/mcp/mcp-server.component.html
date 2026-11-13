@@ -13,22 +13,16 @@
 </app-empty>
 
 <ng-container *ngIf="server as server">
-  <!-- Who it is, and where it is: its header band, in the section's hue. -->
+  <!-- Who it is, and where it is: its title row, its menu at the right. -->
   <header class="server-head">
-    <span class="server-face" aria-hidden="true">
-      <lucide-icon name="server" [size]="28" [strokeWidth]="1.75"></lucide-icon>
-    </span>
     <div class="server-words">
-      <p class="server-eyebrow">
-        <lucide-icon name="square-terminal" [size]="14" aria-hidden="true"></lucide-icon>
-        MCP server<ng-container *ngIf="!mine"> shared with you</ng-container>
-      </p>
       <h1 class="server-name">
         {{ server.name }}
         <button class="icon-btn sm" type="button" *ngIf="mine" aria-label="Rename this server" matTooltip="Rename" (click)="startChange('name')">
           <lucide-icon name="pencil" [size]="14" aria-hidden="true"></lucide-icon>
         </button>
       </h1>
+      <p class="server-kind">MCP server<ng-container *ngIf="!mine"> shared with you</ng-container></p>
       <p class="server-address">
         <lucide-icon name="globe" [size]="14" aria-hidden="true"></lucide-icon>
         <code>{{ server.address }}</code>
@@ -54,11 +48,11 @@
   <!-- What a read or a change of the server itself was refused for. -->
   <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
 
-  <!-- Its tools in numbers, each a tile. -->
-  <ul class="ui-tiles server-tiles" [attr.aria-label]="server.name + ' in numbers'">
-    <li class="ui-tile" *ngFor="let tile of tiles; trackBy: byIcon">
-      <span class="ui-tile-icon" [class.is-warn]="tile.warn">
-        <lucide-icon [name]="tile.icon" [size]="20" aria-hidden="true"></lucide-icon>
+  <!-- Its tools in numbers, as one line. -->
+  <ul class="ui-tiles" [attr.aria-label]="server.name + ' in numbers'">
+    <li class="ui-tile" [class.is-warn]="tile.warn" *ngFor="let tile of tiles; trackBy: byIcon">
+      <span class="ui-tile-icon is-warn" *ngIf="tile.warn">
+        <lucide-icon [name]="tile.icon" [size]="16" aria-hidden="true"></lucide-icon>
       </span>
       <span class="ui-tile-words">
         <span class="ui-tile-value">{{ tile.value }}</span>
@@ -67,13 +61,10 @@
     </li>
   </ul>
 
-  <!-- When it was read, and what it is reached with: each a panel. -->
+  <!-- When it was read, and what it is reached with: each a section. -->
   <dl class="server-facts">
     <div class="ui-panel">
-      <dt>
-        <span class="ui-panel-icon is-hued"><lucide-icon name="refresh-cw" [size]="16" aria-hidden="true"></lucide-icon></span>
-        Read
-      </dt>
+      <dt>Read</dt>
       <dd>
         <span [matTooltip]="lastReadInFull">{{ lastRead || "not yet" }}</span>
         <button class="btn sm" type="button" *ngIf="mine" [disabled]="!!busy" (click)="readAgain()">
@@ -83,10 +74,7 @@
       </dd>
     </div>
     <div class="ui-panel" *ngIf="mine">
-      <dt>
-        <span class="ui-panel-icon is-hued"><lucide-icon name="key-round" [size]="16" aria-hidden="true"></lucide-icon></span>
-        Credential
-      </dt>
+      <dt>Credential</dt>
       <dd>
         <span class="server-fact-line">
           <lucide-icon name="lock" [size]="14" aria-hidden="true"></lucide-icon>
@@ -100,7 +88,6 @@
   <!-- ── The tools: each with its switch and its level ───────────────── -->
   <section aria-labelledby="server-tools-title">
     <div class="ui-panel-head server-tools-head">
-      <span class="ui-panel-icon is-hued"><lucide-icon name="square-terminal" [size]="16" aria-hidden="true"></lucide-icon></span>
       <h2 class="ui-panel-title" id="server-tools-title">Tools</h2>
     </div>
 

@@ -1,10 +1,9 @@
-/* One agent as a review reads it. Alone: its numbers as tiles, then two
-   columns, the agent's own account and its functions wide, the facts
-   installing agrees to in panels beside them that stay in view. Among
-   several: the same, compact. The tiles, the panels, the prompts, the
-   level bar and the chips are the agents' own (agent-shared.css); the
-   functions are the Functions tab's. --hue is the agent's, set on the
-   host. */
+/* One agent as a review reads it. Alone: its numbers as one line, then
+   a main column, the agent's own account and its functions, and beside
+   it a narrow column of the facts installing agrees to, which stays in
+   view. Among several: the same, compact. The prompts, the level bar
+   and the chips are the agents' own (agent-shared.css); sections and
+   numbers are the shared ones (styles/controls.scss `.ui-*`). */
 :host {
   display: flex;
   flex-direction: column;
@@ -16,12 +15,6 @@
   display: flex;
   align-items: flex-start;
   gap: 14px;
-}
-
-.reading-head app-agent-mark {
-  width: 44px;
-  height: 44px;
-  border-radius: 13px;
 }
 
 .reading-head-words {
@@ -43,96 +36,90 @@
 }
 
 .reading-head-about {
-  max-width: 72ch;
+  max-width: 68ch;
   color: var(--ink-2);
   font-size: var(--t-base);
-  line-height: var(--lh-read);
+  line-height: 22px;
 }
 
-/* The tiles sit tight to what follows: the panels have their own gap. */
-.agent-tiles {
-  margin-bottom: 4px;
+/* The numbers sit tight to what follows: the layout has its own gap. */
+.reading-counts {
+  margin-bottom: 0;
 }
 
-.agent-tiles.is-brief .agent-tile {
-  gap: 10px;
-  padding: 10px 12px;
-  box-shadow: none;
-}
-
-.agent-tiles.is-brief .agent-tile-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-}
-
-.agent-tiles.is-brief .agent-tile-value {
-  font-size: var(--t-md);
-  line-height: var(--lh-md);
-}
-
-/* ── Alone: the two columns ─────────────────────────────────────── */
+/* ── Alone: the main column and the facts beside it ─────────────── */
 .reading-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
+  grid-template-columns: minmax(0, 1fr) 320px;
   align-items: start;
-  gap: 20px;
+  gap: 48px;
+  margin-top: 12px;
 }
 
 .reading-main {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 40px;
   min-width: 0;
+  max-width: 880px;
 }
 
-/* The facts stay in view while the README and the functions are read. */
+/* The facts stay in view while the README and the functions are read:
+   no box, a hairline between one fact and the next. */
 .reading-side {
   position: sticky;
   top: 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
   min-width: 0;
 }
 
-.reading-side .agent-panel {
-  padding: 18px;
-}
-
-.reading-side .agent-panel-head {
-  margin-bottom: 14px;
+.reading-side .reading-part + .reading-part {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
 }
 
 @media (max-width: 1100px) {
   .reading-grid {
     grid-template-columns: minmax(0, 1fr);
+    gap: 40px;
   }
 
-  /* Narrow, the facts come first, two by two: they are what installing
-     agrees to. */
+  /* Narrow, the facts come first: they are what installing agrees to. */
   .reading-side {
     position: static;
     order: -1;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   }
 }
 
-/* The panel's icon for what the agent is for wears its hue. */
-.agent-panel-icon.is-hued {
-  background: hsl(var(--hue, 152) 62% 93%);
-  color: hsl(var(--hue, 152) 58% 28%);
+.reading-part {
+  min-width: 0;
 }
 
-:host-context(.dark) .agent-panel-icon.is-hued {
-  background: hsl(var(--hue, 152) 34% 20%);
-  color: hsl(var(--hue, 152) 62% 78%);
+.reading-part-title {
+  margin-bottom: 10px;
+  color: var(--ink);
+  font-size: var(--t-base);
+  font-weight: 600;
+  line-height: var(--lh-base);
+}
+
+.reading-note {
+  margin-top: 10px;
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  line-height: 20px;
+}
+
+.reading-note code {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
 }
 
 /* ── The README: read as an article ─────────────────────────────── */
 .reading-readme {
-  max-width: 78ch;
+  max-width: 72ch;
   overflow-wrap: anywhere;
   font-size: var(--t-read);
   line-height: var(--lh-read);
@@ -151,7 +138,7 @@
 }
 
 .reading-readme.is-folded {
-  max-height: 360px;
+  max-height: 320px;
   overflow: hidden;
   -webkit-mask-image: linear-gradient(#000 70%, transparent);
   mask-image: linear-gradient(#000 70%, transparent);
@@ -161,10 +148,9 @@
   margin-top: 8px;
 }
 
-/* ── What an update changes ─────────────────────────────────────── */
+/* ── What an update changes: the one part that needs the reader ─── */
 .reading-changes {
-  padding: 18px 22px;
-  border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--line));
+  padding: 16px 20px;
   border-radius: var(--r-lg);
   background: var(--warn-soft);
 }
@@ -173,7 +159,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   color: var(--ink);
   font-size: var(--t-md);
   font-weight: 600;
@@ -188,56 +174,33 @@
 .reading-changes ul {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   padding-left: 20px;
   color: var(--ink);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
   list-style: disc;
 }
 
-/* ── What it keeps: a row each, its kind as an icon tile ─────────── */
+/* ── What it keeps: a line each, its kind after its name ─────────── */
 .reading-items {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   list-style: none;
 }
 
 .reading-items li {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
-}
-
-.reading-item-icon {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
-  background: var(--surface-2);
-  color: var(--ink-2);
-}
-
-.reading-item-icon[data-kind="secrets"] {
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-}
-
-.reading-item-words {
-  display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
   color: var(--ink);
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
 }
 
-.reading-item-words strong {
+.reading-items strong {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -246,11 +209,9 @@
 }
 
 .reading-item-kind {
-  color: var(--ink-3);
-  font-size: var(--t-xs);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  font-weight: 400;
 }
 
 /* A slot's description can be long: two lines here, all of it in the
@@ -259,6 +220,8 @@
   display: -webkit-box;
   overflow: hidden;
   color: var(--ink-2);
+  font-size: var(--t-sm);
+  line-height: 20px;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -270,81 +233,30 @@
 
 /* ── What it runs on ────────────────────────────────────────────── */
 .reading-machines {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.reading-machine {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: var(--r-full);
-  background: var(--surface-2);
   color: var(--ink);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
-}
-
-.reading-machine lucide-icon {
-  display: flex;
-  color: var(--ink-3);
-}
-
-.agent-panel-note code {
-  font-family: var(--font-mono);
-  font-size: var(--t-xs);
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
 }
 
 /* A machine it can't run on: said outright. */
 .reading-download-none {
   color: var(--warn-ink);
-  font-size: var(--t-sm);
 }
 
 .reading-address {
   overflow-wrap: anywhere;
 }
 
-/* ── Among several: the facts in a grid of small parts ──────────── */
+/* ── Among several: the facts side by side, no boxes ───────────── */
 .reading-brief {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 12px;
-}
-
-.reading-brief-part {
-  min-width: 0;
-  padding: 14px 16px;
-  border-radius: var(--r-md);
-  background: var(--surface-2);
-}
-
-.reading-brief-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 10px;
-  color: var(--ink-2);
-  font-size: var(--t-xs);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  line-height: var(--lh-xs);
-  text-transform: uppercase;
-}
-
-.reading-brief-title lucide-icon {
-  display: flex;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px 32px;
 }
 
 .reading-brief .lvl-legend {
-  margin-top: 10px;
   gap: 6px;
-}
-
-.reading-brief .reading-item-icon {
-  background: var(--surface);
+  margin-top: 10px;
 }
 
 .reading-functions app-agent-functions {

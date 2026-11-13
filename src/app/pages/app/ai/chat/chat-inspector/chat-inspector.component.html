@@ -16,7 +16,7 @@
     @for (one of tabs; track one.value; let i = $index) {
       <button class="insp-tab" type="button" role="tab" [id]="'insp-tab-' + one.value" aria-controls="insp-panel"
               [attr.aria-selected]="one.value === tab" [tabindex]="one.value === tab ? 0 : -1"
-              (click)="tab = one.value" (keydown)="onTabKey($event, i)">{{ one.name }}</button>
+              (click)="select(one.value)" (keydown)="onTabKey($event, i)">{{ one.name }}</button>
     }
   </div>
 

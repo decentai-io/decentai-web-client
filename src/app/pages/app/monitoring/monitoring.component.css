@@ -1,4 +1,4 @@
-/* Monitoring. The page frame and its band, the tiles, the panels, the
+/* Monitoring. The page frame, the numbers line, the sections, the
    tables, the list and the rows of what was seen are the shared ones;
    here are the line that says how old the numbers are, the agent's name
    with its mark, the meter beside a memory, and the details of the
@@ -11,18 +11,18 @@
   border-radius: var(--r-full);
   background: color-mix(in srgb, var(--surface) 75%, transparent);
   color: var(--ink-2);
-  font-size: var(--t-xs);
-  line-height: var(--lh-xs);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
   font-variant-numeric: tabular-nums;
 }
 
-/* The numbers are live: a dot that breathes while they are asked for
-   again. */
+/* The numbers are live: an accent dot that breathes while they are
+   asked for again. */
 .mon-live {
   width: 6px;
   height: 6px;
   border-radius: var(--r-full);
-  background: hsl(var(--hue, 262) 60% 55%);
+  background: var(--accent);
   animation: mon-pulse 1.6s var(--ease) infinite;
 }
 
@@ -39,11 +39,11 @@
 }
 
 .mon-panel-note {
-  max-width: 72ch;
-  margin: -6px 0 16px;
+  max-width: 68ch;
+  margin: -4px 0 16px;
   color: var(--ink-2);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
 }
 
 /* An agent by its mark and its name. */
@@ -80,27 +80,20 @@
   background: var(--surface-3);
 }
 
+/* One series: a graded neutral from the chart tokens. */
 .mon-meter > span {
   display: block;
   height: 100%;
   border-radius: var(--r-full);
-  background: hsl(var(--hue, 262) 55% 55%);
-}
-
-:host-context(.dark) .mon-meter > span {
-  background: hsl(var(--hue, 262) 70% 72%);
-}
-
-.mon-meter > span.is-high {
-  background: var(--danger);
+  background: var(--chart-3);
 }
 
 /* What a row opens to: each field as it was written down. */
 .mon-fields {
   display: grid;
   gap: 2px;
-  font-size: var(--t-xs);
-  line-height: var(--lh-xs);
+  font-size: var(--t-sm);
+  line-height: var(--lh-sm);
 }
 
 .mon-fields > div {
@@ -119,20 +112,4 @@
   font-family: var(--font-mono);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-}
-
-/* A day of the events, with its icon in the page's hue. */
-.mon-day {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.mon-day lucide-icon {
-  display: flex;
-  color: hsl(var(--hue, 262) 50% 45%);
-}
-
-:host-context(.dark) .mon-day lucide-icon {
-  color: hsl(var(--hue, 262) 62% 76%);
 }

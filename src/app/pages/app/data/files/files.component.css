@@ -2,14 +2,6 @@
    list frame, the table and its toolbar, the file icon). Here is how a
    row lays out its name and its source, and the uploads on their way in. */
 
-/* ── The numbers over the list ───────────────────────────────────────
-   The shared tiles (styles/controls.scss `.ui-tile`), each filling its
-   cell, so a button and a plain tile stand the same height. */
-.data-tiles > li > .ui-tile {
-  width: 100%;
-  height: 100%;
-}
-
 .file-name {
   display: flex;
   align-items: center;
@@ -41,36 +33,22 @@
   gap: 8px;
 }
 
-/* ── The first visit: where files come from, as three small cards ──── */
+/* ── The first visit: where files come from, in three short lines ───── */
 .data-hints {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
+  gap: 12px 24px;
   max-width: 760px;
   margin: 0 auto 32px;
   padding: 0 16px;
+  color: var(--ink-2);
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
+  text-align: center;
   list-style: none;
 }
 
-.data-hint {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  border: 1px dashed color-mix(in srgb, hsl(var(--hue, 214) 50% 50%) 35%, var(--line));
-  border-radius: var(--r-md);
-  background: linear-gradient(160deg, hsl(var(--hue, 214) 60% 97%), var(--surface) 75%);
-  color: var(--ink-2);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
-}
-
-:host-context(.dark) .data-hint {
-  border-color: color-mix(in srgb, hsl(var(--hue, 214) 40% 55%) 30%, var(--line));
-  background: linear-gradient(160deg, hsl(var(--hue, 214) 35% 16%), var(--surface) 75%);
-}
-
-.data-hint strong {
+.data-hints strong {
   color: var(--ink);
   font-weight: 600;
 }
@@ -85,7 +63,7 @@
 
 .files-list.is-dropping {
   border-radius: var(--r-md);
-  outline: 2px dashed hsl(var(--hue, 214) 60% 52%);
+  outline: 2px dashed var(--line-strong);
   outline-offset: 4px;
 }
 
@@ -96,45 +74,25 @@
   gap: 6px;
   margin-bottom: 12px;
   padding: 32px 16px;
+  border: 1px dashed var(--line-strong);
   border-radius: var(--r-lg);
-  background:
-    radial-gradient(70% 120% at 50% 0%, hsl(var(--hue, 214) 70% 90% / 0.9), transparent 70%),
-    hsl(var(--hue, 214) 60% 96%);
-  color: hsl(var(--hue, 214) 58% 28%);
+  background: var(--surface);
+  color: var(--ink);
   font-size: var(--t-base);
   font-weight: 500;
   line-height: var(--lh-base);
   pointer-events: none;
 }
 
-:host-context(.dark) .files-drop {
-  background:
-    radial-gradient(70% 120% at 50% 0%, hsl(var(--hue, 214) 45% 24% / 0.9), transparent 70%),
-    hsl(var(--hue, 214) 30% 14%);
-  color: hsl(var(--hue, 214) 62% 80%);
-}
-
-.files-drop > span:not(.files-drop-icon) {
+.files-drop > span {
   color: var(--ink-2);
-  font-size: var(--t-sm);
   font-weight: 400;
 }
 
-/* The cloud in a tile of its own, lifted off the wash. */
 .files-drop-icon {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 52px;
-  height: 52px;
   margin-bottom: 4px;
-  border-radius: 15px;
-  background: var(--surface);
-  box-shadow: var(--shadow-2);
-}
-
-.files-drop-icon lucide-icon {
-  display: flex;
+  color: var(--ink-2);
 }
 
 .upload-rows {
@@ -150,20 +108,13 @@
   align-items: center;
   gap: 14px;
   padding: 12px 16px;
-  border: 1px solid color-mix(in srgb, hsl(var(--hue, 214) 50% 50%) 20%, var(--line));
+  border: 1px solid var(--line);
   border-radius: var(--r-md);
-  background: linear-gradient(100deg, hsl(var(--hue, 214) 60% 97%), var(--surface) 60%);
-  box-shadow: var(--shadow-1);
-}
-
-:host-context(.dark) .upload-row {
-  border-color: color-mix(in srgb, hsl(var(--hue, 214) 40% 55%) 22%, var(--line));
-  background: linear-gradient(100deg, hsl(var(--hue, 214) 35% 15%), var(--surface) 60%);
+  background: var(--surface);
 }
 
 .upload-row.is-failed {
   border-color: color-mix(in srgb, var(--danger-ink) 30%, var(--line));
-  background: var(--surface);
 }
 
 .upload-words {
@@ -177,9 +128,9 @@
 .upload-name {
   overflow: hidden;
   color: var(--ink);
-  font-size: var(--t-sm);
+  font-size: var(--t-base);
   font-weight: 500;
-  line-height: var(--lh-sm);
+  line-height: var(--lh-base);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -208,7 +159,7 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, hsl(var(--hue, 214) 64% 52%), var(--accent));
+  background: var(--accent);
   transition: width var(--dur-1) linear;
 }
 

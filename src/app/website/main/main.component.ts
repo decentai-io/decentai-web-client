@@ -29,6 +29,7 @@ import { AlertComponent } from 'src/app/components/alert/alert.component';
 import { ContentView } from '../config/config.model';
 import { adminConsoleActions } from '../config/config';
 import { AttentionService } from 'src/app/services/attention.service';
+import { ChatDoneService } from 'src/app/services/chat-done.service';
 import { ShellStatusService } from 'src/app/services/shell-status.service';
 import { TopBarService } from 'src/app/services/top-bar.service';
 
@@ -113,6 +114,7 @@ export class MainComponent implements OnInit, OnDestroy {
     readonly topBar: TopBarService,
     private shellStatus: ShellStatusService,
     private attention: AttentionService,
+    private chatDone: ChatDoneService,
   ) {}
 
   /** The drawer leaves the tab order while it is closed on a phone.
@@ -158,9 +160,14 @@ export class MainComponent implements OnInit, OnDestroy {
     this.subscriptions.add(this.shellStatus.sessionEnded$.subscribe((ended) => {
       this.sessionEnded = ended;
       // Nothing more is asked of an API server that knows nobody.
-      if (ended) this.attention.stop();
+      if (ended) {
+        this.attention.stop();
+        this.chatDone.stop();
+      }
     }));
     void this.workSwitch.refresh();
+    // A chat the person set working and left says when it is done.
+    this.chatDone.start();
 
     // The service worker keeps serving the version it has until the page
     // is loaded again. The person is told, and chooses the moment: a
@@ -222,6 +229,7 @@ export class MainComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.chatDone.stop();
     this.mql.removeEventListener('change', this.onMediaChange);
     this.subscriptions.unsubscribe();
     this.unlockBodyScroll();

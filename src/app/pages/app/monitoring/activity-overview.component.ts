@@ -30,7 +30,7 @@ export function byWhat(rows: SummaryRow[]): WhatDone[] {
  * (Agents:Monitor:summary), beside the agents running now
  * (Agents:Monitor:usage).
  *
- * Read the way the dataviz rules ask: the numbers first, as tiles; then
+ * Read the way the dataviz rules ask: the numbers first, on one line; then
  * one bar list in the accent, with what did not succeed said beside each.
  */
 @Component({

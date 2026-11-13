@@ -1,6 +1,6 @@
-/* The Skills page is made of the shared pieces (the page's band, the
-   tiles, the filter column, the list frame, the row, the pills). Here
-   is how a row says a skill, and the first visit's cards. */
+/* The Skills page is made of the shared pieces (the numbers line, the
+   filter column, the list frame, the row, the pills). Here is how a
+   row says a skill, and the first visit's three lines. */
 
 /* The title is the way in to the skill. */
 .skill-row-title {
@@ -30,44 +30,22 @@ app-row.is-current {
   background: var(--surface-2);
 }
 
-/* ── The numbers over the list ───────────────────────────────────────
-   The shared tiles (styles/controls.scss `.ui-tile`), each filling its
-   cell, so a button and a plain tile stand the same height. */
-.data-tiles > li > .ui-tile {
-  width: 100%;
-  height: 100%;
-}
-
-/* ── The first visit: what a skill can be, as three small cards ────── */
+/* ── The first visit: what a skill can be, in three short lines ─────── */
 .data-hints {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
+  gap: 12px 24px;
   max-width: 760px;
   margin: 0 auto 32px;
   padding: 0 16px;
+  color: var(--ink-2);
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
+  text-align: center;
   list-style: none;
 }
 
-.data-hint {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  border: 1px dashed color-mix(in srgb, hsl(var(--hue, 214) 50% 50%) 35%, var(--line));
-  border-radius: var(--r-md);
-  background: linear-gradient(160deg, hsl(var(--hue, 214) 60% 97%), var(--surface) 75%);
-  color: var(--ink-2);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
-}
-
-:host-context(.dark) .data-hint {
-  border-color: color-mix(in srgb, hsl(var(--hue, 214) 40% 55%) 30%, var(--line));
-  background: linear-gradient(160deg, hsl(var(--hue, 214) 35% 16%), var(--surface) 75%);
-}
-
-.data-hint strong {
+.data-hints strong {
   color: var(--ink);
   font-weight: 600;
 }

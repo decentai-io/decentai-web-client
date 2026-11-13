@@ -1,7 +1,7 @@
-/* One webhook, opened: its band (../schedules/opened-shared.css), what
-   can be done, and its calls or its settings, each in a block. The
-   chips, pills, buttons, the switch and the segmented control are the
-   shared ones. */
+/* One webhook, opened: its head (../schedules/opened-shared.css), what
+   can be done, and its calls or its settings, a heading and what is
+   under it. The chips, pills, buttons, the switch and the segmented
+   control are the shared ones. */
 :host {
   display: flex;
   flex-direction: column;
@@ -24,62 +24,22 @@
   margin-top: 10px;
 }
 
+/* What sits at the right of the calls' heading: the chat, a refresh. */
+.ui-panel-aside {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .webhook-link {
   color: inherit;
-  font-size: var(--t-sm);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
-/* ── The calls, added up ───────────────────────────────────────────── */
+/* ── The calls, added up: the shared numbers line, close to the list ─ */
 .webhook-counts {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 12px;
-  list-style: none;
-}
-
-.webhook-count {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 10px 12px;
-  border-radius: var(--r-md);
-  background: hsl(var(--hue, 186) 60% 96%);
-}
-
-:host-context(.dark) .webhook-count {
-  background: hsl(var(--hue, 186) 30% 16%);
-}
-
-.webhook-count.is-bad {
-  background: var(--danger-soft);
-}
-
-.webhook-count-value {
-  color: var(--ink);
-  font-size: var(--t-md);
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-  line-height: var(--lh-md);
-}
-
-.webhook-count-label {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--ink-2);
-  font-size: var(--t-xs);
-  line-height: var(--lh-xs);
-}
-
-.webhook-count-label lucide-icon {
-  display: flex;
-}
-
-.webhook-count.is-bad .webhook-count-label {
-  color: var(--danger-ink);
+  margin-bottom: 8px;
 }
 
 /* Nothing yet: the inbox, and what will come. */
@@ -87,22 +47,16 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px;
-  border: 1px dashed var(--line-strong);
-  border-radius: var(--r-md);
+  max-width: 68ch;
   color: var(--ink-2);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
 }
 
 .webhook-empty lucide-icon {
   display: flex;
   flex: none;
-  color: hsl(var(--hue, 186) 50% 36%);
-}
-
-:host-context(.dark) .webhook-empty lucide-icon {
-  color: hsl(var(--hue, 186) 60% 72%);
+  color: var(--ink-3);
 }
 
 /* ── The calls ─────────────────────────────────────────────────────── */
@@ -129,26 +83,18 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 10px;
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
 }
 
 .run-icon {
   display: flex;
   flex: none;
-  color: hsl(var(--hue, 186) 50% 34%);
-}
-
-:host-context(.dark) .run-icon {
-  color: hsl(var(--hue, 186) 60% 72%);
+  color: var(--ink-3);
 }
 
 .run-icon[data-outcome='refused'] {
   color: var(--danger-ink);
-}
-
-.run-icon[data-outcome='test'] {
-  color: var(--ink-3);
 }
 
 .run-when {
@@ -161,15 +107,15 @@
 .run-took {
   color: var(--ink-2);
   font-family: var(--font-mono);
-  font-size: var(--t-xs);
+  font-size: var(--t-sm);
   font-variant-numeric: tabular-nums;
 }
 
 .run-why {
   padding-left: 26px;
   color: var(--danger-ink);
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
   overflow-wrap: anywhere;
 }
 
@@ -183,11 +129,11 @@
   display: flex;
   flex-direction: column;
   margin: 0;
-  font-size: var(--t-sm);
-  line-height: var(--lh-sm);
+  font-size: var(--t-base);
+  line-height: var(--lh-base);
 }
 
-/* Each fact: its name over it, with its icon. */
+/* Each fact: its name over it. */
 .webhook-fact {
   display: flex;
   flex-direction: column;
@@ -204,24 +150,10 @@
 }
 
 .webhook-facts dt {
-  display: flex;
-  align-items: center;
-  gap: 6px;
   color: var(--ink-2);
-  font-size: var(--t-xs);
+  font-size: var(--t-sm);
   font-weight: 600;
-  letter-spacing: 0.03em;
-  line-height: var(--lh-xs);
-  text-transform: uppercase;
-}
-
-.webhook-facts dt lucide-icon {
-  display: flex;
-  color: hsl(var(--hue, 186) 50% 34%);
-}
-
-:host-context(.dark) .webhook-facts dt lucide-icon {
-  color: hsl(var(--hue, 186) 60% 72%);
+  line-height: var(--lh-sm);
 }
 
 .webhook-facts dd {
@@ -239,7 +171,7 @@
 .webhook-code {
   color: var(--ink);
   font-family: var(--font-mono);
-  font-size: var(--t-xs);
+  font-size: var(--t-sm);
   overflow-wrap: anywhere;
 }
 
@@ -263,6 +195,7 @@
 }
 
 .webhook-prompt {
+  max-width: 68ch;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
