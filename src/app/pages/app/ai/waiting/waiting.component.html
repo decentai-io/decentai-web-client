@@ -23,8 +23,8 @@
     </li>
     <li class="ui-tile">
       <span class="ui-tile-words">
-        <span class="ui-tile-value">{{ groups.length }}</span>
-        <span class="ui-tile-label">{{ groups.length === 1 ? "Chat" : "Chats" }} asking</span>
+        <span class="ui-tile-value">{{ chatsWaiting }}</span>
+        <span class="ui-tile-label">{{ chatsWaiting === 1 ? "Chat" : "Chats" }} asking</span>
       </span>
     </li>
   </ul>
@@ -42,16 +42,13 @@
   ></app-empty>
 
   <!-- Each chat's cards under its title, oldest first. -->
-  <p class="ui-panel-note" *ngIf="capped">
-    These are the oldest 200. Answer some, then refresh, to see the ones behind them.
-  </p>
 
-  <section class="waiting-chat" *ngFor="let group of chats.of(groups)" [attr.aria-label]="group.title">
+  <section class="waiting-chat" *ngFor="let group of groups; trackBy: trackGroup" [attr.aria-label]="group.title">
     <header class="waiting-head">
       <h2 class="waiting-title">
         <a [routerLink]="['/ai/chats', group.chatId]">{{ group.title }}</a>
       </h2>
-      <span class="ui-pill is-warn waiting-count">{{ group.cards.length }} waiting</span>
+      <span class="ui-pill is-warn waiting-count">{{ waitingIn(group) }} waiting</span>
       <a class="btn ghost sm waiting-open" [routerLink]="['/ai/chats', group.chatId]">
         Open the chat
         <lucide-icon name="arrow-right" [size]="14" aria-hidden="true"></lucide-icon>
@@ -59,7 +56,7 @@
     </header>
 
     <div class="waiting-cards">
-      <article class="waiting-card" *ngFor="let card of cardsOf(group)" [class.is-busy]="answering.has(card.card_id)">
+      <article class="waiting-card" *ngFor="let card of cardsOf(group); trackBy: trackCard" [class.is-busy]="answering.has(card.card_id)">
         <!-- What is asked, by whom, since when: over the card. -->
         <p class="waiting-kicker">
           <span class="waiting-kind" [attr.data-kind]="card.kind">
@@ -94,6 +91,7 @@
               (more)="showAll(group)"></app-more>
   </section>
 
-  <app-more [shown]="chats.count(groups)" [total]="groups.length" label="Show more chats"
-            (more)="chats.more()"></app-more>
+  <!-- The cards behind those read, the next oldest. -->
+  <app-more [shown]="cards.rows.length" [total]="cards.total" [loading]="cards.loading" label="Load more"
+            (more)="more()"></app-more>
 </app-page>

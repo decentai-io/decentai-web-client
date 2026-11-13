@@ -21,12 +21,12 @@
 
   <!-- The numbers that matter, on one line: a state's number narrows
        the list to it. -->
-  <ul class="ui-tiles" *ngIf="schedules.length && !opened" aria-label="Schedules in numbers">
+  <ul class="ui-tiles" *ngIf="counts.all && !opened" aria-label="Schedules in numbers">
     <li>
       <button class="ui-tile" type="button" [class.is-on]="state === 'active'" [attr.aria-pressed]="state === 'active'"
               (click)="toggleState('active')">
         <span class="ui-tile-words">
-          <span class="ui-tile-value">{{ count('active') }}</span>
+          <span class="ui-tile-value">{{ counts.active }}</span>
           <span class="ui-tile-label">Active</span>
         </span>
       </button>
@@ -35,17 +35,17 @@
       <button class="ui-tile" type="button" [class.is-on]="state === 'paused'" [attr.aria-pressed]="state === 'paused'"
               (click)="toggleState('paused')">
         <span class="ui-tile-words">
-          <span class="ui-tile-value">{{ count('paused') }}</span>
+          <span class="ui-tile-value">{{ counts.paused }}</span>
           <span class="ui-tile-label">Paused</span>
         </span>
       </button>
     </li>
-    <li *ngIf="count('failing')">
+    <li *ngIf="counts.failing">
       <button class="ui-tile" type="button" [class.is-on]="state === 'failing'" [attr.aria-pressed]="state === 'failing'"
               (click)="toggleState('failing')">
         <span class="ui-tile-icon is-danger"><lucide-icon name="circle-alert" [size]="20" aria-hidden="true"></lucide-icon></span>
         <span class="ui-tile-words">
-          <span class="ui-tile-value">{{ count('failing') }}</span>
+          <span class="ui-tile-value">{{ counts.failing }}</span>
           <span class="ui-tile-label">Failing</span>
         </span>
       </button>
@@ -72,10 +72,10 @@
 
   <!-- What waits for an answer, in every chat: each leads to its chat,
        where it is answered. -->
-  <section class="ui-panel schedules-cards" *ngIf="cards.length && !opened" aria-labelledby="schedules-cards-title">
+  <section class="ui-panel schedules-cards" *ngIf="cardsTotal && !opened" aria-labelledby="schedules-cards-title">
     <div class="ui-panel-head">
       <h2 class="ui-panel-title" id="schedules-cards-title">Approvals</h2>
-      <span class="ui-pill is-warn">{{ cards.length }} waiting</span>
+      <span class="ui-pill is-warn">{{ cardsTotal }} waiting</span>
       <a class="btn ghost sm" routerLink="/ai/waiting">
         Answer them
         <lucide-icon name="arrow-right" [size]="14" aria-hidden="true"></lucide-icon>
@@ -95,8 +95,8 @@
         </ng-container>
       </app-row>
     </app-list>
-    <p class="ui-panel-note" *ngIf="cards.length > firstCards.length">
-      And {{ cards.length - firstCards.length }} more, on <a routerLink="/ai/waiting">Approvals</a>.
+    <p class="ui-panel-note" *ngIf="cardsTotal > firstCards.length">
+      And {{ cardsTotal - firstCards.length }} more, on <a routerLink="/ai/waiting">Approvals</a>.
     </p>
   </section>
 
@@ -124,15 +124,15 @@
 
   <div class="side-layout" [class.has-opened]="opened">
     <app-filter-column
-      *ngIf="schedules.length && !opened"
+      *ngIf="counts.all && !opened"
       label="Filter schedules"
       [groups]="filters"
       [chosen]="chosen"
       (choose)="filter($event.key, $event.value)"
     ></app-filter-column>
 
-    <app-list label="Schedules" [loading]="loading" [class.side-alone]="!schedules.length">
-      <ng-container listToolbar *ngIf="schedules.length">
+    <app-list label="Schedules" [loading]="loading" [class.side-alone]="!counts.all">
+      <ng-container listToolbar *ngIf="counts.all">
         <span class="search-field toolbar-search">
           <lucide-icon name="search" [size]="16" aria-hidden="true"></lucide-icon>
           <input class="input" type="search" placeholder="Search schedules" aria-label="Search schedules"
@@ -141,7 +141,7 @@
         <ng-container *ngTemplateOutlet="addButton"></ng-container>
       </ng-container>
 
-      <app-row *ngFor="let schedule of pagedSchedules" [class.is-current]="schedule.schedule_id === openId"
+      <app-row *ngFor="let schedule of schedules" [class.is-current]="schedule.schedule_id === openId"
                [class.is-resting]="schedule.paused">
         <!-- The kind is the mark: a prompt that wakes, or a function run. -->
         <lucide-icon rowMark [name]="mark(schedule)" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
@@ -189,18 +189,18 @@
         </button>
       </app-row>
 
-      <app-pager *ngIf="shownSchedules.length > pageSize" [page]="page" [pageSize]="pageSize"
-                 [total]="shownSchedules.length" (pageChange)="toPage($event)"></app-pager>
+      <app-pager *ngIf="pages.total > pageSize" [page]="pages.page" [pageSize]="pageSize"
+                 [total]="pages.total" (pageChange)="toPage($event)"></app-pager>
 
       <app-empty
-        *ngIf="!loading && !schedules.length"
+        *ngIf="!loading && !counts.all"
         icon="calendar-clock"
         title="Nothing on the clock"
         line="A schedule wakes the assistant with a prompt, or runs an agent's function, at the times you say. Describe one above, set one up here, or ask for it in any chat."
       >
         <ng-container *ngTemplateOutlet="addButton"></ng-container>
       </app-empty>
-      <app-empty *ngIf="schedules.length && !shownSchedules.length" icon="search-x" title="No schedule matches"
+      <app-empty *ngIf="counts.all && pages.loaded && !schedules.length" icon="search-x" title="No schedule matches"
                  line="Try another search, or clear the filters.">
         <button class="btn" type="button" (click)="go({ q: '', state: '', chat: '' })">Clear the filters</button>
       </app-empty>

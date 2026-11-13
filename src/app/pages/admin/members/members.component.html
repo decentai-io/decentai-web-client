@@ -10,8 +10,8 @@
   <ul class="ui-tiles" aria-label="Users in numbers" *ngIf="!loading">
     <li class="ui-tile">
       <span class="ui-tile-words">
-        <span class="ui-tile-value">{{ members.length }}</span>
-        <span class="ui-tile-label">{{ members.length === 1 ? "Person" : "People" }}</span>
+        <span class="ui-tile-value">{{ peopleCount }}</span>
+        <span class="ui-tile-label">{{ peopleCount === 1 ? "Person" : "People" }}</span>
       </span>
     </li>
     <li class="ui-tile">
@@ -22,7 +22,7 @@
     </li>
     <li class="ui-tile" *ngIf="canReadInvitations">
       <span class="ui-tile-words">
-        <span class="ui-tile-value">{{ invitations.length }}</span>
+        <span class="ui-tile-value">{{ invitationPages.total }}</span>
         <span class="ui-tile-label">Invited</span>
       </span>
     </li>
@@ -39,7 +39,7 @@
     <ng-container listToolbar>
       <span class="search-field toolbar-search">
         <lucide-icon name="search" [size]="16" aria-hidden="true"></lucide-icon>
-        <input class="input" type="search" placeholder="Search people" aria-label="Search people" [(ngModel)]="query" />
+        <input class="input" type="search" placeholder="Search people" aria-label="Search people" [ngModel]="query" (ngModelChange)="onSearch($event)" />
       </span>
       <button class="btn primary toolbar-end" type="button" *ngIf="canInvite" (click)="startInvite()">
         <lucide-icon [name]="adds ? 'user-plus' : 'mail-plus'" [size]="16" aria-hidden="true"></lucide-icon>
@@ -47,7 +47,7 @@
       </button>
     </ng-container>
 
-    <app-row *ngFor="let member of paging.of(shown, query)" [name]="member.name || member.email">
+    <app-row *ngFor="let member of shown" [name]="member.name || member.email">
       <!-- Their initials in the mark: a list of people reads as people. -->
       <span rowMark class="admin-initials" [class.is-held]="member.status === 'disabled' || member.stopped" aria-hidden="true">{{ initials(member) }}</span>
       <span rowChips class="chip accent" *ngIf="isSelf(member)">You</span>
@@ -70,22 +70,22 @@
       </button>
     </app-row>
 
-    <app-pager [page]="paging.page" [pageSize]="paging.size" [total]="shown.length"
-               (pageChange)="paging.page = $event"></app-pager>
+    <app-pager [page]="pages.page" [pageSize]="pages.size" [total]="pages.total"
+               (pageChange)="pages.go($event)"></app-pager>
 
-    <app-empty *ngIf="members.length && !shown.length" icon="search-x" title="Nobody matches" line="Try another search.">
-      <button class="btn" type="button" (click)="query = ''">Clear the search</button>
+    <app-empty *ngIf="pages.loaded && query.trim() && !shown.length" icon="search-x" title="Nobody matches" line="Try another search.">
+      <button class="btn" type="button" (click)="clearSearch()">Clear the search</button>
     </app-empty>
   </app-list>
 
   <!-- ── Invitations that nobody has taken up yet ────────────────────── -->
-  <section class="admin-section" *ngIf="canReadInvitations && invitations.length" aria-labelledby="invitations-title">
+  <section class="admin-section" *ngIf="canReadInvitations && invitationPages.total" aria-labelledby="invitations-title">
     <h2 class="admin-section-title" id="invitations-title">
       Pending invitations
-      <span class="ui-pill">{{ invitations.length }}</span>
+      <span class="ui-pill">{{ invitationPages.total }}</span>
     </h2>
     <app-list label="Pending invitations">
-      <app-row *ngFor="let invitation of invitationPaging.of(invitations)" [name]="invitation.email">
+      <app-row *ngFor="let invitation of invitations" [name]="invitation.email">
         <lucide-icon rowMark name="mail" [size]="20" [strokeWidth]="1.75" aria-hidden="true"></lucide-icon>
         <span rowMeta class="ui-pills">
           <app-pills class="admin-invite-groups" [items]="groupList(invitation.groups)" icon="users" none="No groups"></app-pills>
@@ -99,8 +99,8 @@
         <button rowState class="btn ghost danger sm" type="button" *ngIf="canRevokeInvitations"
                 [disabled]="isBusy(invitation.invitation_id)" (click)="revoke(invitation)">Withdraw</button>
       </app-row>
-      <app-pager [page]="invitationPaging.page" [pageSize]="invitationPaging.size" [total]="invitations.length"
-                 (pageChange)="invitationPaging.page = $event"></app-pager>
+      <app-pager [page]="invitationPages.page" [pageSize]="invitationPages.size" [total]="invitationPages.total"
+                 (pageChange)="invitationPages.go($event)"></app-pager>
     </app-list>
   </section>
 
@@ -146,15 +146,8 @@
           <app-field label="Email" [error]="tried && !inviteEmail.trim() ? 'Enter their email address.' : ''">
             <input class="input" type="email" name="invite-email" autocomplete="off" [(ngModel)]="inviteEmail" />
           </app-field>
-          <fieldset class="admin-picks" *ngIf="groups.length">
-            <legend>Groups<span class="admin-count">{{ inviteGroupIds.size }} of {{ groups.length }}</span></legend>
-            <div class="ui-checks" [class.is-long]="groups.length > 6">
-              <mat-checkbox class="check-row" *ngFor="let group of groups" [checked]="inviteGroupIds.has(group.group_id)"
-                            (change)="toggleInviteGroup(group.group_id)">
-                <span class="check-name">{{ group.name }}</span>
-              </mat-checkbox>
-            </div>
-          </fieldset>
+          <app-search-picks legend="Groups" placeholder="Search groups" none="No groups besides Everyone yet."
+                            [search]="searchGroups" [selected]="inviteGroupIds" [named]="chosenGroups"></app-search-picks>
           <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
         </div>
       </mat-dialog-content>
@@ -197,15 +190,8 @@
       <mat-dialog-content>
         <div class="form">
           <p class="dialog-note">Everyone holds them already, without being listed.</p>
-          <fieldset class="admin-picks">
-            <legend>Groups<span class="admin-count">{{ selected.size }} of {{ groups.length }}</span></legend>
-            <div class="ui-checks" [class.is-long]="groups.length > 6">
-              <mat-checkbox class="check-row" *ngFor="let group of groups" [checked]="selected.has(group.group_id)"
-                            (change)="toggleGroup(group.group_id)">
-                <span class="check-name">{{ group.name }}</span>
-              </mat-checkbox>
-            </div>
-          </fieldset>
+          <app-search-picks legend="Groups" placeholder="Search groups" none="No groups besides Everyone yet."
+                            [search]="searchGroups" [selected]="selected" [named]="chosenGroups"></app-search-picks>
           <p class="form-notice is-error" role="alert" *ngIf="error">{{ error }}</p>
         </div>
       </mat-dialog-content>
@@ -237,6 +223,11 @@
               <ul class="admin-lines"><li *ngFor="let line of handedLines">{{ line }}</li></ul>
               <p class="dialog-note">Records, files, skills and MCP servers keep their sharing; the successor becomes their owner.</p>
               <app-field label="Successor">
+                <span class="search-field admin-successor-search">
+                  <lucide-icon name="search" [size]="16" aria-hidden="true"></lucide-icon>
+                  <input class="input" type="search" name="successor-search" placeholder="Find a person"
+                         aria-label="Find a successor" [ngModel]="successorQuery" (ngModelChange)="onSuccessorSearch($event)" />
+                </span>
                 <app-select name="successor" [choices]="successorChoices" [(ngModel)]="successorId"></app-select>
               </app-field>
             </section>

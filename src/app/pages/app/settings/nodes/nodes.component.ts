@@ -14,7 +14,7 @@ import { EmptyComponent } from 'src/app/components/ui/empty.component';
 import { FieldComponent } from 'src/app/components/ui/field.component';
 import { ListComponent } from 'src/app/components/ui/list.component';
 import { PagerComponent } from 'src/app/components/ui/pager.component';
-import { Paging } from 'src/app/components/ui/paging';
+import { ServerPage, ServerPages } from 'src/app/components/ui/paging';
 import { PillsComponent } from 'src/app/components/ui/pills.component';
 import { Choice } from 'src/app/components/ui/radio-keys';
 import { RowComponent } from 'src/app/components/ui/row.component';
@@ -24,13 +24,14 @@ import { SwitchComponent } from 'src/app/components/ui/switch.component';
 import { AuthService } from 'src/app/services/auth.service';
 import { ConfirmService } from 'src/app/services/confirm.service';
 import {
-  EnrolledNode, EnrollmentToken, ExecutionNode, NODE_NAME_MAX, NodeSandbox, NodesService, NOTE_MAX, REASON_MAX,
+  EnrolledNode, EnrollmentToken, ExecutionNode, NODE_NAME_MAX, NodeCounts, NodeQuery, NodeSandbox, NodesService, NOTE_MAX,
+  REASON_MAX,
 } from 'src/app/services/nodes.service';
 import { OrgSettings, SettingsOrgService } from 'src/app/services/settings-org.service';
 import { DataPageBase } from '../../data-page-base';
 import { NodeDetailComponent, NodeDetailGrants } from './node-detail.component';
 import {
-  filterNodes, filtersOn, groupNodes, isShared, NO_FILTERS, NodeFilters, NodeGroup, nodeFacts, nodeLabel,
+  filtersOn, groupNodes, isShared, NO_FILTERS, NodeFilters, NodeGroup, nodeFacts, nodeLabel,
   nodeState, NodeStateFilter, overview, NodesOverview, plural, scopeName, STATE_WORDS, TOKEN_WORDS, tokenFacts,
   tokenState,
 } from './nodes-words';
@@ -117,15 +118,18 @@ export class NodesComponent extends DataPageBase implements OnInit, OnDestroy {
   refreshFailed = false;
   refreshing = false;
 
-  nodes: ExecutionNode[] = [];
-  tokens: EnrollmentToken[] = [];
+  /** The nodes twenty to a page; the tokens, taller, ten: each paged,
+   *  searched and filtered on the API server. */
+  readonly nodePages = new ServerPages<ExecutionNode>(20, (after, limit) => this.pageNodes(after, limit));
+  readonly tokenPages = new ServerPages<EnrollmentToken>(10, (after, limit) => this.pageTokens(after, limit));
+  /** The server's numbers of the runtimes and the tokens, whatever the
+   *  search; null where it gave none (the page's rows are counted). */
+  nodeCounts: NodeCounts | null = null;
+  tokenCounts: { live: number; spent: number } | null = null;
   /** The nodes the listed tokens enrolled. */
   enrolled: EnrolledNode[] = [];
   /** Whether tokens that enroll nobody any more are shown too. */
   showSpent = false;
-  /** The nodes twenty to a page; the tokens, taller, ten. */
-  readonly nodePaging = new Paging(20);
-  readonly tokenPaging = new Paging(10);
   /** A token just made: its secret, shown this once. */
   made: { id: string; token: string } | null = null;
 
@@ -276,6 +280,7 @@ export class NodesComponent extends DataPageBase implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.destroyed = true;
+    this.nodePages.cancel();
     if (this.timer) clearInterval(this.timer);
     this.address?.unsubscribe();
     if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', this.onVisible);
@@ -321,19 +326,51 @@ export class NodesComponent extends DataPageBase implements OnInit, OnDestroy {
     return failed.find((reason) => reason) ?? '';
   }
 
+  /** The page of nodes shown read again; the first, the first time. */
   private async readNodes(): Promise<string> {
-    const page = await this.service.nodes();
-    if (page.error) return page.error;
-    this.nodes = page.nodes;
-    return '';
+    await (this.nodePages.loaded ? this.nodePages.reload() : this.nodePages.first());
+    return this.nodePages.error;
   }
 
   private async readTokens(): Promise<string> {
-    const page = await this.service.tokens();
-    if (page.error) return page.error;
-    this.tokens = page.tokens;
-    this.enrolled = page.enrolled;
-    return '';
+    await (this.tokenPages.loaded ? this.tokenPages.reload() : this.tokenPages.first());
+    return this.tokenPages.error;
+  }
+
+  private async pageNodes(after: string, limit: number): Promise<ServerPage<ExecutionNode>> {
+    const page = await this.service.nodes(this.nodeQuery(), after, limit);
+    if (!page.error) this.nodeCounts = page.counts;
+    return { rows: page.nodes, next: page.next ?? null, total: page.total ?? page.nodes.length, error: page.error };
+  }
+
+  private async pageTokens(after: string, limit: number): Promise<ServerPage<EnrollmentToken>> {
+    const page = await this.service.tokens(this.showSpent ? {} : { state: 'live' }, after, limit);
+    if (!page.error) {
+      this.tokenCounts = page.counts ?? null;
+      this.enrolled = page.enrolled;
+    }
+    return { rows: page.tokens, next: page.next ?? null, total: page.total ?? page.tokens.length, error: page.error };
+  }
+
+  /** The filters as the server takes them: a scope is shared, or the
+   *  organization's own. */
+  private nodeQuery(): NodeQuery {
+    const filters = this.filters;
+    return {
+      ...(filters.query.trim() ? { q: filters.query.trim() } : {}),
+      ...(filters.state !== 'all' ? { state: filters.state } : {}),
+      ...(filters.scope !== 'all' ? { scope: isShared({ scope: filters.scope }) ? 'shared' as const : 'own' as const } : {}),
+    };
+  }
+
+  /** The nodes of the page shown. */
+  get nodes(): ExecutionNode[] {
+    return this.nodePages.rows;
+  }
+
+  /** The tokens of the page shown. */
+  get tokens(): EnrollmentToken[] {
+    return this.tokenPages.rows;
   }
 
   private async readPlacement(): Promise<string> {
@@ -399,30 +436,37 @@ export class NodesComponent extends DataPageBase implements OnInit, OnDestroy {
 
   // ── The counts at the head ──────────────────────────────────────────
 
+  /** The numbers at the head: the server's, whatever the search; where
+   *  it gave none, those of the rows read. */
   get counts(): NodesOverview {
-    return overview(this.nodes, this.tokens);
+    const read = overview(this.nodes, this.tokens);
+    const nodes = this.nodeCounts;
+    return {
+      ...(nodes ? {
+        total: nodes.total, connected: nodes.connected, refused: nodes.refused, sandboxes: nodes.sandboxes,
+        draining: nodes.draining, chats: nodes.chats,
+      } : read),
+      tokens: this.tokenCounts ? this.tokenCounts.live : read.tokens,
+    };
   }
 
   plural = plural;
 
   // ── Nodes ───────────────────────────────────────────────────────────
 
+  /** The nodes of the page shown, as the server searched and filtered. */
   get shownNodes(): ExecutionNode[] {
-    return filterNodes(this.nodes, this.filters);
+    return this.nodes;
   }
 
   get groups(): NodeGroup[] {
     return groupNodes(this.shownNodes);
   }
 
-  /** The groups with the nodes of the page shown: the pages run through
-   *  the groups in their order, and a group's head keeps its own counts. */
+  /** The nodes of the page shown, in their groups: shared runtimes
+   *  first, then the organization's own, connected first. */
   get pagedGroups(): Array<NodeGroup & { shown: ExecutionNode[] }> {
-    const groups = this.groups;
-    const key = `${this.filters.query}|${this.filters.state}|${this.filters.scope}`;
-    const page = new Set(this.nodePaging.of(groups.flatMap((group) => group.nodes), key));
-    return groups.map((group) => ({ ...group, shown: group.nodes.filter((node) => page.has(node)) }))
-      .filter((group) => group.shown.length);
+    return this.groups.map((group) => ({ ...group, shown: group.nodes }));
   }
 
   get filtering(): boolean {
@@ -431,28 +475,38 @@ export class NodesComponent extends DataPageBase implements OnInit, OnDestroy {
 
   clearFilters(): void {
     this.filters = { ...NO_FILTERS };
+    void this.nodePages.first();
   }
 
+  /** A filter changed: the first page asked of the server again, once
+   *  the typing stops for a search. */
   setFilter<K extends keyof NodeFilters>(key: K, value: NodeFilters[K]): void {
     this.filters = { ...this.filters, [key]: value };
+    if (key === 'query') this.nodePages.search();
+    else void this.nodePages.first();
   }
 
-  /** The organizations the nodes are for, to filter by: offered when
-   *  there are two or more. */
+  /** Whom the nodes are for, to filter by: offered where there are both
+   *  shared runtimes and the organization's own. */
   get scopeChoices(): Choice<string>[] {
+    const counts = this.nodeCounts;
     const seen = new Map<string, string>();
     for (const node of this.nodes) seen.set(node.scope, scopeName(node));
-    if (seen.size < 2) return [];
-    const ordered = [...seen.entries()].sort(([a, an], [b, bn]) =>
-      isShared({ scope: a }) !== isShared({ scope: b }) ? (isShared({ scope: a }) ? -1 : 1) : an.localeCompare(bn));
-    return [{ value: 'all', name: 'Any organization' }, ...ordered.map(([value, name]) => ({ value, name }))];
+    const own = this.auth.organization?.org_id ?? [...seen.keys()].find((scope) => !isShared({ scope })) ?? '';
+    const both = counts ? counts.shared > 0 && counts.own > 0 : seen.size >= 2;
+    if (!both && this.filters.scope === 'all') return [];
+    return [
+      { value: 'all', name: 'Any organization' },
+      { value: '', name: scopeName({ scope: '' }) },
+      { value: own, name: scopeName({ scope: own || 'own' }) },
+    ];
   }
 
   get nodesFoot(): string {
-    if (!this.nodes.length) return '';
-    const shown = this.shownNodes.length;
-    const all = `${this.counts.connected} connected · ${this.nodes.length} in all`;
-    return this.filtering ? `${shown} shown · ${all}` : all;
+    const counts = this.counts;
+    if (!counts.total && !this.nodes.length) return '';
+    const all = `${counts.connected} connected · ${counts.total} in all`;
+    return this.filtering ? `${this.nodePages.total} shown · ${all}` : all;
   }
 
   stateOf(node: ExecutionNode) {
@@ -629,19 +683,33 @@ export class NodesComponent extends DataPageBase implements OnInit, OnDestroy {
 
   /** Tokens that enroll nobody any more: withdrawn, used up or expired. */
   get spentCount(): number {
+    if (this.tokenCounts) return this.tokenCounts.spent;
     return this.tokens.filter((token) => tokenState(token) !== 'live').length;
   }
 
-  /** Live tokens first; the spent ones when asked for. */
+  /** How many tokens can enroll, the server's count. */
+  get liveCount(): number {
+    if (this.tokenCounts) return this.tokenCounts.live;
+    return this.tokens.filter((token) => tokenState(token) === 'live').length;
+  }
+
+  /** The tokens of the page shown: those that can enroll, and the spent
+   *  ones too when asked for, newest first, as the server reads them. */
   get visibleTokens(): EnrollmentToken[] {
-    const live = this.tokens.filter((token) => tokenState(token) === 'live');
-    return this.showSpent ? [...live, ...this.tokens.filter((token) => tokenState(token) !== 'live')] : live;
+    return this.showSpent ? this.tokens : this.tokens.filter((token) => tokenState(token) === 'live');
+  }
+
+  /** The spent tokens shown, or not: the first page asked again. */
+  setShowSpent(show: boolean): Promise<void> {
+    this.showSpent = show;
+    return this.tokenPages.first();
   }
 
   get tokensFoot(): string {
-    if (!this.tokens.length) return '';
-    const live = this.tokens.length - this.spentCount;
-    return this.spentCount ? `${live} can enroll · ${this.spentCount} spent` : `${live} can enroll`;
+    const live = this.liveCount;
+    const spent = this.spentCount;
+    if (!live && !spent) return '';
+    return spent ? `${live} can enroll · ${spent} spent` : `${live} can enroll`;
   }
 
   tokenWord(token: EnrollmentToken): string {
@@ -777,6 +845,7 @@ export class NodesComponent extends DataPageBase implements OnInit, OnDestroy {
 
   /** The organization's own runtimes connected now, as last listed. */
   get ownConnected(): number {
+    if (this.nodeCounts?.own_connected !== undefined) return this.nodeCounts.own_connected;
     return this.nodes.filter((node) => !isShared(node) && node.live && !node.refused).length;
   }
 

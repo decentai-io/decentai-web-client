@@ -1,4 +1,4 @@
-import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { Refused } from 'src/app/services/request.service';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 
@@ -7,7 +7,7 @@ import { AuthService, CatalogAction } from 'src/app/services/auth.service';
 import { Policy, PolicyService, PolicyStatement } from 'src/app/services/policy.service';
 import { ConfirmService } from 'src/app/services/confirm.service';
 import { DataPageBase } from '../../app/data-page-base';
-import { Paging } from 'src/app/components/ui/paging';
+import { ServerPage, ServerPages } from 'src/app/components/ui/paging';
 import { NamedAgent, PolicyWords, serviceName } from './policy-words';
 
 /** The actions of one service, as the grid draws them. */
@@ -62,10 +62,12 @@ const SHOWN_STATEMENTS = 4;
   templateUrl: './policies.component.html',
   styleUrls: ['../admin-shared.css', './policies.component.css'],
 })
-export class PoliciesComponent extends DataPageBase implements OnInit {
+export class PoliciesComponent extends DataPageBase implements OnInit, OnDestroy {
   loading = true;
 
-  policies: Policy[] = [];
+  /** The policies, ten to a page, the built-in ones first: paged and
+   *  searched, by name or by an action they name, on the API server. */
+  readonly pages = new ServerPages<Policy>(10, (after, limit) => this.readPolicies(after, limit));
   /** The endpoints' actions, by service. */
   catalog: ActionGroup[] = [];
   /** Says actions in words. */
@@ -91,8 +93,8 @@ export class PoliciesComponent extends DataPageBase implements OnInit {
   busy = new Set<string>();
 
   query = '';
-  /** The policies, ten at a time: each says what it allows, in words. */
-  readonly paging = new Paging(10);
+
+
   /** Save was pressed: what the name still needs is said under it. */
   tried = false;
   /** The editor, on the dialog shell. */
@@ -113,11 +115,11 @@ export class PoliciesComponent extends DataPageBase implements OnInit {
     // The catalog rides on Auth:Me; make sure the session has been read.
     await this.auth.ensureLoaded();
     try {
-      const [policies, agents] = await Promise.all([
-        this.policyService.list(),
+      const [, agents] = await Promise.all([
+        this.pages.first(),
         this.agents.installed().catch(() => []),
       ]);
-      this.policies = policies;
+      if (this.pages.error) this.fail(this.pages.error);
       this.catalog = PoliciesComponent.services(this.auth.catalog);
       const named: NamedAgent[] = agents.map((agent) => ({
         agent_id: agent.agent_id, name: agent.name, functions: agent.manifest.functions,
@@ -144,8 +146,32 @@ export class PoliciesComponent extends DataPageBase implements OnInit {
     return [...groups.values()];
   }
 
+  ngOnDestroy(): void {
+    this.pages.cancel();
+  }
+
+  private readPolicies(after: string, limit: number): Promise<ServerPage<Policy>> {
+    return this.policyService.page(after, limit, this.query);
+  }
+
   private async reload(): Promise<void> {
-    this.policies = await this.policyService.list();
+    await this.pages.reload();
+  }
+
+  /** The policies of the page shown. */
+  get policies(): Policy[] {
+    return this.pages.rows;
+  }
+
+  /** A new search: from the first page, once the typing stops. */
+  onSearch(query: string): void {
+    this.query = query;
+    this.pages.search();
+  }
+
+  clearSearch(): void {
+    this.query = '';
+    void this.pages.first();
   }
 
   // ── What the current person may do ──────────────────────────────────
@@ -203,14 +229,6 @@ export class PoliciesComponent extends DataPageBase implements OnInit {
     return PolicyWords.agentsOf(policy.statements)
       .filter((id) => this.agentIds.has(id))
       .map((id) => ({ agent_id: id, name: this.words.agentName(id) }));
-  }
-
-  /** What the search reads of a policy: its name and its words. */
-  private searchable(policy: Policy): string {
-    const words = policy.statements.flatMap((statement) => [
-      this.words.effect(statement), ...statement.actions.map((action) => this.words.action(action)), ...statement.actions,
-    ]);
-    return `${policy.name} ${words.join(' ')}`.toLowerCase();
   }
 
   private groupOf(action: string): ActionGroup | undefined {
@@ -360,8 +378,7 @@ export class PoliciesComponent extends DataPageBase implements OnInit {
 
   /** The policies the search leaves. */
   get shown(): Policy[] {
-    const query = this.query.trim().toLowerCase();
-    return this.policies.filter((policy) => !query || this.searchable(policy).includes(query));
+    return this.policies;
   }
 
   /** The groups that open unfolded: the ones the policy already allows

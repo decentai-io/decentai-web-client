@@ -37,6 +37,28 @@ describe('WebhooksComponent', () => {
     expect(component.foot).toBe('1 on · 1 of 25');
   });
 
+  it('pages those shared on the server, keeping its own whole, and counts from the server', async () => {
+    const asked: string[] = [];
+    const { component } = create({
+      list: async (after: string) => {
+        asked.push(after);
+        return {
+          webhooks: [hook('a')], handed: [], limit: 25, total: 12,
+          shared: after ? [hook('s10', { role: 'viewer' })] : Array.from({ length: 10 }, (_, i) => hook(`s${i}`, { role: 'viewer' })),
+          next: after ? null : 's9', counts: { webhooks: 1, on: 1, signed: 0, shared: 12, handed: 0 },
+        };
+      },
+    });
+    await component.ngOnInit();
+    expect(component.shared.length).toBe(10);
+    expect(component.sharedPages.total).toBe(12);
+
+    await component.sharedPages.go(2);
+    expect(asked).toEqual(['', 's9']);
+    expect(component.shared.map((one) => one.webhook_id)).toEqual(['s10']);
+    expect(component.webhooks.length).toBe(1);
+  });
+
   it('says the list could not be read instead of showing it empty', async () => {
     const { component } = create({ list: async () => ({ webhooks: [], shared: [], handed: [], limit: 0, error: 'Not allowed.' }) });
     await component.ngOnInit();

@@ -244,3 +244,8 @@
     min-height: 44px;
   }
 }
+
+/* The search over a successor's choices, above them. */
+.admin-successor-search {
+  margin-bottom: 8px;
+}

@@ -4,11 +4,11 @@ import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { firstValueFrom, Subscription } from 'rxjs';
 
 import { Candidate } from 'src/app/components/transfer-dialog/transfer-dialog.component';
-import { Paging } from 'src/app/components/ui/paging';
+import { Paging, ServerPage, ServerPages } from 'src/app/components/ui/paging';
 import { AuthService } from 'src/app/services/auth.service';
 import { ConfirmService } from 'src/app/services/confirm.service';
 import { ProfileService } from 'src/app/services/profile.service';
-import { Webhook, WebhooksService } from 'src/app/services/webhooks.service';
+import { Webhook, WebhookCounts, WebhooksService } from 'src/app/services/webhooks.service';
 import { DataPageBase } from '../../data-page-base';
 import { ShareEditor } from '../../share-editor';
 import { WebhookDialogComponent, WebhookDialogData } from './webhook-dialog.component';
@@ -38,17 +38,19 @@ const WIDE = { width: '640px', maxWidth: '100vw' };
 })
 export class WebhooksComponent extends DataPageBase implements OnInit, OnDestroy {
   loading = true;
-  /** Each list a page at a time: yours are 25 at most, the others' have no end. */
+  /** Each list a page at a time: yours are 25 at most and read whole;
+   *  those shared with you have no end, and the API server pages them. */
   readonly ownPaging = new Paging(10);
-  readonly sharedPaging = new Paging(10);
+  readonly sharedPages = new ServerPages<Webhook>(10, (after, limit) => this.read(after, limit));
   readonly handedPaging = new Paging(5);
   /** Why the webhooks could not be read. */
   loadError = '';
   webhooks: Webhook[] = [];
-  shared: Webhook[] = [];
   /** Handed to the person, not yet accepted. */
   handed: Webhook[] = [];
   limit = 0;
+  /** The webhooks in numbers, the server's. */
+  counts: WebhookCounts = { webhooks: 0, on: 0, signed: 0, shared: 0, handed: 0 };
 
   /** The webhook being handed over, while its dialog is open. */
   handing: Webhook | null = null;
@@ -91,18 +93,29 @@ export class WebhooksComponent extends DataPageBase implements OnInit, OnDestroy
     this.address.unsubscribe();
   }
 
+  /** The page of shared ones shown read again, and with it the person's
+   *  own and those handed to them. */
   async reload(): Promise<void> {
     this.loadError = '';
-    const page = await this.service.list();
+    await (this.sharedPages.loaded ? this.sharedPages.reload() : this.sharedPages.first());
     // A read that failed says so and leaves what was on screen.
-    if (page.error) {
-      this.loadError = page.error;
-      return;
+    this.loadError = this.sharedPages.error;
+  }
+
+  private async read(after: string, limit: number): Promise<ServerPage<Webhook>> {
+    const page = await this.service.list(after, limit);
+    if (!page.error) {
+      this.webhooks = page.webhooks;
+      this.handed = page.handed;
+      this.limit = page.limit;
+      this.counts = page.counts ?? this.counts;
     }
-    this.webhooks = page.webhooks;
-    this.shared = page.shared;
-    this.handed = page.handed;
-    this.limit = page.limit;
+    return { rows: page.shared ?? [], next: page.next ?? null, total: page.total ?? page.shared?.length ?? 0, error: page.error };
+  }
+
+  /** The page of webhooks shared with the person shown. */
+  get shared(): Webhook[] {
+    return this.sharedPages.rows;
   }
 
   // ── What the person may do ──────────────────────────────────────────

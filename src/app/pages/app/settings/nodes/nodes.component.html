@@ -94,7 +94,7 @@
 
     <!-- Every node, grouped by the organization it serves. -->
     <app-list *ngIf="!openId || loading" label="Nodes" rows="groups" [loading]="loading" [foot]="nodesFoot">
-      <ng-container listToolbar *ngIf="!loading && nodes.length">
+      <ng-container listToolbar *ngIf="!loading && (nodes.length || filtering)">
         <span class="search-field toolbar-search">
           <lucide-icon name="search" [size]="16" aria-hidden="true"></lucide-icon>
           <input
@@ -150,11 +150,11 @@
           </app-row>
         </div>
       </section>
-      <app-pager [page]="nodePaging.page" [pageSize]="nodePaging.size" [total]="shownNodes.length"
-                 (pageChange)="nodePaging.page = $event"></app-pager>
+      <app-pager [page]="nodePages.page" [pageSize]="nodePages.size" [total]="nodePages.total"
+                 (pageChange)="nodePages.go($event)"></app-pager>
 
       <app-empty
-        *ngIf="!nodes.length"
+        *ngIf="!nodes.length && !filtering"
         icon="server"
         title="No nodes yet"
         line="A node joins by itself: make an enrollment token, put it in the node's identity folder, and start it pointed at this deployment."
@@ -165,7 +165,7 @@
         </a>
       </app-empty>
       <app-empty
-        *ngIf="nodes.length && !shownNodes.length"
+        *ngIf="!nodes.length && filtering"
         icon="search-x"
         title="No node matches"
         line="Nothing listed fits the search and filters."
@@ -182,7 +182,7 @@
     </p>
     <app-list label="Enrollment tokens" [loading]="loading" [foot]="tokensFoot">
       <ng-container listToolbar *ngIf="!loading">
-        <app-switch *ngIf="spentCount" label="Show spent" [(ngModel)]="showSpent"></app-switch>
+        <app-switch *ngIf="spentCount" label="Show spent" [ngModel]="showSpent" (ngModelChange)="setShowSpent($event)"></app-switch>
         <button
           *ngIf="canCreateToken"
           class="btn primary sm toolbar-end"
@@ -195,7 +195,7 @@
       </ng-container>
 
       <app-row
-        *ngFor="let token of tokenPaging.of(visibleTokens, showSpent ? 'spent' : '')"
+        *ngFor="let token of visibleTokens"
         class="authority-row"
         [class.is-revoked]="!tokenLive(token)"
         [name]="tokenName(token)"
@@ -221,8 +221,8 @@
           {{ busy === token._id ? "Withdrawing…" : "Withdraw" }}
         </button>
       </app-row>
-      <app-pager [page]="tokenPaging.page" [pageSize]="tokenPaging.size" [total]="visibleTokens.length"
-                 (pageChange)="tokenPaging.page = $event"></app-pager>
+      <app-pager [page]="tokenPages.page" [pageSize]="tokenPages.size" [total]="tokenPages.total"
+                 (pageChange)="tokenPages.go($event)"></app-pager>
 
       <app-empty
         *ngIf="!visibleTokens.length"

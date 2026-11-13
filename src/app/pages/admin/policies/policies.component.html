@@ -9,15 +9,15 @@
     <p class="form-notice" role="status" *ngIf="notice">{{ notice }}</p>
 
     <app-list label="Policies" [loading]="loading">
-      <ng-container listToolbar *ngIf="policies.length">
+      <ng-container listToolbar *ngIf="policies.length || query">
         <span class="search-field toolbar-search">
           <lucide-icon name="search" [size]="16" aria-hidden="true"></lucide-icon>
-          <input class="input" type="search" placeholder="Search policies" aria-label="Search policies" [(ngModel)]="query" />
+          <input class="input" type="search" placeholder="Search policies" aria-label="Search policies" [ngModel]="query" (ngModelChange)="onSearch($event)" />
         </span>
         <ng-container *ngTemplateOutlet="addButton"></ng-container>
       </ng-container>
 
-      <app-row *ngFor="let policy of paging.of(shown, query)">
+      <app-row *ngFor="let policy of shown">
         <button rowName class="admin-name" type="button" *ngIf="canUpdate && !policy.built_in; else plainName" (click)="startEdit(policy)">{{ policy.name }}</button>
         <ng-template #plainName><span rowName>{{ policy.name }}</span></ng-template>
         <span rowChips class="ui-pill" *ngIf="policy.built_in"
@@ -48,15 +48,15 @@
         </button>
       </app-row>
 
-      <app-pager [page]="paging.page" [pageSize]="paging.size" [total]="shown.length"
-                 (pageChange)="paging.page = $event"></app-pager>
+      <app-pager [page]="pages.page" [pageSize]="pages.size" [total]="pages.total"
+                 (pageChange)="pages.go($event)"></app-pager>
 
-      <app-empty *ngIf="!loading && !policies.length" icon="scroll-text" title="No policies yet"
+      <app-empty *ngIf="!loading && pages.loaded && !policies.length && !query.trim()" icon="scroll-text" title="No policies yet"
                  line="A policy says what a group may do in the platform. Groups give their people policies.">
         <ng-container *ngTemplateOutlet="addButton"></ng-container>
       </app-empty>
-      <app-empty *ngIf="policies.length && !shown.length" icon="search-x" title="No policy matches" line="Try another search.">
-        <button class="btn" type="button" (click)="query = ''">Clear the search</button>
+      <app-empty *ngIf="pages.loaded && query.trim() && !shown.length" icon="search-x" title="No policy matches" line="Try another search.">
+        <button class="btn" type="button" (click)="clearSearch()">Clear the search</button>
       </app-empty>
     </app-list>
   </div>
