@@ -71,6 +71,17 @@ describe('NodesService', () => {
     });
   });
 
+  it('makes a join code as it makes a token, but of no one kind', async () => {
+    const { service, sent } = create({ code: 'decentai-join:e30', expires: 1000 });
+
+    const answer = await service.joinCode({ uses: 1, days: 7, labels: ['gpu'], shared: false });
+
+    expect(sent[0]).toEqual({
+      endpoint: 'Nodes:Authority:join', data: { expires: 604800, uses: 1, labels: ['gpu'], shared: false },
+    });
+    expect(answer.code).toBe('decentai-join:e30');
+  });
+
   it('names the token, the runtime and the sandbox as the API server reads them', async () => {
     const { service, sent } = create();
 

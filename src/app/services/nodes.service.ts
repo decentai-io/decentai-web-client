@@ -211,6 +211,18 @@ export class NodesService {
     });
   }
 
+  /** A join code: a runtime's token and a sandbox's, with where they
+   *  enroll and whom they trust, for the desktop app to lend a computer
+   *  with. It is in this answer and never again. */
+  joinCode(draft: Omit<TokenDraft, 'kind'>): Promise<{ code?: string; expires?: number } & Failure> {
+    return this.request.gateway('Nodes:Authority:join', {
+      expires: Math.round(draft.days * 86400),
+      uses: draft.uses,
+      labels: draft.labels,
+      shared: draft.shared,
+    });
+  }
+
   /** Withdrawn: it enrolls nobody, and its nodes are not renewed. */
   revokeToken(id: string): Promise<Failure> {
     return this.request.gateway('Nodes:Authority:revoke', { token_id: id });

@@ -132,6 +132,9 @@ export class NodesComponent extends DataPageBase implements OnInit, OnDestroy {
   showSpent = false;
   /** A token just made: its secret, shown this once. */
   made: { id: string; token: string } | null = null;
+  /** The token dialog makes a join code instead: both kinds at once, for
+   *  the desktop app. Its code is shown once, as `made.token`. */
+  joining = false;
 
   placement: Placement = 'prefer_own';
   savingPlacement = false;
@@ -231,6 +234,7 @@ export class NodesComponent extends DataPageBase implements OnInit, OnDestroy {
   get canForget(): boolean { return this.auth.can('nodes:node:forget'); }
   get canListTokens(): boolean { return this.auth.can('nodes:authority:list'); }
   get canCreateToken(): boolean { return this.auth.can('nodes:authority:create'); }
+  get canJoin(): boolean { return this.auth.can('nodes:authority:join'); }
   get canSeePlacement(): boolean { return this.auth.can('settings:organization:get'); }
   get canSetPlacement(): boolean { return this.auth.can('settings:organization:update'); }
 
@@ -747,9 +751,10 @@ export class NodesComponent extends DataPageBase implements OnInit, OnDestroy {
 
   // ── The token form ──────────────────────────────────────────────────
 
-  startCreate(): void {
+  startCreate(joining = false): void {
     this.form = { ...BLANK_FORM };
     this.made = null;
+    this.joining = joining;
     this.formError = '';
     this.tried = false;
     this.openDialog(this.editor, '560px');
@@ -784,13 +789,23 @@ export class NodesComponent extends DataPageBase implements OnInit, OnDestroy {
     if (this.dialogRef) this.dialogRef.disableClose = true;
     try {
       const form = this.form;
-      const result = await this.service.createToken({
-        kind: form.kind,
+      const draft = {
         uses: Number(form.uses),
         days: Number(form.days),
         labels: form.labels.split(',').map((label) => label.trim()).filter(Boolean),
         shared: this.operator && form.scope === 'shared',
-      });
+      };
+      if (this.joining) {
+        const joined = await this.service.joinCode(draft);
+        if (joined.error || !joined.code) {
+          this.formError = joined.error || 'The join code could not be made.';
+          return;
+        }
+        this.made = { id: '', token: joined.code };
+        await this.readTokens();
+        return;
+      }
+      const result = await this.service.createToken({ kind: form.kind, ...draft });
       if (result.error || !result.token || !result.id) {
         this.formError = result.error || 'The token could not be made.';
         return;
@@ -805,7 +820,7 @@ export class NodesComponent extends DataPageBase implements OnInit, OnDestroy {
   }
 
   copyMade(): void {
-    if (this.made && this.clipboard?.copy(this.made.token)) this.flash('Token copied.');
+    if (this.made && this.clipboard?.copy(this.made.token)) this.flash(this.joining ? 'Join code copied.' : 'Token copied.');
   }
 
   // ── Where chats run ─────────────────────────────────────────────────
