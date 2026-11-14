@@ -112,3 +112,18 @@ jobs:
             --notes-file notes.md \
             --generate-notes \
             --verify-tag
+
+      # The desktop app carries the web client: its release workflow is told
+      # there is a new one, and releases the app with it. Without the token
+      # (a fine-grained token with Actions: write on decentai-desktop-app),
+      # the desktop's daily check finds it instead.
+      - name: Tell the desktop app's release
+        env:
+          GH_TOKEN: ${{ secrets.DESKTOP_DISPATCH_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "No DESKTOP_DISPATCH_TOKEN: the desktop app's daily check finds this release."
+            exit 0
+          fi
+          gh api "repos/${{ github.repository_owner }}/decentai-desktop-app/dispatches" \
+            -f event_type=web-client-released -F "client_payload[version]=${{ steps.version.outputs.number }}"

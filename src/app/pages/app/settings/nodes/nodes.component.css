@@ -237,6 +237,13 @@
   gap: 2px;
 }
 
+/* A join code is one long word: it wraps anywhere, and scrolls past a few lines. */
+.authority-key code {
+  overflow-wrap: anywhere;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
 .authority-copy {
   margin: -4px 0;
 }

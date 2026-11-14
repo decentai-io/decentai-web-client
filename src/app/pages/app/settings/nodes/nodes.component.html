@@ -184,8 +184,18 @@
       <ng-container listToolbar *ngIf="!loading">
         <app-switch *ngIf="spentCount" label="Show spent" [ngModel]="showSpent" (ngModelChange)="setShowSpent($event)"></app-switch>
         <button
+          *ngIf="canJoin"
+          class="btn sm toolbar-end"
+          type="button"
+          (click)="startCreate(true)"
+        >
+          <lucide-icon name="key-round" [size]="16" aria-hidden="true"></lucide-icon>
+          Make a join code
+        </button>
+        <button
           *ngIf="canCreateToken"
-          class="btn primary sm toolbar-end"
+          class="btn primary sm"
+          [class.toolbar-end]="!canJoin"
           type="button"
           (click)="startCreate()"
         >
@@ -269,15 +279,17 @@
 
 <!-- ── Making a token: on the dialog shell ─────────────────────────── -->
 <ng-template #editor>
-  <h2 mat-dialog-title>{{ made ? "Your enrollment token" : "Make an enrollment token" }}</h2>
+  <h2 mat-dialog-title *ngIf="!joining">{{ made ? "Your enrollment token" : "Make an enrollment token" }}</h2>
+  <h2 mat-dialog-title *ngIf="joining">{{ made ? "Your join code" : "Make a join code" }}</h2>
 
   <ng-container *ngIf="made; else tokenForm">
     <mat-dialog-content>
       <div class="form">
-        <p class="dialog-note">Shown this once: only its hash is kept. Put it in the node's identity folder as its <code>token</code> file, beside <code>enroll</code> and <code>roots.pem</code>.</p>
+        <p class="dialog-note" *ngIf="!joining">Shown this once: only its hash is kept. Put it in the node's identity folder as its <code>token</code> file, beside <code>enroll</code> and <code>roots.pem</code>.</p>
+        <p class="dialog-note" *ngIf="joining">Paste it in the DecentAI desktop app, under Lend this computer.</p>
         <span class="authority-key">
           <code class="mono">{{ made.token }}</code>
-          <button class="icon-btn sm authority-copy" type="button" aria-label="Copy the token" matTooltip="Copy" (click)="copyMade()">
+          <button class="icon-btn sm authority-copy" type="button" [attr.aria-label]="joining ? 'Copy the join code' : 'Copy the token'" matTooltip="Copy" (click)="copyMade()">
             <lucide-icon name="copy" [size]="14" aria-hidden="true"></lucide-icon>
           </button>
         </span>
@@ -292,7 +304,8 @@
     <form (ngSubmit)="save()">
       <mat-dialog-content>
         <div class="form">
-          <app-field label="For">
+          <p class="dialog-note" *ngIf="joining">A runtime's token and a sandbox's, with where they enroll, in one code for the DecentAI desktop app.</p>
+          <app-field label="For" *ngIf="!joining">
             <app-segmented name="kind" [choices]="kinds" [(ngModel)]="form.kind"></app-segmented>
           </app-field>
 

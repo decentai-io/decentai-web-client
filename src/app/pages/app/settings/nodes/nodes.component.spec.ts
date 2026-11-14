@@ -18,7 +18,7 @@ import { filterNodes, groupNodes, NO_FILTERS, nodeFacts, nodeLabel, overview, to
 const ALL = [
   'nodes:node:list', 'nodes:node:refuse', 'nodes:node:allow', 'nodes:node:drain',
   'nodes:node:update', 'nodes:node:forget',
-  'nodes:authority:list', 'nodes:authority:create', 'nodes:authority:revoke',
+  'nodes:authority:list', 'nodes:authority:create', 'nodes:authority:revoke', 'nodes:authority:join',
   'settings:organization:get', 'settings:organization:update',
 ];
 
@@ -454,6 +454,23 @@ describe('NodesComponent', () => {
 
       expect(component.formError).toBe('A token is for a runtime or a sandbox.');
       expect(component.made).toBeNull();
+    });
+
+    it('makes a join code with the same form, and shows it once to copy', async () => {
+      const { component, called, copied } = create({ joinCode: () => ({ code: 'decentai-join:e30', expires: 1 }) });
+      await component.ngOnInit();
+
+      component.startCreate(true);
+      component.form = { ...component.form, uses: '2', days: '1', labels: 'gpu' };
+      await component.save();
+
+      expect(called('joinCode')[0].args[0]).toEqual({ uses: 2, days: 1, labels: ['gpu'], shared: false });
+      expect(called('createToken').length).toBe(0);
+      expect(component.made?.token).toBe('decentai-join:e30');
+      component.copyMade();
+      expect(copied).toEqual(['decentai-join:e30']);
+      component.startCreate();
+      expect(component.joining).toBeFalse();
     });
 
     it('makes one for the whole deployment only for the operator', async () => {
